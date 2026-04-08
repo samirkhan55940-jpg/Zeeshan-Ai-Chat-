@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (Google TFLite Edition)
+name: Build Zeeshan AI Chat (The Ultimate Fix)
 
 on:
   push:
@@ -18,16 +18,22 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK & NDK
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653" "cmake;3.22.1"
+
       - name: Create Project Structure
         run: |
-          # 🚨 C++ ka kissa khatam! Sirf Java folders banayenge 🚨
           mkdir -p app/src/main/java/com/zeeshan/ai
+          mkdir -p app/src/main/cpp
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
 
-          echo "Downloading Google TFLite Brain..."
-          # TFLite optimized offline brain download kar rahe hain
-          wget -q --show-progress https://storage.googleapis.com/download.tensorflow.org/models/tflite/text_classification/text_classifier.tflite -O app/src/main/assets/model.tflite
+          echo "Downloading 400MB Asli AI Brain..."
+          wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
+
+          echo "Cloning Modern Engine (b3600)..."
+          git clone --depth 1 --branch b3600 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
 
           echo "android.useAndroidX=true
           android.enableJetifier=true
@@ -39,7 +45,7 @@ jobs:
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
-          # 🚨 CMake aur NDK poori tarah hata diya gaya hai! 100% Java Code 🚨
+          # 🚨 HACK: cppFlags mein "-Wno-error" aur "-Wno-all" lagaya hai taaki build kisi bhi warning par na ruke 🚨
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -49,16 +55,21 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 23
-                  versionName "23.0-TFLite-Java"
+                  versionCode 24
+                  versionName "24.0-Bulletproof"
+                  ndk { abiFilters "arm64-v8a" }
+                  externalNativeBuild { 
+                      cmake { 
+                          cppFlags "-std=c++17 -O3 -Wno-error -Wno-all -Wno-pedantic" 
+                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF"
+                      } 
+                  }
               }
-              aaptOptions { noCompress 'tflite' }
+              androidResources { noCompress 'gguf' }
+              externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt"; version "3.22.1" } }
               compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
           }
-          dependencies { 
-              implementation 'androidx.appcompat:appcompat:1.6.1' 
-              implementation 'org.tensorflow:tensorflow-lite:2.14.0' // Google AI Engine
-          }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
           echo "<resources><string name=\"app_name\">Zeeshan Ai Chat</string></resources>" > app/src/main/res/values/strings.xml
@@ -79,7 +90,108 @@ jobs:
           </manifest>
           EOF
 
-          # 🚨 Final Java Code with TFLite & 700MB Vault (No C++ needed) 🚨
+          # 🚨 MASTER LOCKS: Faltu features ko poori tarah OFF kar diya hai 🚨
+          cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
+          cmake_minimum_required(VERSION 3.22.1)
+          project("zeeshan_ai_engine")
+          
+          set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
+          set(GGML_NEON OFF CACHE BOOL "" FORCE)
+          set(LLAMA_LLAMAFILE OFF CACHE BOOL "" FORCE)
+          set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
+          set(LLAMA_WERROR OFF CACHE BOOL "" FORCE)
+          set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+          set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+          set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+          set(LLAMA_NATIVE OFF CACHE BOOL "" FORCE)
+          
+          set(LLAMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
+          add_subdirectory(${LLAMA_DIR} llama_build)
+          
+          add_library(zeeshan_ai_engine SHARED native-lib.cpp)
+          target_include_directories(zeeshan_ai_engine PRIVATE ${LLAMA_DIR}/include ${LLAMA_DIR} ${LLAMA_DIR}/common)
+          
+          find_library(log-lib log)
+          target_link_libraries(zeeshan_ai_engine llama ${log-lib})
+          EOF
+
+          cat << 'EOF' > app/src/main/cpp/native-lib.cpp
+          #include <jni.h>
+          #include <string>
+          #include <vector>
+          #include "llama.h"
+
+          extern "C" JNIEXPORT jstring JNICALL
+          Java_com_zeeshan_ai_MainActivity_askZeeshanAI(JNIEnv* env, jobject, jstring user_msg, jstring model_path) {
+              const char *path = env->GetStringUTFChars(model_path, nullptr);
+              const char *msg = env->GetStringUTFChars(user_msg, nullptr);
+              
+              llama_backend_init();
+              llama_model_params m_params = llama_model_default_params();
+              llama_model * model = llama_load_model_from_file(path, m_params);
+              
+              if (model == nullptr) {
+                  return env->NewStringUTF("Zeeshan Ai Error: Engine load nahi hua.");
+              }
+
+              llama_context_params c_params = llama_context_default_params();
+              c_params.n_ctx = 512; 
+              llama_context * ctx = llama_new_context_with_model(model, c_params);
+
+              std::string prompt = "User: " + std::string(msg) + "\nAI: ";
+              
+              std::vector<llama_token> tokens_list(prompt.length() + 2);
+              int n_tokens = llama_tokenize(model, prompt.c_str(), prompt.length(), tokens_list.data(), tokens_list.size(), true, true);
+              
+              if (n_tokens < 0) return env->NewStringUTF("Zeeshan Ai Error: Samajh nahi aaya.");
+              tokens_list.resize(n_tokens);
+
+              llama_batch batch = llama_batch_init(512, 0, 1);
+              for (size_t i = 0; i < tokens_list.size(); i++) {
+                  llama_batch_add(batch, tokens_list[i], i, {0}, false);
+              }
+              batch.logits[batch.n_tokens - 1] = true;
+              
+              llama_decode(ctx, batch);
+
+              std::string final_response = "";
+              int n_len = 30; // Max 30 words fast speed ke liye
+              
+              for (int i = 0; i < n_len; i++) {
+                  auto * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
+                  llama_token new_token_id = 0;
+                  float max_logit = -1e9;
+                  int n_vocab = llama_n_vocab(model);
+                  for(int v = 0; v < n_vocab; v++) {
+                      if(logits[v] > max_logit) { max_logit = logits[v]; new_token_id = v; }
+                  }
+
+                  if (new_token_id == llama_token_eos(model)) break;
+                  
+                  char buf[128];
+                  int n = llama_token_to_piece(model, new_token_id, buf, sizeof(buf), 0, true);
+                  if (n > 0) final_response += std::string(buf, n);
+
+                  llama_batch_clear(batch);
+                  llama_batch_add(batch, new_token_id, batch.n_tokens, {0}, true);
+                  llama_decode(ctx, batch);
+              }
+
+              llama_batch_free(batch);
+              llama_free(ctx);
+              llama_free_model(model);
+              llama_backend_free();
+
+              env->ReleaseStringUTFChars(model_path, path);
+              env->ReleaseStringUTFChars(user_msg, msg);
+              
+              std::string output = final_response;
+              if (output.empty()) { output = "[Sochne mein thoda waqt lag raha hai...]"; }
+              
+              return env->NewStringUTF(output.c_str());
+          }
+          EOF
+
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           import androidx.annotation.Nullable;
@@ -90,7 +202,6 @@ jobs:
           import android.app.Dialog;
           import android.content.Intent;
           import android.content.pm.PackageManager;
-          import android.content.res.AssetFileDescriptor;
           import android.os.Bundle;
           import android.speech.RecognizerIntent;
           import android.speech.tts.TextToSpeech;
@@ -98,22 +209,20 @@ jobs:
           import android.view.Gravity;
           import android.graphics.Color;
           import android.net.Uri;
-          import org.tensorflow.lite.Interpreter;
           import java.io.*;
-          import java.nio.MappedByteBuffer;
-          import java.nio.channels.FileChannel;
           import java.util.ArrayList;
           import java.util.Locale;
 
           public class MainActivity extends AppCompatActivity {
+              static { System.loadLibrary("zeeshan_ai_engine"); }
+              public native String askZeeshanAI(String msg, String modelPath);
               private LinearLayout chatLayout;
               private ScrollView scrollView;
+              private String modelFilePath;
               private Button sendBtn;
               private EditText inputField;
               private TextToSpeech textToSpeech;
-              private Interpreter tflite; // Google AI Engine
               
-              // 700 MB Vault Config
               private static final long MAX_VAULT_SIZE = 700 * 1024 * 1024L; 
               private File vaultDir;
 
@@ -129,40 +238,16 @@ jobs:
                   textToSpeech = new TextToSpeech(this, status -> {
                       if (status == TextToSpeech.SUCCESS) textToSpeech.setLanguage(new Locale("hi", "IN"));
                   });
-                  
                   new Thread(() -> {
-                      try {
-                          tflite = new Interpreter(loadModelFile());
-                          runOnUiThread(() -> {
-                              addMessage("System", "✅ Google AI Engine Loaded! 700MB Vault Ready.", false);
+                      modelFilePath = copyModelFromAssets();
+                      runOnUiThread(() -> {
+                          if(modelFilePath != null) {
+                              addMessage("System", "✅ Engine Installed! 700MB Vault Ready.", false);
                               sendBtn.setEnabled(true);
                               sendBtn.setBackgroundColor(Color.parseColor("#0284C7"));
-                          });
-                      } catch (Exception e) {
-                          runOnUiThread(() -> addMessage("System", "Error loading Google Engine.", false));
-                      }
+                          }
+                      });
                   }).start();
-              }
-
-              private MappedByteBuffer loadModelFile() throws IOException {
-                  AssetFileDescriptor fileDescriptor = this.getAssets().openFd("model.tflite");
-                  FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-                  FileChannel fileChannel = inputStream.getChannel();
-                  long startOffset = fileDescriptor.getStartOffset();
-                  long declaredLength = fileDescriptor.getDeclaredLength();
-                  return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
-              }
-
-              // Google Engine Output Logic (Simulated for text)
-              private String askZeeshanAI(String msg) {
-                  if (tflite == null) return "Engine load nahi hua bhai.";
-                  try {
-                      // Google Engine Processing happening here
-                      Thread.sleep(1500); // AI Thinking Delay
-                      return "Google Engine Response: Main " + msg + " samajh gaya. App bilkul theek chal rahi hai!";
-                  } catch (Exception e) {
-                      return "[Sochne mein thoda waqt lag raha hai...]";
-                  }
               }
 
               private long getVaultSize() {
@@ -321,7 +406,7 @@ jobs:
                           sendBtn.setEnabled(false);
                           sendBtn.setBackgroundColor(Color.GRAY);
                           new Thread(() -> {
-                              String resp = askZeeshanAI(text);
+                              String resp = askZeeshanAI(text, modelFilePath);
                               runOnUiThread(() -> { 
                                   addMessage("Zeeshan Ai Chat", resp, false); 
                                   speakOut(resp); 
@@ -349,6 +434,19 @@ jobs:
                   if (textToSpeech != null) textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
               }
 
+              private String copyModelFromAssets() {
+                  File outFile = new File(getFilesDir(), "model.gguf");
+                  if (outFile.exists() && outFile.length() > 0) return outFile.getAbsolutePath();
+                  try {
+                      InputStream in = getAssets().open("model.gguf");
+                      OutputStream out = new FileOutputStream(outFile);
+                      byte[] buffer = new byte[1024 * 1024];
+                      int read;
+                      while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
+                      in.close(); out.flush(); out.close(); return outFile.getAbsolutePath();
+                  } catch (IOException e) { return null; }
+              }
+
               private void addMessage(String sender, String msg, boolean isUser) {
                   TextView tv = new TextView(this);
                   tv.setText(sender + ":\n" + msg);
@@ -372,6 +470,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Chat-GoogleEdition
+          name: Zeeshan-Ai-Chat-Ultimate
           path: app/build/outputs/apk/debug/*.apk
 
