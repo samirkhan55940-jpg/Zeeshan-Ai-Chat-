@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (Strict Mode Off)
+name: Build Zeeshan AI Chat (Modern Engine Fix)
 
 on:
   push:
@@ -32,8 +32,9 @@ jobs:
           echo "Downloading 400MB AI Brain..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
 
-          echo "Cloning GitHub Engine..."
-          git clone --depth 1 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
+          # 🚨 ILAJ: Wapas b3600 par aa gaye hain, Time travel hata diya taaki compiler crash na ho 🚨
+          echo "Cloning GitHub Engine (Modern b3600)..."
+          git clone --depth 1 --branch b3600 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
 
           echo "android.useAndroidX=true
           android.enableJetifier=true
@@ -45,7 +46,7 @@ jobs:
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
-          # 🚨 ILAJ: WERROR (Strict Mode) aur NATIVE dono OFF kar diye hain 🚨
+          # 🚨 Saare safe locks ek sath laga diye hain 🚨
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -55,13 +56,13 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 17
-                  versionName "17.0-WarningsBypassed"
+                  versionCode 18
+                  versionName "18.0-ModernFix"
                   ndk { abiFilters "arm64-v8a" }
                   externalNativeBuild { 
                       cmake { 
                           cppFlags "-std=c++17 -O3" 
-                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF", "-DLLAMA_WERROR=OFF", "-DLLAMA_NATIVE=OFF"
+                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF", "-DGGML_LLAMAFILE=OFF", "-DLLAMA_WERROR=OFF", "-DGGML_NEON=OFF"
                       } 
                   }
               }
@@ -90,15 +91,15 @@ jobs:
           </manifest>
           EOF
 
-          # 🚨 CMake mein Warning Bypass Add Kiya Hai 🚨
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("zeeshan_ai_engine")
           
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
           set(LLAMA_LLAMAFILE OFF CACHE BOOL "" FORCE)
+          set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
           set(LLAMA_WERROR OFF CACHE BOOL "" FORCE)
-          set(LLAMA_NATIVE OFF CACHE BOOL "" FORCE)
+          set(GGML_NEON OFF CACHE BOOL "" FORCE)
           
           set(LLAMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
           add_subdirectory(${LLAMA_DIR} llama_build)
@@ -465,5 +466,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Chat-Werror-Fix
+          name: Zeeshan-Ai-Chat-FinalFix
           path: app/build/outputs/apk/debug/*.apk
+
