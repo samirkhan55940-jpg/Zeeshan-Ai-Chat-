@@ -1,0 +1,475 @@
+name: Build Zeeshan AI Chat (Final Mega Edition)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK & NDK
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653" "cmake;3.22.1"
+
+      - name: Create Project Structure
+        run: |
+          mkdir -p app/src/main/java/com/zeeshan/ai
+          mkdir -p app/src/main/cpp
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/assets
+
+          echo "Downloading 400MB AI Brain..."
+          wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
+
+          # 🚨 FIX: Stable b3000 version clone kar rahe hain jisme error nahi hai 🚨
+          echo "Cloning GitHub Engine (100% Stable Android Version)..."
+          git clone --depth 1 --branch b3000 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
+
+          # 1. Gradle Setup & Memory Fix
+          echo "android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8" > gradle.properties
+
+          echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          include ':app'" > settings.gradle
+
+          echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
+
+          # 2. App Build Gradle
+          cat << 'EOF' > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.zeeshan.ai'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.zeeshan.ai'
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 13
+                  versionName "13.0-StableEngine"
+                  ndk { abiFilters "arm64-v8a" }
+                  externalNativeBuild { 
+                      cmake { 
+                          cppFlags "-std=c++17 -O3" 
+                          arguments "-DGGML_OPENMP=OFF", "-DGGML_LLAMAFILE=OFF"
+                      } 
+                  }
+              }
+              androidResources { noCompress 'gguf' }
+              externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt"; version "3.22.1" } }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+          }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
+          EOF
+
+          # 3. Strings & App Name
+          echo "<resources><string name=\"app_name\">Zeeshan Ai Chat</string></resources>" > app/src/main/res/values/strings.xml
+
+          # 4. AndroidManifest
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+              <application android:allowBackup="true" android:label="@string/app_name" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          # 5. CMake Setup
+          cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
+          cmake_minimum_required(VERSION 3.22.1)
+          project("zeeshan_ai_engine")
+          
+          set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
+          set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
+          
+          set(LLAMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
+          add_subdirectory(${LLAMA_DIR} llama_build)
+          
+          add_library(zeeshan_ai_engine SHARED native-lib.cpp)
+          target_include_directories(zeeshan_ai_engine PRIVATE ${LLAMA_DIR}/include ${LLAMA_DIR} ${LLAMA_DIR}/common)
+          
+          find_library(log-lib log)
+          target_link_libraries(zeeshan_ai_engine llama ${log-lib})
+          EOF
+
+          # 6. C++ JNI Engine
+          cat << 'EOF' > app/src/main/cpp/native-lib.cpp
+          #include <jni.h>
+          #include <string>
+          #include <vector>
+          #include "llama.h"
+
+          extern "C" JNIEXPORT jstring JNICALL
+          Java_com_zeeshan_ai_MainActivity_askZeeshanAI(JNIEnv* env, jobject, jstring user_msg, jstring model_path) {
+              const char *path = env->GetStringUTFChars(model_path, nullptr);
+              const char *msg = env->GetStringUTFChars(user_msg, nullptr);
+              
+              llama_backend_init();
+              llama_model_params m_params = llama_model_default_params();
+              llama_model * model = llama_load_model_from_file(path, m_params);
+              
+              if (model == nullptr) {
+                  return env->NewStringUTF("Zeeshan Ai Error: Engine load fail ho gaya.");
+              }
+
+              llama_context_params c_params = llama_context_default_params();
+              c_params.n_ctx = 512; 
+              llama_context * ctx = llama_new_context_with_model(model, c_params);
+
+              std::string prompt = "User: " + std::string(msg) + "\nAI: ";
+              
+              std::vector<llama_token> tokens_list(prompt.length() + 2);
+              int n_tokens = llama_tokenize(model, prompt.c_str(), prompt.length(), tokens_list.data(), tokens_list.size(), true, true);
+              
+              if (n_tokens < 0) return env->NewStringUTF("Zeeshan Ai Error: Message samajh nahi aaya.");
+              tokens_list.resize(n_tokens);
+
+              llama_batch batch = llama_batch_init(512, 0, 1);
+              for (size_t i = 0; i < tokens_list.size(); i++) {
+                  llama_batch_add(batch, tokens_list[i], i, {0}, false);
+              }
+              batch.logits[batch.n_tokens - 1] = true;
+              
+              llama_decode(ctx, batch);
+
+              std::string final_response = "";
+              int n_len = 30; // Max 30 words ki limit
+              
+              for (int i = 0; i < n_len; i++) {
+                  auto * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
+                  llama_token new_token_id = 0;
+                  float max_logit = -1e9;
+                  int n_vocab = llama_n_vocab(model);
+                  for(int v = 0; v < n_vocab; v++) {
+                      if(logits[v] > max_logit) { max_logit = logits[v]; new_token_id = v; }
+                  }
+
+                  if (new_token_id == llama_token_eos(model)) break;
+                  
+                  char buf[128];
+                  int n = llama_token_to_piece(model, new_token_id, buf, sizeof(buf), 0, true);
+                  if (n > 0) final_response += std::string(buf, n);
+
+                  llama_batch_clear(batch);
+                  llama_batch_add(batch, new_token_id, batch.n_tokens, {0}, true);
+                  llama_decode(ctx, batch);
+              }
+
+              llama_batch_free(batch);
+              llama_free(ctx);
+              llama_free_model(model);
+              llama_backend_free();
+
+              env->ReleaseStringUTFChars(model_path, path);
+              env->ReleaseStringUTFChars(user_msg, msg);
+              
+              std::string output = final_response;
+              if (output.empty()) { output = "[Sochne mein thoda waqt lag raha hai...]"; }
+              
+              return env->NewStringUTF(output.c_str());
+          }
+          EOF
+
+          # 7. JAVA UI (Vault System & Voice)
+          cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
+          package com.zeeshan.ai;
+          import androidx.annotation.Nullable;
+          import androidx.appcompat.app.AppCompatActivity;
+          import androidx.core.app.ActivityCompat;
+          import androidx.core.content.ContextCompat;
+          import android.Manifest;
+          import android.app.Dialog;
+          import android.content.Intent;
+          import android.content.pm.PackageManager;
+          import android.os.Bundle;
+          import android.speech.RecognizerIntent;
+          import android.speech.tts.TextToSpeech;
+          import android.widget.*;
+          import android.view.Gravity;
+          import android.graphics.Color;
+          import android.net.Uri;
+          import java.io.*;
+          import java.util.ArrayList;
+          import java.util.Locale;
+
+          public class MainActivity extends AppCompatActivity {
+              static { System.loadLibrary("zeeshan_ai_engine"); }
+              public native String askZeeshanAI(String msg, String modelPath);
+              private LinearLayout chatLayout;
+              private ScrollView scrollView;
+              private String modelFilePath;
+              private Button sendBtn;
+              private EditText inputField;
+              private TextToSpeech textToSpeech;
+              
+              // 700 MB Vault Config
+              private static final long MAX_VAULT_SIZE = 700 * 1024 * 1024L; 
+              private File vaultDir;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  
+                  vaultDir = new File(getFilesDir(), "PdfVault");
+                  if(!vaultDir.exists()) vaultDir.mkdirs();
+
+                  setupUI();
+                  
+                  textToSpeech = new TextToSpeech(this, status -> {
+                      if (status == TextToSpeech.SUCCESS) textToSpeech.setLanguage(new Locale("hi", "IN"));
+                  });
+                  new Thread(() -> {
+                      modelFilePath = copyModelFromAssets();
+                      runOnUiThread(() -> {
+                          if(modelFilePath != null) {
+                              addMessage("System", "✅ Engine Opened! 700MB Vault Ready.", false);
+                              sendBtn.setEnabled(true);
+                              sendBtn.setBackgroundColor(Color.parseColor("#0284C7"));
+                          }
+                      });
+                  }).start();
+              }
+
+              private long getVaultSize() {
+                  long size = 0;
+                  File[] files = vaultDir.listFiles();
+                  if (files != null) {
+                      for (File f : files) size += f.length();
+                  }
+                  return size;
+              }
+
+              private void showVaultMenu() {
+                  Dialog dialog = new Dialog(this);
+                  LinearLayout dialogLayout = new LinearLayout(this);
+                  dialogLayout.setOrientation(LinearLayout.VERTICAL);
+                  dialogLayout.setPadding(40, 40, 40, 40);
+                  dialogLayout.setBackgroundColor(Color.parseColor("#1E293B"));
+
+                  TextView title = new TextView(this);
+                  title.setText("💾 700MB Memory Vault");
+                  title.setTextColor(Color.WHITE);
+                  title.setTextSize(20);
+                  dialogLayout.addView(title);
+
+                  TextView info = new TextView(this);
+                  long usedMB = getVaultSize() / (1024 * 1024);
+                  info.setText("\nUsed: " + usedMB + " MB / 700 MB\n(100% Offline, Koi data bahar nahi jayega)\n");
+                  info.setTextColor(Color.parseColor("#A7F3D0"));
+                  dialogLayout.addView(info);
+
+                  Button uploadBtn = new Button(this);
+                  uploadBtn.setText("UPLOAD PDF");
+                  uploadBtn.setBackgroundColor(Color.parseColor("#0284C7"));
+                  uploadBtn.setTextColor(Color.WHITE);
+                  uploadBtn.setOnClickListener(v -> {
+                      dialog.dismiss();
+                      Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                      intent.setType("application/pdf");
+                      startActivityForResult(intent, 200);
+                  });
+                  dialogLayout.addView(uploadBtn);
+
+                  Button clearBtn = new Button(this);
+                  clearBtn.setText("DELETE ALL DATA");
+                  clearBtn.setBackgroundColor(Color.parseColor("#EF4444")); 
+                  clearBtn.setTextColor(Color.WHITE);
+                  clearBtn.setOnClickListener(v -> {
+                      File[] files = vaultDir.listFiles();
+                      if (files != null) for (File f : files) f.delete();
+                      Toast.makeText(this, "Memory Vault Cleared!", Toast.LENGTH_SHORT).show();
+                      dialog.dismiss();
+                  });
+                  dialogLayout.addView(clearBtn);
+
+                  dialog.setContentView(dialogLayout);
+                  dialog.show();
+              }
+
+              private void savePdfToVault(Uri uri) {
+                  try {
+                      InputStream in = getContentResolver().openInputStream(uri);
+                      File newPdf = new File(vaultDir, "Doc_" + System.currentTimeMillis() + ".pdf");
+                      
+                      OutputStream out = new FileOutputStream(newPdf);
+                      byte[] buffer = new byte[1024];
+                      int read;
+                      long currentSize = getVaultSize();
+                      long addedSize = 0;
+
+                      while ((read = in.read(buffer)) != -1) {
+                          addedSize += read;
+                          if (currentSize + addedSize > MAX_VAULT_SIZE) {
+                              out.close(); in.close(); newPdf.delete();
+                              runOnUiThread(() -> Toast.makeText(this, "❌ Failed! 700MB Limit Reached.", Toast.LENGTH_LONG).show());
+                              return;
+                          }
+                          out.write(buffer, 0, read);
+                      }
+                      out.flush(); out.close(); in.close();
+                      runOnUiThread(() -> Toast.makeText(this, "✅ PDF Saved in Vault!", Toast.LENGTH_SHORT).show());
+                  } catch (Exception e) {
+                      e.printStackTrace();
+                  }
+              }
+
+              private void setupUI() {
+                  LinearLayout root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setBackgroundColor(Color.parseColor("#0F172A"));
+
+                  LinearLayout headerLayout = new LinearLayout(this);
+                  headerLayout.setOrientation(LinearLayout.HORIZONTAL);
+                  headerLayout.setPadding(20, 40, 20, 20);
+
+                  TextView header = new TextView(this);
+                  header.setText("Zeeshan Ai Chat");
+                  header.setTextColor(Color.parseColor("#38BDF8"));
+                  header.setTextSize(24);
+                  header.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1.0f));
+                  headerLayout.addView(header);
+
+                  Button vaultBtn = new Button(this);
+                  vaultBtn.setText("⚙️ VAULT");
+                  vaultBtn.setBackgroundColor(Color.parseColor("#334155"));
+                  vaultBtn.setTextColor(Color.WHITE);
+                  vaultBtn.setOnClickListener(v -> showVaultMenu());
+                  headerLayout.addView(vaultBtn);
+
+                  root.addView(headerLayout);
+
+                  scrollView = new ScrollView(this);
+                  chatLayout = new LinearLayout(this);
+                  chatLayout.setOrientation(LinearLayout.VERTICAL);
+                  chatLayout.setPadding(20, 20, 20, 20);
+                  scrollView.addView(chatLayout);
+                  root.addView(scrollView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
+
+                  LinearLayout inputLayout = new LinearLayout(this);
+                  inputLayout.setBackgroundColor(Color.parseColor("#1E293B"));
+                  inputLayout.setPadding(15, 15, 15, 15);
+                  
+                  Button micBtn = new Button(this);
+                  micBtn.setText("🎤");
+                  micBtn.setTextColor(Color.WHITE);
+                  micBtn.setBackgroundColor(Color.TRANSPARENT);
+                  inputLayout.addView(micBtn);
+                  
+                  inputField = new EditText(this);
+                  inputField.setHint("Puchiye...");
+                  inputField.setTextColor(Color.WHITE);
+                  inputLayout.addView(inputField, new LinearLayout.LayoutParams(0, -2, 1.0f));
+                  
+                  sendBtn = new Button(this);
+                  sendBtn.setText("SEND");
+                  sendBtn.setEnabled(false);
+                  inputLayout.addView(sendBtn);
+                  root.addView(inputLayout);
+                  setContentView(root);
+
+                  micBtn.setOnClickListener(v -> {
+                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                          ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 100);
+                      } else { 
+                          Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                          intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                          intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN");
+                          try { startActivityForResult(intent, 101); } catch (Exception e) {}
+                      }
+                  });
+
+                  sendBtn.setOnClickListener(v -> {
+                      String text = inputField.getText().toString();
+                      if(!text.isEmpty()) {
+                          addMessage("You", text, true);
+                          inputField.setText("");
+                          sendBtn.setEnabled(false);
+                          sendBtn.setBackgroundColor(Color.GRAY);
+                          new Thread(() -> {
+                              String resp = askZeeshanAI(text, modelFilePath);
+                              runOnUiThread(() -> { 
+                                  addMessage("Zeeshan Ai Chat", resp, false); 
+                                  speakOut(resp); 
+                                  sendBtn.setEnabled(true);
+                                  sendBtn.setBackgroundColor(Color.parseColor("#0284C7"));
+                              });
+                          }).start();
+                      }
+                  });
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (requestCode == 101 && resultCode == RESULT_OK && data != null) {
+                      ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                      if (result != null && !result.isEmpty()) inputField.setText(result.get(0));
+                  } else if (requestCode == 200 && resultCode == RESULT_OK && data != null) {
+                      Uri pdfUri = data.getData();
+                      new Thread(() -> savePdfToVault(pdfUri)).start();
+                  }
+              }
+
+              private void speakOut(String text) {
+                  if (textToSpeech != null) textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+              }
+
+              private String copyModelFromAssets() {
+                  File outFile = new File(getFilesDir(), "model.gguf");
+                  if (outFile.exists() && outFile.length() > 0) return outFile.getAbsolutePath();
+                  try {
+                      InputStream in = getAssets().open("model.gguf");
+                      OutputStream out = new FileOutputStream(outFile);
+                      byte[] buffer = new byte[1024 * 1024];
+                      int read;
+                      while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
+                      in.close(); out.flush(); out.close(); return outFile.getAbsolutePath();
+                  } catch (IOException e) { return null; }
+              }
+
+              private void addMessage(String sender, String msg, boolean isUser) {
+                  TextView tv = new TextView(this);
+                  tv.setText(sender + ":\n" + msg);
+                  tv.setPadding(30, 25, 30, 25);
+                  LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
+                  params.setMargins(0, 15, 0, 15);
+                  if(isUser) { tv.setBackgroundColor(Color.parseColor("#0284C7")); tv.setTextColor(Color.WHITE); params.gravity = Gravity.END; }
+                  else { tv.setBackgroundColor(Color.parseColor("#334155")); tv.setTextColor(Color.parseColor("#A7F3D0")); params.gravity = Gravity.START; }
+                  tv.setLayoutParams(params); chatLayout.addView(tv);
+                  scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+              }
+          }
+          EOF
+
+      - name: Build Final APK
+        uses: gradle/gradle-build-action@v3
+        with:
+          arguments: assembleDebug
+          gradle-version: 8.1
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zeeshan-Ai-Chat-Complete
+          path: app/build/outputs/apk/debug/*.apk
+
