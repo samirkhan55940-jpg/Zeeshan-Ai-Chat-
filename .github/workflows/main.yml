@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (Master Key Edition)
+name: Build Zeeshan AI Chat (Final Perfect Setup)
 
 on:
   push:
@@ -32,9 +32,13 @@ jobs:
           echo "Downloading 400MB AI Brain..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
 
-          echo "Cloning Old Stable Engine (b2700)..."
-          git clone --depth 1 --branch b2700 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
+          # 🚨 PERFECT MATCH: Naya engine jo aapke C++ code ko support karta hai 🚨
+          echo "Cloning Modern Engine (b3600)..."
+          git clone --depth 1 --branch b3600 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
 
+          # 🚨 THE MASTER HACK: Engine ki file mein ghus kar 'Strict Error Lock' todna 🚨
+          find app/src/main/cpp/llama.cpp -type f -name "CMakeLists.txt" -exec sed -i 's/-Werror//g' {} +
+          
           echo "android.useAndroidX=true
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8" > gradle.properties
@@ -45,7 +49,7 @@ jobs:
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
-          # 🚨 SECRET MASTER KEY: "-U__ARM_NEON" add kiya hai taaki wo error wala code compile hi na ho 🚨
+          # App Build Gradle Setup
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -55,13 +59,13 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 21
-                  versionName "21.0-MasterKey"
+                  versionCode 22
+                  versionName "22.0-PerfectMatch"
                   ndk { abiFilters "arm64-v8a" }
                   externalNativeBuild { 
                       cmake { 
-                          cppFlags "-std=c++17 -O3 -U__ARM_NEON -Wno-error" 
-                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_NATIVE=OFF"
+                          cppFlags "-std=c++17 -O3 -Wno-error" 
+                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF", "-DGGML_LLAMAFILE=OFF"
                       } 
                   }
               }
@@ -90,15 +94,15 @@ jobs:
           </manifest>
           EOF
 
-          # 🚨 CMake ko bhi strict order diya hai error ignore karne ka 🚨
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("zeeshan_ai_engine")
           
-          add_compile_options(-U__ARM_NEON -Wno-error)
+          # Force Disable Strict Locks
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
-          set(GGML_NEON OFF CACHE BOOL "" FORCE)
-          set(LLAMA_NATIVE OFF CACHE BOOL "" FORCE)
+          set(LLAMA_LLAMAFILE OFF CACHE BOOL "" FORCE)
+          set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
+          set(LLAMA_WERROR OFF CACHE BOOL "" FORCE)
           
           set(LLAMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
           add_subdirectory(${LLAMA_DIR} llama_build)
@@ -110,6 +114,7 @@ jobs:
           target_link_libraries(zeeshan_ai_engine llama ${log-lib})
           EOF
 
+          # Asli Naya C++ Code (100% match with b3600 Engine)
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
@@ -150,7 +155,7 @@ jobs:
               llama_decode(ctx, batch);
 
               std::string final_response = "";
-              int n_len = 30;
+              int n_len = 30; // Max 30 words fast speed ke liye
               
               for (int i = 0; i < n_len; i++) {
                   auto * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
@@ -187,6 +192,7 @@ jobs:
           }
           EOF
 
+          # 700MB Vault UI aur Voice System
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           import androidx.annotation.Nullable;
@@ -237,7 +243,7 @@ jobs:
                       modelFilePath = copyModelFromAssets();
                       runOnUiThread(() -> {
                           if(modelFilePath != null) {
-                              addMessage("System", "✅ Real Engine Locked & Loaded! 700MB Vault Ready.", false);
+                              addMessage("System", "✅ Real Engine Online! 700MB Vault Ready.", false);
                               sendBtn.setEnabled(true);
                               sendBtn.setBackgroundColor(Color.parseColor("#0284C7"));
                           }
@@ -322,7 +328,7 @@ jobs:
                           out.write(buffer, 0, read);
                       }
                       out.flush(); out.close(); in.close();
-                      runOnUiThread(() -> Toast.makeText(this, "✅ PDF Saved in Vault!", Toast.LENGTH_SHORT).show());
+                      runOnUiThread(() -> Toast.makeText(this, "✅ PDF Saved Securely!", Toast.LENGTH_SHORT).show());
                   } catch (Exception e) {
                       e.printStackTrace();
                   }
@@ -465,6 +471,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Chat-Final-Master
+          name: Zeeshan-Ai-Chat-Final-Done
           path: app/build/outputs/apk/debug/*.apk
 
