@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (MLC LLM Edition)
+name: Build Zeeshan AI Chat (Camera + Gallery + Mic)
 
 on:
   push:
@@ -18,19 +18,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        run: |
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
-
-      - name: Create Project Structure
+      - name: Create App Structure
         run: |
           mkdir -p app/src/main/java/com/zeeshan/ai
           mkdir -p app/src/main/res/values
-          mkdir -p app/src/main/assets/model
-
-          # MLC LLM ke liye chota aur fast model download kar rahe hain (RedPajama 3B - Compressed)
-          echo "Downloading MLC Optimized Brain..."
-          wget -q --show-progress https://huggingface.co/mlc-ai/mlc-chat-RedPajama-INCITE-Chat-3B-v1-q4f16_1/resolve/main/params/ndarray-cache.json -P app/src/main/assets/model/
           
           echo "android.useAndroidX=true
           android.enableJetifier=true" > gradle.properties
@@ -39,7 +30,6 @@ jobs:
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
-          # MLC LLM Library dependencies add kar di hain
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -47,19 +37,17 @@ jobs:
               compileSdk 34
               defaultConfig {
                   applicationId 'com.zeeshan.ai'
-                  minSdk 26
+                  minSdk 24
                   targetSdk 34
-                  versionCode 25
-                  versionName "25.0-MLC-Edition"
+                  versionCode 31
+                  versionName "31.0-Multimedia"
               }
-              buildTypes { release { minifyEnabled false } }
-              compileOptions { sourceCompatibility JavaVersion.VERSION_1_17; targetCompatibility JavaVersion.VERSION_1_17 }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-              // MLC LLM Android Runtime
-              implementation 'ai.mlc:mlc-llm-android:0.1.0' 
+              implementation 'com.squareup.okhttp3:okhttp:4.11.0'
+              implementation 'androidx.core:core-ktx:1.12.0'
           }
           EOF
 
@@ -68,8 +56,12 @@ jobs:
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.CAMERA" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+              
               <application android:allowBackup="true" android:label="@string/app_name" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
@@ -81,50 +73,38 @@ jobs:
           </manifest>
           EOF
 
-          # MLC LLM Java Logic with 700MB Vault
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           import android.Manifest;
-          import android.app.Dialog;
           import android.content.Intent;
           import android.content.pm.PackageManager;
           import android.graphics.Color;
-          import android.net.Uri;
           import android.os.Bundle;
-          import android.speech.RecognizerIntent;
-          import android.speech.tts.TextToSpeech;
+          import android.provider.MediaStore;
           import android.view.Gravity;
+          import android.view.View;
           import android.widget.*;
           import androidx.annotation.Nullable;
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
           import androidx.core.content.ContextCompat;
-          import java.io.*;
-          import java.util.ArrayList;
-          import java.util.Locale;
-          // Note: MLC Chat imports depend on the specific AAR version
-          
+
           public class MainActivity extends AppCompatActivity {
               private LinearLayout chatLayout;
               private ScrollView scrollView;
-              private Button sendBtn;
               private EditText inputField;
-              private TextToSpeech textToSpeech;
-              private File vaultDir;
-              private static final long MAX_VAULT_SIZE = 700 * 1024 * 1024L;
+              private Button sendBtn, camBtn, galBtn, micBtn;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  vaultDir = new File(getFilesDir(), "PdfVault");
-                  if(!vaultDir.exists()) vaultDir.mkdirs();
                   setupUI();
-                  
-                  textToSpeech = new TextToSpeech(this, status -> {
-                      if (status == TextToSpeech.SUCCESS) textToSpeech.setLanguage(new Locale("hi", "IN"));
-                  });
+                  requestPermissions();
+              }
 
-                  addMessage("System", "🚀 MLC Engine Ready! GPU Acceleration Active.", false);
+              private void requestPermissions() {
+                  String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_MEDIA_IMAGES};
+                  ActivityCompat.requestPermissions(this, perms, 100);
               }
 
               private void setupUI() {
@@ -132,23 +112,15 @@ jobs:
                   root.setOrientation(LinearLayout.VERTICAL);
                   root.setBackgroundColor(Color.parseColor("#0F172A"));
 
-                  // Header with Vault Button
-                  LinearLayout header = new LinearLayout(this);
-                  header.setPadding(20, 40, 20, 20);
-                  TextView title = new TextView(this);
-                  title.setText("Zeeshan Ai Chat");
-                  title.setTextColor(Color.parseColor("#38BDF8"));
-                  title.setTextSize(24);
-                  title.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1.0f));
-                  
-                  Button vaultBtn = new Button(this);
-                  vaultBtn.setText("⚙️ VAULT");
-                  vaultBtn.setOnClickListener(v -> showVaultMenu());
-                  
-                  header.addView(title);
-                  header.addView(vaultBtn);
+                  // Header
+                  TextView header = new TextView(this);
+                  header.setText("Zeeshan Ai Multimedia");
+                  header.setTextColor(Color.parseColor("#38BDF8"));
+                  header.setTextSize(22);
+                  header.setPadding(30, 50, 30, 30);
                   root.addView(header);
 
+                  // Chat Area
                   scrollView = new ScrollView(this);
                   chatLayout = new LinearLayout(this);
                   chatLayout.setOrientation(LinearLayout.VERTICAL);
@@ -156,86 +128,75 @@ jobs:
                   scrollView.addView(chatLayout);
                   root.addView(scrollView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
 
-                  LinearLayout inputArea = new LinearLayout(this);
-                  inputArea.setPadding(15, 15, 15, 15);
-                  inputArea.setBackgroundColor(Color.parseColor("#1E293B"));
+                  // Tools Area (Camera & Gallery)
+                  LinearLayout tools = new LinearLayout(this);
+                  tools.setOrientation(LinearLayout.HORIZONTAL);
+                  tools.setPadding(20, 10, 20, 10);
                   
+                  camBtn = new Button(this); camBtn.setText("📷 CAM"); tools.addView(camBtn);
+                  galBtn = new Button(this); galBtn.setText("🖼️ GAL"); tools.addView(galBtn);
+                  micBtn = new Button(this); micBtn.setText("🎤 MIC"); tools.addView(micBtn);
+                  root.addView(tools);
+
+                  // Input Area
+                  LinearLayout inputArea = new LinearLayout(this);
+                  inputArea.setPadding(20, 20, 20, 20);
+                  inputArea.setBackgroundColor(Color.parseColor("#1E293B"));
+
                   inputField = new EditText(this);
-                  inputField.setHint("MLC Engine se puchiye...");
+                  inputField.setHint("Message...");
                   inputField.setTextColor(Color.WHITE);
                   inputArea.addView(inputField, new LinearLayout.LayoutParams(0, -2, 1.0f));
-                  
+
                   sendBtn = new Button(this);
                   sendBtn.setText("SEND");
-                  sendBtn.setOnClickListener(v -> handleSend());
                   inputArea.addView(sendBtn);
-                  
                   root.addView(inputArea);
+
                   setContentView(root);
+
+                  // Click Listeners
+                  camBtn.setOnClickListener(v -> startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1));
+                  galBtn.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI), 2));
+                  sendBtn.setOnClickListener(v -> sendMessage());
+                  micBtn.setOnClickListener(v -> Toast.makeText(this, "Listening...", Toast.LENGTH_SHORT).show());
               }
 
-              private void handleSend() {
+              private void sendMessage() {
                   String text = inputField.getText().toString();
-                  if(!text.isEmpty()) {
+                  if (!text.isEmpty()) {
                       addMessage("You", text, true);
                       inputField.setText("");
-                      // MLC Inference logic would go here
-                      String reply = "MLC AI: Main GPU ka use karke fast jawab dunga!";
-                      addMessage("Zeeshan Ai", reply, false);
-                      textToSpeech.speak(reply, TextToSpeech.QUEUE_FLUSH, null, null);
+                      addMessage("AI", "Bhai, photo aur message mil gaya!", false);
                   }
-              }
-
-              private void showVaultMenu() {
-                  Dialog dialog = new Dialog(this);
-                  LinearLayout layout = new LinearLayout(this);
-                  layout.setOrientation(LinearLayout.VERTICAL);
-                  layout.setPadding(40, 40, 40, 40);
-                  layout.setBackgroundColor(Color.parseColor("#1E293B"));
-
-                  TextView tv = new TextView(this);
-                  long used = getVaultSize() / (1024 * 1024);
-                  tv.setText("💾 Vault: " + used + "MB / 700MB");
-                  tv.setTextColor(Color.WHITE);
-                  
-                  Button delBtn = new Button(this);
-                  delBtn.setText("DELETE ALL");
-                  delBtn.setOnClickListener(v -> {
-                      for (File f : vaultDir.listFiles()) f.delete();
-                      dialog.dismiss();
-                      Toast.makeText(this, "Vault Cleared", Toast.LENGTH_SHORT).show();
-                  });
-
-                  layout.addView(tv);
-                  layout.addView(delBtn);
-                  dialog.setContentView(layout);
-                  dialog.show();
-              }
-
-              private long getVaultSize() {
-                  long size = 0;
-                  if (vaultDir.listFiles() != null) for (File f : vaultDir.listFiles()) size += f.length();
-                  return size;
               }
 
               private void addMessage(String sender, String msg, boolean isUser) {
                   TextView tv = new TextView(this);
                   tv.setText(sender + ": " + msg);
-                  tv.setPadding(20, 10, 20, 10);
+                  tv.setPadding(20, 15, 20, 15);
                   tv.setTextColor(Color.WHITE);
                   tv.setBackgroundColor(isUser ? Color.parseColor("#0284C7") : Color.parseColor("#334155"));
                   chatLayout.addView(tv);
                   scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
               }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (resultCode == RESULT_OK) {
+                      if (requestCode == 1) addMessage("You", "Sent a Photo from Camera", true);
+                      if (requestCode == 2) addMessage("You", "Sent a Photo from Gallery", true);
+                  }
+              }
           }
           EOF
 
       - name: Build APK
-        run: ./gradlew assembleDebug
+        run: chmod +x gradlew && ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-MLC-Edition
+          name: Zeeshan-AI-Multimedia
           path: app/build/outputs/apk/debug/*.apk
-
