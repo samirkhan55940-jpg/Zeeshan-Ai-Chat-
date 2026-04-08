@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (Final Mega Edition)
+name: Build Zeeshan AI Chat (The Golden Fix)
 
 on:
   push:
@@ -32,11 +32,13 @@ jobs:
           echo "Downloading 400MB AI Brain..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
 
-          # 🚨 FIX: Wapas b3600 version par aa gaye jo properly download hota hai 🚨
-          echo "Cloning GitHub Engine (b3600)..."
-          git clone --depth 1 --branch b3600 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
+          # 🚨 ILAJ (THE CURE): Engine ko Time Travel kara ke stable date par le gaye 🚨
+          echo "Cloning Stable GitHub Engine (April 2024 Version)..."
+          git clone https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
+          cd app/src/main/cpp/llama.cpp
+          git checkout $(git rev-list -n 1 --before="2024-04-15" master)
+          cd ../../../../..
 
-          # 1. Gradle Setup & Memory Fix
           echo "android.useAndroidX=true
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8" > gradle.properties
@@ -47,7 +49,7 @@ jobs:
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
-          # 2. App Build Gradle (Double Lock lagaya hai sgemm crash rokne ke liye)
+          # App Build Gradle (Clean & Safe)
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -57,13 +59,13 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 14
-                  versionName "14.0-Vault-Fixed"
+                  versionCode 15
+                  versionName "15.0-GoldenFix"
                   ndk { abiFilters "arm64-v8a" }
                   externalNativeBuild { 
                       cmake { 
                           cppFlags "-std=c++17 -O3" 
-                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF", "-DGGML_LLAMAFILE=OFF"
+                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF"
                       } 
                   }
               }
@@ -74,10 +76,8 @@ jobs:
           dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
-          # 3. Strings & App Name
           echo "<resources><string name=\"app_name\">Zeeshan Ai Chat</string></resources>" > app/src/main/res/values/strings.xml
 
-          # 4. AndroidManifest
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -94,14 +94,12 @@ jobs:
           </manifest>
           EOF
 
-          # 5. CMake Setup (Double Lock inside CMake)
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("zeeshan_ai_engine")
           
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
           set(LLAMA_LLAMAFILE OFF CACHE BOOL "" FORCE)
-          set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
           
           set(LLAMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
           add_subdirectory(${LLAMA_DIR} llama_build)
@@ -113,7 +111,7 @@ jobs:
           target_link_libraries(zeeshan_ai_engine llama ${log-lib})
           EOF
 
-          # 6. C++ JNI Engine
+          # C++ JNI Engine
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
@@ -191,7 +189,7 @@ jobs:
           }
           EOF
 
-          # 7. JAVA UI (700MB Vault System & Voice)
+          # JAVA UI (700MB Vault System & Voice)
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           import androidx.annotation.Nullable;
