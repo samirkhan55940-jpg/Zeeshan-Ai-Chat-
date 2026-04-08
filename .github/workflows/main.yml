@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (Old Stable Engine)
+name: Build Zeeshan AI Chat (Master Key Edition)
 
 on:
   push:
@@ -32,7 +32,6 @@ jobs:
           echo "Downloading 400MB AI Brain..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
 
-          # 🚨 ILAJ: Naya engine hata kar purana aur stable "b2700" engine lagaya jisme Android Support best tha 🚨
           echo "Cloning Old Stable Engine (b2700)..."
           git clone --depth 1 --branch b2700 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
 
@@ -46,7 +45,7 @@ jobs:
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
-          # 🚨 Clean Android Build settings for old engine 🚨
+          # 🚨 SECRET MASTER KEY: "-U__ARM_NEON" add kiya hai taaki wo error wala code compile hi na ho 🚨
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -56,12 +55,12 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 20
-                  versionName "20.0-OldStable"
+                  versionCode 21
+                  versionName "21.0-MasterKey"
                   ndk { abiFilters "arm64-v8a" }
                   externalNativeBuild { 
                       cmake { 
-                          cppFlags "-std=c++17 -O3" 
+                          cppFlags "-std=c++17 -O3 -U__ARM_NEON -Wno-error" 
                           arguments "-DGGML_OPENMP=OFF", "-DLLAMA_NATIVE=OFF"
                       } 
                   }
@@ -91,12 +90,14 @@ jobs:
           </manifest>
           EOF
 
-          # Simple CMake setup for the old engine
+          # 🚨 CMake ko bhi strict order diya hai error ignore karne ka 🚨
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("zeeshan_ai_engine")
           
+          add_compile_options(-U__ARM_NEON -Wno-error)
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
+          set(GGML_NEON OFF CACHE BOOL "" FORCE)
           set(LLAMA_NATIVE OFF CACHE BOOL "" FORCE)
           
           set(LLAMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
@@ -125,7 +126,7 @@ jobs:
               llama_model * model = llama_load_model_from_file(path, m_params);
               
               if (model == nullptr) {
-                  return env->NewStringUTF("Zeeshan Ai Error: Purana engine load nahi hua.");
+                  return env->NewStringUTF("Zeeshan Ai Error: Engine load nahi hua.");
               }
 
               llama_context_params c_params = llama_context_default_params();
@@ -236,7 +237,7 @@ jobs:
                       modelFilePath = copyModelFromAssets();
                       runOnUiThread(() -> {
                           if(modelFilePath != null) {
-                              addMessage("System", "✅ Old Stable Engine Opened! 700MB Vault Ready.", false);
+                              addMessage("System", "✅ Real Engine Locked & Loaded! 700MB Vault Ready.", false);
                               sendBtn.setEnabled(true);
                               sendBtn.setBackgroundColor(Color.parseColor("#0284C7"));
                           }
@@ -464,6 +465,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Chat-OldEngine
+          name: Zeeshan-Ai-Chat-Final-Master
           path: app/build/outputs/apk/debug/*.apk
 
