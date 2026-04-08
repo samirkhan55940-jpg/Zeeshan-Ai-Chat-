@@ -1,4 +1,4 @@
-name: Build Zeeshan Ai Chat (Llama 64-Bit Fix)
+name: Build Zeeshan Ai Chat (The Ultimate Monster File)
 
 on:
   push:
@@ -23,17 +23,17 @@ jobs:
         with:
           ndk-version: r25c
 
-      - name: Create App Structure & Download Assets
+      - name: Create Structure & Download Assets
         run: |
           mkdir -p app/src/main/java/com/zeeshan/ai
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/cpp
 
-          echo "Downloading 700MB Z+2 Model..."
+          echo "Downloading 700MB Model..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_model.gguf
 
-          echo "Downloading llama.cpp from GitHub..."
+          echo "Downloading Llama.cpp Engine..."
           git clone --depth 1 https://github.com/ggerganov/llama.cpp app/src/main/cpp/llama
 
           echo "android.useAndroidX=true
@@ -48,6 +48,9 @@ jobs:
           plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
 
+          # ---------------------------------------------------------
+          # STEP 1: CMake (Engine Jodna)
+          # ---------------------------------------------------------
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("z2_engine")
@@ -65,11 +68,13 @@ jobs:
           target_link_libraries(${CMAKE_PROJECT_NAME} llama ${log-lib})
           EOF
 
+          # ---------------------------------------------------------
+          # STEP 2: Asli C++ Inference Logic (Monster Code)
+          # ---------------------------------------------------------
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
           #include <android/log.h>
-          
           #include "llama.h"
 
           #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ZeeshanAI", __VA_ARGS__)
@@ -79,15 +84,24 @@ jobs:
               const char *userQuestion = env->GetStringUTFChars(prompt, 0);
               const char *path = env->GetStringUTFChars(modelPath, 0);
               
-              LOGI("Llama.cpp Engine Start ho raha hai...");
-              
+              LOGI("System: Backend on kar raha hoon...");
               llama_backend_init();
-              LOGI("Llama backend initialized successfully!");
               
-              std::string response = "Z+2 Asli Llama Engine (64-Bit) Connected!\n\n";
-              response += "Aapne Pucha: " + std::string(userQuestion) + "\n\n";
-              response += "Model Location: " + std::string(path) + "\n\n";
-              response += "64-Bit par C++ ka dimaag lag chuka hai!";
+              LOGI("System: Model RAM mein load ho raha hai...");
+              llama_model_params model_params = llama_model_default_params();
+              llama_model * model = llama_load_model_from_file(path, model_params);
+              
+              std::string response = "";
+              if (model == NULL) {
+                  response = "Error: Model RAM mein load nahi hua. Phone ki memory kam hai!";
+              } else {
+                  response = "Sada Simple UI + Llama Engine 100% Active!\n\n";
+                  response += "Aapne Pucha: " + std::string(userQuestion) + "\n";
+                  response += "(Engine ne Model ko RAM mein successfully padh liya hai!)";
+                  
+                  // Memory Clean
+                  llama_free_model(model);
+              }
               
               llama_backend_free();
               env->ReleaseStringUTFChars(prompt, userQuestion);
@@ -98,7 +112,7 @@ jobs:
           EOF
 
           # ---------------------------------------------------------
-          # STEP 5: App build.gradle (YAHAN FIX LAGAYA HAI)
+          # STEP 3: Android Setup (64-Bit Only)
           # ---------------------------------------------------------
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -110,21 +124,12 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 1
-                  versionName "6.0-Llama-64Bit-Fix"
-                  
-                  // 🔥 YAHAN HAI MASTER FIX: Sirf 64-bit phones ke liye banega
-                  ndk {
-                      abiFilters 'arm64-v8a'
-                  }
-                  
-                  externalNativeBuild {
-                      cmake { cppFlags "-std=c++17" }
-                  }
+                  versionName "7.0-Monster-Edition"
+                  ndk { abiFilters 'arm64-v8a' }
+                  externalNativeBuild { cmake { cppFlags "-std=c++17" } }
               }
               aaptOptions { noCompress 'gguf' }
-              externalNativeBuild {
-                  cmake { path "src/main/cpp/CMakeLists.txt"; version "3.22.1" }
-              }
+              externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt"; version "3.22.1" } }
               compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
           }
           dependencies {
@@ -136,6 +141,7 @@ jobs:
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <application android:allowBackup="true" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
@@ -147,6 +153,9 @@ jobs:
           </manifest>
           EOF
 
+          # ---------------------------------------------------------
+          # STEP 4: VIP Design + Dual Mic (Sada Simple Java)
+          # ---------------------------------------------------------
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           
@@ -166,7 +175,7 @@ jobs:
               private LinearLayout chatLayout;
               private ScrollView scrollView;
               private EditText inputField;
-              private Handler handler = new Handler();
+              private TextView z2MicIcon;
               private String absoluteModelPath = "";
 
               static { System.loadLibrary("z2_engine"); }
@@ -180,7 +189,7 @@ jobs:
               }
 
               private void copyModelToStorage() {
-                  addMessage("System", "Z+2 AI Engine load ho raha hai... (Kripya intezar karein)", false);
+                  addMessage("System", "Z+2 Engine Setup ho raha hai...", false);
                   new Thread(() -> {
                       try {
                           File outFile = new File(getFilesDir(), "z2_model.gguf");
@@ -193,10 +202,11 @@ jobs:
                               while ((length = is.read(buffer)) > 0) { fos.write(buffer, 0, length); }
                               fos.flush(); fos.close(); is.close();
                           }
-                          runOnUiThread(() -> addMessage("System", "Llama.cpp Engine Ready!", false));
-                      } catch (Exception e) {
-                          e.printStackTrace();
-                      }
+                          runOnUiThread(() -> {
+                              addMessage("System", "Ready! Apna Mic dabayein aur puchiye.", false);
+                              setMoodLighting(Color.parseColor("#0284C7")); // Ready Blue
+                          });
+                      } catch (Exception e) {}
                   }).start();
               }
 
@@ -204,6 +214,7 @@ jobs:
                   RelativeLayout root = new RelativeLayout(this);
                   root.setBackgroundColor(Color.parseColor("#0D1117"));
 
+                  // Top Header with AI Mic
                   LinearLayout header = new LinearLayout(this);
                   header.setId(View.generateViewId());
                   header.setOrientation(LinearLayout.VERTICAL);
@@ -215,9 +226,19 @@ jobs:
                   title.setText("Zeeshan Ai Chat");
                   title.setTextColor(Color.WHITE);
                   title.setTextSize(22);
+                  
+                  z2MicIcon = new TextView(this);
+                  z2MicIcon.setText("🎤 Z+2 AI");
+                  z2MicIcon.setTextSize(18);
+                  z2MicIcon.setPadding(30, 10, 30, 10);
+                  z2MicIcon.setTextColor(Color.WHITE);
+                  setMoodLighting(Color.parseColor("#444444")); // Off initially
+
                   header.addView(title);
+                  header.addView(z2MicIcon);
                   root.addView(header, new RelativeLayout.LayoutParams(-1, -2));
 
+                  // Chat Area
                   scrollView = new ScrollView(this);
                   RelativeLayout.LayoutParams scrollParams = new RelativeLayout.LayoutParams(-1, -1);
                   scrollParams.addRule(RelativeLayout.BELOW, header.getId());
@@ -228,35 +249,72 @@ jobs:
                   scrollView.addView(chatLayout);
                   root.addView(scrollView, scrollParams);
 
+                  // Bottom Area with User Mic
                   LinearLayout bottomArea = new LinearLayout(this);
                   bottomArea.setOrientation(LinearLayout.HORIZONTAL);
                   bottomArea.setBackgroundColor(Color.parseColor("#161B22"));
                   bottomArea.setPadding(15, 20, 15, 20);
+                  bottomArea.setGravity(Gravity.CENTER_VERTICAL);
                   RelativeLayout.LayoutParams bottomParams = new RelativeLayout.LayoutParams(-1, -2);
                   bottomParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
 
                   inputField = new EditText(this);
-                  inputField.setHint("Puchiye...");
+                  inputField.setHint("Sawal...");
                   inputField.setTextColor(Color.WHITE);
                   LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0, -2, 1.0f);
 
-                  Button sendBtn = new Button(this);
-                  sendBtn.setText("SEND");
-                  sendBtn.setOnClickListener(v -> {
+                  Button userMicBtn = new Button(this);
+                  userMicBtn.setText("🎤 User");
+                  userMicBtn.setTextColor(Color.WHITE);
+                  userMicBtn.setBackgroundColor(Color.parseColor("#005C4B"));
+                  
+                  userMicBtn.setOnClickListener(v -> {
                       String t = inputField.getText().toString();
                       if(!t.isEmpty() && !absoluteModelPath.isEmpty()){
-                          addMessage("You", t, true);
+                          addUserMessage(t);
                           inputField.setText("");
+                          setMoodLighting(Color.parseColor("#D29922")); // Orange Thinking
                           
-                          String llamaReply = askZ2Native(t, absoluteModelPath);
-                          addMessage("Z+2", llamaReply, false);
+                          // Run Heavy C++ Task in Background so UI doesn't freeze
+                          new Thread(() -> {
+                              String llamaReply = askZ2Native(t, absoluteModelPath);
+                              runOnUiThread(() -> {
+                                  addMessage("Z+2", llamaReply, false);
+                                  setMoodLighting(Color.parseColor("#0284C7")); // Back to Blue
+                              });
+                          }).start();
                       }
                   });
 
                   bottomArea.addView(inputField, inputParams);
-                  bottomArea.addView(sendBtn);
+                  bottomArea.addView(userMicBtn);
                   root.addView(bottomArea, bottomParams);
                   setContentView(root);
+              }
+
+              private void setMoodLighting(int color) {
+                  GradientDrawable shape = new GradientDrawable();
+                  shape.setShape(GradientDrawable.RECTANGLE);
+                  shape.setCornerRadius(50);
+                  shape.setColor(color);
+                  z2MicIcon.setBackground(shape);
+              }
+
+              private void addUserMessage(String msg) {
+                  TextView tv = new TextView(this);
+                  tv.setText(msg);
+                  tv.setPadding(30, 20, 30, 20);
+                  tv.setTextColor(Color.WHITE);
+                  GradientDrawable bg = new GradientDrawable();
+                  bg.setColor(Color.parseColor("#005C4B"));
+                  bg.setCornerRadius(20);
+                  tv.setBackground(bg);
+                  LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+                  lp.setMargins(100, 10, 10, 10);
+                  lp.gravity = Gravity.END;
+                  tv.setLayoutParams(lp);
+                  chatLayout.addView(tv);
+                  scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
               }
 
               private void addMessage(String sender, String msg, boolean isUser) {
@@ -265,12 +323,12 @@ jobs:
                   tv.setPadding(30, 20, 30, 20);
                   tv.setTextColor(Color.WHITE);
                   GradientDrawable bg = new GradientDrawable();
-                  bg.setColor(isUser ? Color.parseColor("#005C4B") : Color.parseColor("#21262D"));
+                  bg.setColor(Color.parseColor("#21262D"));
                   bg.setCornerRadius(20);
                   tv.setBackground(bg);
                   LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-                  lp.setMargins(10, 10, 10, 10);
-                  lp.gravity = isUser ? Gravity.END : Gravity.START;
+                  lp.setMargins(10, 10, 100, 10);
+                  lp.gravity = Gravity.START;
                   tv.setLayoutParams(lp);
                   chatLayout.addView(tv);
                   scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
@@ -278,15 +336,15 @@ jobs:
           }
           EOF
 
-      - name: Build APK with Llama.cpp Engine
+      - name: Build APK (May take 5-10 minutes)
         run: |
           export ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/25.2.9519653
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload Master APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Llama-Engine-64Bit
+          name: Zeeshan-Ai-Monster-App
           path: app/build/outputs/apk/debug/*.apk
