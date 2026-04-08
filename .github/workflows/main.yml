@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (The Golden Fix)
+name: Build Zeeshan AI Chat (Neon Disabled Fix)
 
 on:
   push:
@@ -32,7 +32,6 @@ jobs:
           echo "Downloading 400MB AI Brain..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
 
-          # 🚨 ILAJ (THE CURE): Engine ko Time Travel kara ke stable date par le gaye 🚨
           echo "Cloning Stable GitHub Engine (April 2024 Version)..."
           git clone https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
           cd app/src/main/cpp/llama.cpp
@@ -49,7 +48,7 @@ jobs:
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
-          # App Build Gradle (Clean & Safe)
+          # 🚨 ILAJ: DGGML_NEON=OFF kar diya gaya hai taaki compiler crash na ho 🚨
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -59,13 +58,13 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 15
-                  versionName "15.0-GoldenFix"
+                  versionCode 16
+                  versionName "16.0-NeonOff"
                   ndk { abiFilters "arm64-v8a" }
                   externalNativeBuild { 
                       cmake { 
                           cppFlags "-std=c++17 -O3" 
-                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF"
+                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF", "-DGGML_NEON=OFF"
                       } 
                   }
               }
@@ -94,12 +93,14 @@ jobs:
           </manifest>
           EOF
 
+          # 🚨 CMake mein bhi Neon OFF kar diya hai 🚨
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("zeeshan_ai_engine")
           
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
           set(LLAMA_LLAMAFILE OFF CACHE BOOL "" FORCE)
+          set(GGML_NEON OFF CACHE BOOL "" FORCE)
           
           set(LLAMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
           add_subdirectory(${LLAMA_DIR} llama_build)
@@ -111,7 +112,6 @@ jobs:
           target_link_libraries(zeeshan_ai_engine llama ${log-lib})
           EOF
 
-          # C++ JNI Engine
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
@@ -152,7 +152,7 @@ jobs:
               llama_decode(ctx, batch);
 
               std::string final_response = "";
-              int n_len = 30; // Max 30 words ki limit
+              int n_len = 30; // Max 30 words limit
               
               for (int i = 0; i < n_len; i++) {
                   auto * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
@@ -189,7 +189,6 @@ jobs:
           }
           EOF
 
-          # JAVA UI (700MB Vault System & Voice)
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           import androidx.annotation.Nullable;
@@ -221,7 +220,6 @@ jobs:
               private EditText inputField;
               private TextToSpeech textToSpeech;
               
-              // 700 MB Vault Config
               private static final long MAX_VAULT_SIZE = 700 * 1024 * 1024L; 
               private File vaultDir;
 
@@ -469,6 +467,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Chat-Complete
+          name: Zeeshan-Ai-Chat-NeonOff
           path: app/build/outputs/apk/debug/*.apk
 
