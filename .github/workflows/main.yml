@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (Modern Engine Fix)
+name: Build Zeeshan AI Chat (Old Stable Engine)
 
 on:
   push:
@@ -32,9 +32,9 @@ jobs:
           echo "Downloading 400MB AI Brain..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
 
-          # 🚨 ILAJ: Wapas b3600 par aa gaye hain, Time travel hata diya taaki compiler crash na ho 🚨
-          echo "Cloning GitHub Engine (Modern b3600)..."
-          git clone --depth 1 --branch b3600 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
+          # 🚨 ILAJ: Naya engine hata kar purana aur stable "b2700" engine lagaya jisme Android Support best tha 🚨
+          echo "Cloning Old Stable Engine (b2700)..."
+          git clone --depth 1 --branch b2700 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama.cpp
 
           echo "android.useAndroidX=true
           android.enableJetifier=true
@@ -46,7 +46,7 @@ jobs:
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
-          # 🚨 Saare safe locks ek sath laga diye hain 🚨
+          # 🚨 Clean Android Build settings for old engine 🚨
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -56,13 +56,13 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 18
-                  versionName "18.0-ModernFix"
+                  versionCode 20
+                  versionName "20.0-OldStable"
                   ndk { abiFilters "arm64-v8a" }
                   externalNativeBuild { 
                       cmake { 
                           cppFlags "-std=c++17 -O3" 
-                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_LLAMAFILE=OFF", "-DGGML_LLAMAFILE=OFF", "-DLLAMA_WERROR=OFF", "-DGGML_NEON=OFF"
+                          arguments "-DGGML_OPENMP=OFF", "-DLLAMA_NATIVE=OFF"
                       } 
                   }
               }
@@ -91,15 +91,13 @@ jobs:
           </manifest>
           EOF
 
+          # Simple CMake setup for the old engine
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("zeeshan_ai_engine")
           
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
-          set(LLAMA_LLAMAFILE OFF CACHE BOOL "" FORCE)
-          set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
-          set(LLAMA_WERROR OFF CACHE BOOL "" FORCE)
-          set(GGML_NEON OFF CACHE BOOL "" FORCE)
+          set(LLAMA_NATIVE OFF CACHE BOOL "" FORCE)
           
           set(LLAMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
           add_subdirectory(${LLAMA_DIR} llama_build)
@@ -127,7 +125,7 @@ jobs:
               llama_model * model = llama_load_model_from_file(path, m_params);
               
               if (model == nullptr) {
-                  return env->NewStringUTF("Zeeshan Ai Error: Engine load fail ho gaya.");
+                  return env->NewStringUTF("Zeeshan Ai Error: Purana engine load nahi hua.");
               }
 
               llama_context_params c_params = llama_context_default_params();
@@ -139,7 +137,7 @@ jobs:
               std::vector<llama_token> tokens_list(prompt.length() + 2);
               int n_tokens = llama_tokenize(model, prompt.c_str(), prompt.length(), tokens_list.data(), tokens_list.size(), true, true);
               
-              if (n_tokens < 0) return env->NewStringUTF("Zeeshan Ai Error: Message samajh nahi aaya.");
+              if (n_tokens < 0) return env->NewStringUTF("Zeeshan Ai Error: Samajh nahi aaya.");
               tokens_list.resize(n_tokens);
 
               llama_batch batch = llama_batch_init(512, 0, 1);
@@ -238,7 +236,7 @@ jobs:
                       modelFilePath = copyModelFromAssets();
                       runOnUiThread(() -> {
                           if(modelFilePath != null) {
-                              addMessage("System", "✅ Engine Opened! 700MB Vault Ready.", false);
+                              addMessage("System", "✅ Old Stable Engine Opened! 700MB Vault Ready.", false);
                               sendBtn.setEnabled(true);
                               sendBtn.setBackgroundColor(Color.parseColor("#0284C7"));
                           }
@@ -466,6 +464,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Chat-FinalFix
+          name: Zeeshan-Ai-Chat-OldEngine
           path: app/build/outputs/apk/debug/*.apk
 
