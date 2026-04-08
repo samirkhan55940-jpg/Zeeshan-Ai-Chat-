@@ -1,4 +1,4 @@
-name: Build Zeeshan Ai Chat (Asli Llama Engine Fix)
+name: Build Zeeshan Ai Chat (Llama 64-Bit Fix)
 
 on:
   push:
@@ -30,15 +30,12 @@ jobs:
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/cpp
 
-          # 1. Download Alibaba AI Model
           echo "Downloading 700MB Z+2 Model..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_model.gguf
 
-          # 2. Asli llama.cpp engine GitHub se Download (Clone)
           echo "Downloading llama.cpp from GitHub..."
           git clone --depth 1 https://github.com/ggerganov/llama.cpp app/src/main/cpp/llama
 
-          # Gradle Memory Fix
           echo "android.useAndroidX=true
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx6g -Dfile.encoding=UTF-8" > gradle.properties
@@ -51,9 +48,6 @@ jobs:
           plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
 
-          # ---------------------------------------------------------
-          # STEP 3: CMake Setup (Naya Rasta Update Kiya)
-          # ---------------------------------------------------------
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("z2_engine")
@@ -67,21 +61,15 @@ jobs:
           add_library(${CMAKE_PROJECT_NAME} SHARED native-lib.cpp)
           find_library(log-lib log)
           
-          # FIX: C++ ko batana ki nayi 'include' folder mein header file hai
           target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE llama/include llama)
-          
           target_link_libraries(${CMAKE_PROJECT_NAME} llama ${log-lib})
           EOF
 
-          # ---------------------------------------------------------
-          # STEP 4: Asli C++ Connection Code (native-lib.cpp)
-          # ---------------------------------------------------------
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
           #include <android/log.h>
           
-          // FIX: Naye folder structure ke hisaab se sahi file link karna
           #include "llama.h"
 
           #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ZeeshanAI", __VA_ARGS__)
@@ -93,16 +81,14 @@ jobs:
               
               LOGI("Llama.cpp Engine Start ho raha hai...");
               
-              // Llama Engine On karna (Backward compatibility check)
               llama_backend_init();
               LOGI("Llama backend initialized successfully!");
               
-              std::string response = "Asli llama.cpp Engine Successfully Compiled and Connected!\n\n";
+              std::string response = "Z+2 Asli Llama Engine (64-Bit) Connected!\n\n";
               response += "Aapne Pucha: " + std::string(userQuestion) + "\n\n";
               response += "Model Location: " + std::string(path) + "\n\n";
-              response += "Bhai, naya rasta mil gaya aur Llama.cpp ka engine lag chuka hai!";
+              response += "64-Bit par C++ ka dimaag lag chuka hai!";
               
-              // Memory saaf karna
               llama_backend_free();
               env->ReleaseStringUTFChars(prompt, userQuestion);
               env->ReleaseStringUTFChars(modelPath, path);
@@ -112,7 +98,7 @@ jobs:
           EOF
 
           # ---------------------------------------------------------
-          # STEP 5: App build.gradle (C++ Build Enable)
+          # STEP 5: App build.gradle (YAHAN FIX LAGAYA HAI)
           # ---------------------------------------------------------
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -124,7 +110,13 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 1
-                  versionName "5.1-Llama-Engine-Fix"
+                  versionName "6.0-Llama-64Bit-Fix"
+                  
+                  // 🔥 YAHAN HAI MASTER FIX: Sirf 64-bit phones ke liye banega
+                  ndk {
+                      abiFilters 'arm64-v8a'
+                  }
+                  
                   externalNativeBuild {
                       cmake { cppFlags "-std=c++17" }
                   }
@@ -155,9 +147,6 @@ jobs:
           </manifest>
           EOF
 
-          # ---------------------------------------------------------
-          # STEP 6: Java Code (Copy Model & Send to C++)
-          # ---------------------------------------------------------
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           
@@ -299,5 +288,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Llama-Engine-Fix
+          name: Zeeshan-Ai-Llama-Engine-64Bit
           path: app/build/outputs/apk/debug/*.apk
