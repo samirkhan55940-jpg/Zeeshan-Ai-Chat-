@@ -28,9 +28,10 @@ jobs:
           echo "Downloading Z+2 Brain..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_model.gguf
 
-          # Gradle Setup
+          # Fix: Server ko 4GB RAM dena taaki "Java heap space" error na aaye
           echo "android.useAndroidX=true
-          android.enableJetifier=true" > gradle.properties
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8" > gradle.properties
 
           echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
@@ -40,6 +41,7 @@ jobs:
           plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
 
+          # Fix: aaptOptions lagana taaki AI model compress na ho aur error na aaye
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -51,6 +53,9 @@ jobs:
                   targetSdk 34
                   versionCode 1
                   versionName "3.0-Z2-Masterpiece"
+              }
+              aaptOptions {
+                  noCompress 'gguf'
               }
               compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
           }
@@ -79,7 +84,7 @@ jobs:
           </manifest>
           EOF
 
-          # The Main Masterpiece Code (UI, Voice, Animations in one file)
+          # The Main Masterpiece Code
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           
@@ -111,7 +116,6 @@ jobs:
                   ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_MEDIA_IMAGES}, 1);
                   setupUI();
                   
-                  // Welcome Voice Setup
                   tts = new TextToSpeech(this, status -> {
                       if (status == TextToSpeech.SUCCESS) {
                           tts.setLanguage(new Locale("hi", "IN"));
@@ -122,9 +126,8 @@ jobs:
 
               private void setupUI() {
                   RelativeLayout root = new RelativeLayout(this);
-                  root.setBackgroundColor(Color.parseColor("#0D1117")); // Dark Theme
+                  root.setBackgroundColor(Color.parseColor("#0D1117"));
 
-                  // 1. Top Header: Zeeshan Ai Chat & Z+2 Mic (Mood Lighting)
                   LinearLayout header = new LinearLayout(this);
                   header.setId(View.generateViewId());
                   header.setOrientation(LinearLayout.VERTICAL);
@@ -143,13 +146,12 @@ jobs:
                   z2MicIcon.setTextSize(18);
                   z2MicIcon.setPadding(30, 10, 30, 10);
                   z2MicIcon.setTextColor(Color.WHITE);
-                  setMoodLighting(Color.parseColor("#0284C7")); // Default Blue
+                  setMoodLighting(Color.parseColor("#0284C7"));
 
                   header.addView(title);
                   header.addView(z2MicIcon);
                   root.addView(header, new RelativeLayout.LayoutParams(-1, -2));
 
-                  // 2. Chat Area
                   scrollView = new ScrollView(this);
                   RelativeLayout.LayoutParams scrollParams = new RelativeLayout.LayoutParams(-1, -1);
                   scrollParams.addRule(RelativeLayout.BELOW, header.getId());
@@ -161,7 +163,6 @@ jobs:
                   scrollView.addView(chatLayout);
                   root.addView(scrollView, scrollParams);
 
-                  // 3. Bottom Bar (Aadesh +, Input, User Mic)
                   LinearLayout bottomArea = new LinearLayout(this);
                   bottomArea.setOrientation(LinearLayout.HORIZONTAL);
                   bottomArea.setBackgroundColor(Color.parseColor("#161B22"));
@@ -170,7 +171,6 @@ jobs:
                   RelativeLayout.LayoutParams bottomParams = new RelativeLayout.LayoutParams(-1, -2);
                   bottomParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
 
-                  // Aadesh Button (Gallery)
                   Button aadeshBtn = new Button(this);
                   aadeshBtn.setText("+");
                   aadeshBtn.setTextSize(24);
@@ -185,7 +185,6 @@ jobs:
                   LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0, -2, 1.0f);
                   inputParams.setMargins(10, 0, 10, 0);
 
-                  // User Mic Button (Send/Voice)
                   Button userMicBtn = new Button(this);
                   userMicBtn.setText("🎤");
                   userMicBtn.setTextSize(20);
@@ -195,7 +194,6 @@ jobs:
                       if(!t.isEmpty()){
                           addUserMessage(t);
                           inputField.setText("");
-                          // Trigger Z+2 AI Logic
                           processAiResponse(t);
                       } else {
                           Toast.makeText(this, "Listening... (Voice mode active)", Toast.LENGTH_SHORT).show();
@@ -214,7 +212,7 @@ jobs:
                   GradientDrawable shape = new GradientDrawable();
                   shape.setShape(GradientDrawable.RECTANGLE);
                   shape.setCornerRadius(50);
-                  shape.setColor(color); // Blue, Green, or Orange
+                  shape.setColor(color);
                   z2MicIcon.setBackground(shape);
               }
 
@@ -232,7 +230,7 @@ jobs:
                   tv.setTextSize(16);
                   
                   GradientDrawable bg = new GradientDrawable();
-                  bg.setColor(Color.parseColor("#005C4B")); // User Green
+                  bg.setColor(Color.parseColor("#005C4B"));
                   bg.setCornerRadius(30);
                   tv.setBackground(bg);
                   
@@ -245,7 +243,6 @@ jobs:
               }
 
               private void processAiResponse(String userText) {
-                  // Turbo Mode Activated - Simulating Alibaba AI Brain
                   String mood = "normal";
                   String reply = "Main Alibaba Qwen AI hoon. Aapne kaha: " + userText;
                   
@@ -261,22 +258,19 @@ jobs:
               }
 
               private void speakAndType(String text, String mood) {
-                  // Mood Lighting
-                  if(mood.equals("happy")) setMoodLighting(Color.parseColor("#2EA043")); // Green
-                  else if(mood.equals("thinking")) setMoodLighting(Color.parseColor("#D29922")); // Orange
-                  else setMoodLighting(Color.parseColor("#0284C7")); // Blue
+                  if(mood.equals("happy")) setMoodLighting(Color.parseColor("#2EA043"));
+                  else if(mood.equals("thinking")) setMoodLighting(Color.parseColor("#D29922"));
+                  else setMoodLighting(Color.parseColor("#0284C7"));
 
-                  // Voice
                   tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
 
-                  // UI Bubble
                   TextView tv = new TextView(this);
                   tv.setPadding(40, 25, 40, 25);
                   tv.setTextColor(Color.WHITE);
                   tv.setTextSize(16);
                   
                   GradientDrawable bg = new GradientDrawable();
-                  bg.setColor(Color.parseColor("#21262D")); // AI Dark Gray
+                  bg.setColor(Color.parseColor("#21262D"));
                   bg.setCornerRadius(30);
                   tv.setBackground(bg);
                   
@@ -286,7 +280,6 @@ jobs:
                   tv.setLayoutParams(lp);
                   chatLayout.addView(tv);
 
-                  // Typewriter Effect
                   final int[] index = {0};
                   handler.post(new Runnable() {
                       @Override
@@ -295,10 +288,10 @@ jobs:
                               tv.setText(text.substring(0, index[0]));
                               index[0]++;
                               scrollToBottom();
-                              handler.postDelayed(this, 30); // Speed of typing
+                              handler.postDelayed(this, 30);
                           } else {
-                              addSmartChips(); // Add chips after typing finishes
-                              setMoodLighting(Color.parseColor("#0284C7")); // Reset to Blue
+                              addSmartChips();
+                              setMoodLighting(Color.parseColor("#0284C7"));
                           }
                       }
                   });
@@ -352,4 +345,3 @@ jobs:
         with:
           name: Zeeshan-Ai-Chat-Z2-Masterpiece
           path: app/build/outputs/apk/debug/*.apk
-
