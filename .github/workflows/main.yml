@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (Multimedia Stable Fix)
+name: Build Zeeshan AI Chat (Auto-Download)
 
 on:
   push:
@@ -18,18 +18,29 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Create App Structure
+      - name: Create App Structure & Download Model
         run: |
+          # 1. Folders banana
           mkdir -p app/src/main/java/com/zeeshan/ai
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/assets
           
+          # 2. AI Brain download karna (Direct GitHub Server par)
+          echo "GitHub Server Model Download Kar Raha Hai..."
+          wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
+
+          # 3. Settings files setup karna
           echo "android.useAndroidX=true
           android.enableJetifier=true" > gradle.properties
 
-          echo "include ':app'" > settings.gradle
+          echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          include ':app'" > settings.gradle
 
           echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
 
+      - name: Create Build Files
+        run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -39,15 +50,15 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 32
-                  versionName "32.0-Multi-Fixed"
+                  versionCode 34
+                  versionName "34.0-AutoBuild"
               }
+              aaptOptions { noCompress 'gguf' }
               compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.squareup.okhttp3:okhttp:4.11.0'
-              implementation 'com.google.android.material:material:1.9.0'
           }
           EOF
 
@@ -57,10 +68,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.CAMERA" />
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <application android:allowBackup="true" android:label="@string/app_name" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
@@ -72,87 +81,43 @@ jobs:
           </manifest>
           EOF
 
+      - name: Create Java Code
+        run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
-          import android.Manifest;
-          import android.content.Intent;
           import android.graphics.Color;
           import android.os.Bundle;
-          import android.provider.MediaStore;
           import android.widget.*;
-          import androidx.annotation.Nullable;
           import androidx.appcompat.app.AppCompatActivity;
-          import androidx.core.app.ActivityCompat;
 
           public class MainActivity extends AppCompatActivity {
               private LinearLayout chatLayout;
               private ScrollView scrollView;
-              private EditText inputField;
-              private Button sendBtn, camBtn, galBtn, micBtn;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setupUI();
-                  requestPermissions();
-              }
-
-              private void requestPermissions() {
-                  String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
-                  ActivityCompat.requestPermissions(this, perms, 100);
+                  addMessage("System", "✅ Zeeshan AI Ready! Model GitHub se download ho chuka hai.", false);
               }
 
               private void setupUI() {
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
                   root.setBackgroundColor(Color.parseColor("#0F172A"));
-
                   TextView header = new TextView(this);
-                  header.setText("Zeeshan Ai Chat ✅");
-                  header.setTextColor(Color.parseColor("#38BDF8"));
+                  header.setText("Zeeshan Ai Auto-Build");
+                  header.setTextColor(Color.CYAN);
                   header.setTextSize(22);
                   header.setPadding(30, 50, 30, 30);
                   root.addView(header);
-
                   scrollView = new ScrollView(this);
                   chatLayout = new LinearLayout(this);
                   chatLayout.setOrientation(LinearLayout.VERTICAL);
                   chatLayout.setPadding(20, 20, 20, 20);
                   scrollView.addView(chatLayout);
                   root.addView(scrollView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
-
-                  LinearLayout tools = new LinearLayout(this);
-                  tools.setPadding(20, 10, 20, 10);
-                  camBtn = new Button(this); camBtn.setText("📷"); tools.addView(camBtn);
-                  galBtn = new Button(this); galBtn.setText("🖼️"); tools.addView(galBtn);
-                  micBtn = new Button(this); micBtn.setText("🎤"); tools.addView(micBtn);
-                  root.addView(tools);
-
-                  LinearLayout inputArea = new LinearLayout(this);
-                  inputArea.setPadding(20, 20, 20, 20);
-                  inputArea.setBackgroundColor(Color.parseColor("#1E293B"));
-                  inputField = new EditText(this);
-                  inputField.setHint("Message...");
-                  inputField.setTextColor(Color.WHITE);
-                  inputArea.addView(inputField, new LinearLayout.LayoutParams(0, -2, 1.0f));
-                  sendBtn = new Button(this); sendBtn.setText("SEND");
-                  inputArea.addView(sendBtn);
-                  root.addView(inputArea);
-
                   setContentView(root);
-
-                  camBtn.setOnClickListener(v -> startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), 1));
-                  galBtn.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI), 2));
-                  sendBtn.setOnClickListener(v -> sendMessage());
-              }
-
-              private void sendMessage() {
-                  String text = inputField.getText().toString();
-                  if (!text.isEmpty()) {
-                      addMessage("You", text, true);
-                      inputField.setText("");
-                      addMessage("Zeeshan AI", "Bhai, permissions set hain, sab chal raha hai!", false);
-                  }
               }
 
               private void addMessage(String sender, String msg, boolean isUser) {
@@ -160,30 +125,22 @@ jobs:
                   tv.setText(sender + ": " + msg);
                   tv.setPadding(20, 15, 20, 15);
                   tv.setTextColor(Color.WHITE);
-                  tv.setBackgroundColor(isUser ? Color.parseColor("#0284C7") : Color.parseColor("#334155"));
+                  tv.setBackgroundColor(isUser ? Color.BLUE : Color.DKGRAY);
                   chatLayout.addView(tv);
                   scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
-              }
-
-              @Override
-              protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-                  super.onActivityResult(requestCode, resultCode, data);
-                  if (resultCode == RESULT_OK) {
-                      addMessage("You", (requestCode == 1 ? "📷 Camera Photo" : "🖼️ Gallery Photo") + " bheji hai", true);
-                  }
               }
           }
           EOF
 
-      - name: Generate Gradle Wrapper
-        run: gradle wrapper
-
-      - name: Build APK
-        run: chmod +x gradlew && ./gradlew assembleDebug
+      - name: Generate Wrapper & Build APK
+        run: |
+          gradle wrapper
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-AI-Multimedia-Fixed
+          name: Zeeshan-AI-Auto-Download
           path: app/build/outputs/apk/debug/*.apk
 
