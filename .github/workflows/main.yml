@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Ultra Stable
+name: Build Zeeshan AI (700MB Vault + PDF Edition)
 
 on:
   push:
@@ -24,38 +24,20 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
           
-          # AI Model Download (GitHub Server pe auto-download)
-          echo "Downloading AI Brain..."
+          # Auto-Download Model
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
 
-          # 🚨 Gradle 9.4 Compatibility Fix 🚨
           echo "android.useAndroidX=true
           android.enableJetifier=true" > gradle.properties
 
-          echo "pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
+          echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
           include ':app'" > settings.gradle
 
-          echo "plugins {
-              id 'com.android.application' version '8.2.0' apply false
-          }" > build.gradle
+          echo "plugins { id 'com.android.application' version '8.2.0' apply false }" > build.gradle
 
           cat << 'EOF' > app/build.gradle
-          plugins {
-              id 'com.android.application'
-          }
+          plugins { id 'com.android.application' }
           android {
               namespace 'com.zeeshan.ai'
               compileSdk 34
@@ -63,14 +45,11 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 35
-                  versionName "35.0-Ultra-Stable"
+                  versionCode 36
+                  versionName "36.0-Vault-700MB"
               }
               aaptOptions { noCompress 'gguf' }
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -86,7 +65,7 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.CAMERA" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
               <application android:allowBackup="true" android:label="@string/app_name" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
@@ -101,23 +80,31 @@ jobs:
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           import android.Manifest;
+          import android.content.Intent;
           import android.graphics.Color;
+          import android.net.Uri;
           import android.os.Bundle;
           import android.widget.*;
+          import androidx.annotation.Nullable;
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
+          import java.io.*;
 
           public class MainActivity extends AppCompatActivity {
               private LinearLayout chatLayout;
               private ScrollView scrollView;
-              private EditText inputField;
+              private TextView vaultStatus;
+              private final long MAX_VAULT_SIZE = 700 * 1024 * 1024L; // 700MB Limit
+              private File vaultDir;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+                  vaultDir = new File(getFilesDir(), "ZeeshanVault");
+                  if(!vaultDir.exists()) vaultDir.mkdirs();
                   setupUI();
-                  ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, 100);
-                  addMessage("System", "✅ Zeeshan AI Offline Ready!", false);
+                  updateVaultInfo();
+                  ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_EXTERNAL_STORAGE}, 100);
               }
 
               private void setupUI() {
@@ -125,12 +112,17 @@ jobs:
                   root.setOrientation(LinearLayout.VERTICAL);
                   root.setBackgroundColor(Color.parseColor("#0F172A"));
 
-                  TextView header = new TextView(this);
-                  header.setText("Zeeshan AI Chat");
-                  header.setTextColor(Color.CYAN);
-                  header.setTextSize(22);
-                  header.setPadding(30, 50, 30, 30);
-                  root.addView(header);
+                  vaultStatus = new TextView(this);
+                  vaultStatus.setTextColor(Color.GREEN);
+                  vaultStatus.setPadding(30, 40, 30, 10);
+                  root.addView(vaultStatus);
+
+                  LinearLayout tools = new LinearLayout(this);
+                  tools.setPadding(20, 10, 20, 10);
+                  Button pdfBtn = new Button(this); pdfBtn.setText("📄 +PDF"); 
+                  Button clearBtn = new Button(this); clearBtn.setText("🗑️ CLEAR");
+                  tools.addView(pdfBtn); tools.addView(clearBtn);
+                  root.addView(tools);
 
                   scrollView = new ScrollView(this);
                   chatLayout = new LinearLayout(this);
@@ -142,23 +134,61 @@ jobs:
                   LinearLayout inputArea = new LinearLayout(this);
                   inputArea.setPadding(20, 20, 20, 20);
                   inputArea.setBackgroundColor(Color.parseColor("#1E293B"));
-                  inputField = new EditText(this);
-                  inputField.setHint("Puchiye...");
-                  inputField.setTextColor(Color.WHITE);
-                  inputArea.addView(inputField, new LinearLayout.LayoutParams(0, -2, 1.0f));
-                  Button sendBtn = new Button(this);
-                  sendBtn.setText("SEND");
-                  sendBtn.setOnClickListener(v -> {
-                      String t = inputField.getText().toString();
-                      if(!t.isEmpty()){
-                          addMessage("You", t, true);
-                          inputField.setText("");
-                          addMessage("AI", "Bhai, main offline dimaag se soch raha hoon...", false);
+                  EditText input = new EditText(this); input.setHint("Puchiye..."); input.setTextColor(Color.WHITE);
+                  Button send = new Button(this); send.setText("SEND");
+                  inputArea.addView(input, new LinearLayout.LayoutParams(0, -2, 1.0f));
+                  inputArea.addView(send);
+                  root.addView(inputArea);
+
+                  setContentView(root);
+
+                  pdfBtn.setOnClickListener(v -> {
+                      Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                      intent.setType("application/pdf");
+                      startActivityForResult(intent, 200);
+                  });
+
+                  clearBtn.setOnClickListener(v -> {
+                      for (File f : vaultDir.listFiles()) f.delete();
+                      updateVaultInfo();
+                      addMessage("System", "Vault Cleared!", false);
+                  });
+
+                  send.setOnClickListener(v -> {
+                      if(!input.getText().toString().isEmpty()){
+                          addMessage("You", input.getText().toString(), true);
+                          input.setText("");
                       }
                   });
-                  inputArea.addView(sendBtn);
-                  root.addView(inputArea);
-                  setContentView(root);
+              }
+
+              private void updateVaultInfo() {
+                  long size = 0;
+                  if(vaultDir.listFiles() != null) for(File f : vaultDir.listFiles()) size += f.length();
+                  long sizeMB = size / (1024 * 1024);
+                  vaultStatus.setText("💾 Vault Memory: " + sizeMB + "MB / 700MB");
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (requestCode == 200 && resultCode == RESULT_OK && data != null) {
+                      saveToVault(data.getData());
+                  }
+              }
+
+              private void saveToVault(Uri uri) {
+                  try {
+                      InputStream in = getContentResolver().openInputStream(uri);
+                      File file = new File(vaultDir, "Doc_" + System.currentTimeMillis() + ".pdf");
+                      FileOutputStream out = new FileOutputStream(file);
+                      byte[] buf = new byte[1024];
+                      int len;
+                      while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+                      out.close(); in.close();
+                      updateVaultInfo();
+                      addMessage("System", "PDF Saved to 700MB Vault!", false);
+                  } catch (Exception e) { addMessage("System", "Error saving PDF", false); }
               }
 
               private void addMessage(String sender, String msg, boolean isUser) {
@@ -173,7 +203,7 @@ jobs:
           }
           EOF
 
-      - name: Build APK with Gradle 8.5
+      - name: Build APK
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
@@ -182,6 +212,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-AI-Ultra-Stable
+          name: Zeeshan-AI-Vault-700MB
           path: app/build/outputs/apk/debug/*.apk
-
