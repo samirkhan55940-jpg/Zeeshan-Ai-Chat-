@@ -1,4 +1,4 @@
-name: Build Zeeshan AI Chat (Auto-Download)
+name: Build Zeeshan AI Ultra Stable
 
 on:
   push:
@@ -18,31 +18,44 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Create App Structure & Download Model
+      - name: Create App Structure
         run: |
-          # 1. Folders banana
           mkdir -p app/src/main/java/com/zeeshan/ai
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
           
-          # 2. AI Brain download karna (Direct GitHub Server par)
-          echo "GitHub Server Model Download Kar Raha Hai..."
+          # AI Model Download (GitHub Server pe auto-download)
+          echo "Downloading AI Brain..."
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/model.gguf
 
-          # 3. Settings files setup karna
+          # 🚨 Gradle 9.4 Compatibility Fix 🚨
           echo "android.useAndroidX=true
           android.enableJetifier=true" > gradle.properties
 
-          echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          echo "pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
           include ':app'" > settings.gradle
 
-          echo "plugins { id 'com.android.application' version '8.1.0' apply false }" > build.gradle
+          echo "plugins {
+              id 'com.android.application' version '8.2.0' apply false
+          }" > build.gradle
 
-      - name: Create Build Files
-        run: |
           cat << 'EOF' > app/build.gradle
-          plugins { id 'com.android.application' }
+          plugins {
+              id 'com.android.application'
+          }
           android {
               namespace 'com.zeeshan.ai'
               compileSdk 34
@@ -50,15 +63,18 @@ jobs:
                   applicationId 'com.zeeshan.ai'
                   minSdk 24
                   targetSdk 34
-                  versionCode 34
-                  versionName "34.0-AutoBuild"
+                  versionCode 35
+                  versionName "35.0-Ultra-Stable"
               }
               aaptOptions { noCompress 'gguf' }
-              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.squareup.okhttp3:okhttp:4.11.0'
+              implementation 'com.google.android.material:material:1.9.0'
           }
           EOF
 
@@ -70,6 +86,7 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.CAMERA" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
               <application android:allowBackup="true" android:label="@string/app_name" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
@@ -81,42 +98,66 @@ jobs:
           </manifest>
           EOF
 
-      - name: Create Java Code
-        run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
+          import android.Manifest;
           import android.graphics.Color;
           import android.os.Bundle;
           import android.widget.*;
           import androidx.appcompat.app.AppCompatActivity;
+          import androidx.core.app.ActivityCompat;
 
           public class MainActivity extends AppCompatActivity {
               private LinearLayout chatLayout;
               private ScrollView scrollView;
+              private EditText inputField;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setupUI();
-                  addMessage("System", "✅ Zeeshan AI Ready! Model GitHub se download ho chuka hai.", false);
+                  ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, 100);
+                  addMessage("System", "✅ Zeeshan AI Offline Ready!", false);
               }
 
               private void setupUI() {
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
                   root.setBackgroundColor(Color.parseColor("#0F172A"));
+
                   TextView header = new TextView(this);
-                  header.setText("Zeeshan Ai Auto-Build");
+                  header.setText("Zeeshan AI Chat");
                   header.setTextColor(Color.CYAN);
                   header.setTextSize(22);
                   header.setPadding(30, 50, 30, 30);
                   root.addView(header);
+
                   scrollView = new ScrollView(this);
                   chatLayout = new LinearLayout(this);
                   chatLayout.setOrientation(LinearLayout.VERTICAL);
                   chatLayout.setPadding(20, 20, 20, 20);
                   scrollView.addView(chatLayout);
                   root.addView(scrollView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
+
+                  LinearLayout inputArea = new LinearLayout(this);
+                  inputArea.setPadding(20, 20, 20, 20);
+                  inputArea.setBackgroundColor(Color.parseColor("#1E293B"));
+                  inputField = new EditText(this);
+                  inputField.setHint("Puchiye...");
+                  inputField.setTextColor(Color.WHITE);
+                  inputArea.addView(inputField, new LinearLayout.LayoutParams(0, -2, 1.0f));
+                  Button sendBtn = new Button(this);
+                  sendBtn.setText("SEND");
+                  sendBtn.setOnClickListener(v -> {
+                      String t = inputField.getText().toString();
+                      if(!t.isEmpty()){
+                          addMessage("You", t, true);
+                          inputField.setText("");
+                          addMessage("AI", "Bhai, main offline dimaag se soch raha hoon...", false);
+                      }
+                  });
+                  inputArea.addView(sendBtn);
+                  root.addView(inputArea);
                   setContentView(root);
               }
 
@@ -125,22 +166,22 @@ jobs:
                   tv.setText(sender + ": " + msg);
                   tv.setPadding(20, 15, 20, 15);
                   tv.setTextColor(Color.WHITE);
-                  tv.setBackgroundColor(isUser ? Color.BLUE : Color.DKGRAY);
+                  tv.setBackgroundColor(isUser ? Color.parseColor("#0284C7") : Color.parseColor("#334155"));
                   chatLayout.addView(tv);
                   scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
               }
           }
           EOF
 
-      - name: Generate Wrapper & Build APK
+      - name: Build APK with Gradle 8.5
         run: |
-          gradle wrapper
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-AI-Auto-Download
+          name: Zeeshan-AI-Ultra-Stable
           path: app/build/outputs/apk/debug/*.apk
 
