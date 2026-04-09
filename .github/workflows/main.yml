@@ -1,4 +1,4 @@
-name: Build Zeeshan Ai Chat (Step-By-Step Final Force)
+name: Build Zeeshan Ai Chat (Dual Mic Voice Engine)
 
 on:
   push:
@@ -9,28 +9,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: 1. Checkout Code (Code Nikalna)
+      - name: 1. Checkout Code
         uses: actions/checkout@v4
 
-      - name: 2. Set up JDK 17 (Java Tayar Karna)
+      - name: 2. Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Setup Android NDK (C++ Engine Tools)
+      - name: 3. Setup Android NDK
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r25c
 
-      - name: 4. Create Folders & Repositories (Dukan Set Karna)
+      - name: 4. Create Folders & Repositories
         run: |
           mkdir -p app/src/main/java/com/zeeshan/ai
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/cpp
           
-          # Fix: Repositories ko ek dam clear batana
           echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS); repositories { google(); mavenCentral() } }
           include ':app'" > settings.gradle
@@ -39,15 +38,15 @@ jobs:
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx6g" > gradle.properties
 
-      - name: 5. Download Alibaba Model (Dimaag Download)
+      - name: 5. Download Alibaba Model (The Brain)
         run: |
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_model.gguf
 
-      - name: 6. Download Llama Engine (Accelerator Engine)
+      - name: 6. Download Llama Engine
         run: |
           git clone --depth 1 https://github.com/ggerganov/llama.cpp app/src/main/cpp/llama
 
-      - name: 7. Write C++ Accelerator Code
+      - name: 7. Write C++ UNLOCKED Accelerator (8GB RAM)
         run: |
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
@@ -61,29 +60,64 @@ jobs:
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
+          #include <vector>
           #include "llama.h"
 
           extern "C" JNIEXPORT jstring JNICALL
           Java_com_zeeshan_ai_MainActivity_askZ2Native(JNIEnv* env, jobject, jstring prompt, jstring modelPath) {
+              const char *userText = env->GetStringUTFChars(prompt, 0);
               const char *path = env->GetStringUTFChars(modelPath, 0);
+              
               llama_backend_init();
               auto mparams = llama_model_default_params();
               llama_model * model = llama_load_model_from_file(path, mparams);
               
-              std::string res = "Z+2 Accelerator Mode Active!\n";
-              if(model) {
-                  res += "Status: Alibaba AI Model RAM me Load ho gaya hai.";
-                  llama_free_model(model);
-              } else {
-                  res += "Error: Memory me jagah kam hai.";
+              if (!model) return env->NewStringUTF("Error: Engine Load Nahi Hua!");
+
+              auto cparams = llama_context_default_params();
+              cparams.n_ctx = 2048; 
+              llama_context * ctx = llama_new_context_with_model(model, cparams);
+
+              std::vector<llama_token> tokens(2048);
+              int n_tokens = llama_tokenize(model, userText, strlen(userText), tokens.data(), tokens.size(), true, true);
+              
+              llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens, 0, 0);
+              if (llama_decode(ctx, batch) != 0) return env->NewStringUTF("Error: Decode fail!");
+
+              std::string ai_reply = "";
+              int n_vocab = llama_n_vocab(model);
+
+              // 1024 words generation loop
+              for (int i = 0; i < 1024; i++) {
+                  auto logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
+                  std::vector<llama_token_data> candidates;
+                  candidates.reserve(n_vocab);
+                  for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
+                      candidates.push_back(llama_token_data{token_id, logits[token_id], 0.0f});
+                  }
+                  llama_token_data_array candidates_p = { candidates.data(), candidates.size(), false };
+                  
+                  llama_token new_token_id = llama_sample_token_greedy(ctx, &candidates_p);
+                  if (llama_token_is_eog(model, new_token_id)) break; 
+
+                  const char * token_str = llama_token_get_text(model, new_token_id);
+                  if (token_str) ai_reply += token_str;
+
+                  batch = llama_batch_get_one(&new_token_id, 1, n_tokens + i, 0);
+                  if (llama_decode(ctx, batch) != 0) break;
               }
+
+              llama_free(ctx);
+              llama_free_model(model);
               llama_backend_free();
+              
+              env->ReleaseStringUTFChars(prompt, userText);
               env->ReleaseStringUTFChars(modelPath, path);
-              return env->NewStringUTF(res.c_str());
+              return env->NewStringUTF(ai_reply.c_str());
           }
           EOF
 
-      - name: 8. Write Java UI & Build Config
+      - name: 8. Write Java VIP UI (Dual Mic System)
         run: |
           cat << 'EOF' > build.gradle
           plugins { id 'com.android.application' version '8.2.0' apply false }
@@ -99,7 +133,7 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 1
-                  versionName "13.0-StepByStep"
+                  versionName "16.0-Dual-Mic-Engine"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
@@ -110,38 +144,133 @@ jobs:
 
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
+          import android.content.Intent;
           import android.graphics.Color;
           import android.os.Bundle;
+          import android.speech.RecognizerIntent;
+          import android.speech.tts.TextToSpeech;
+          import android.view.Gravity;
           import android.widget.*;
           import androidx.appcompat.app.AppCompatActivity;
           import java.io.*;
+          import java.util.ArrayList;
+          import java.util.Locale;
 
           public class MainActivity extends AppCompatActivity {
               private String path = "";
+              private LinearLayout chat;
+              private EditText input;
+              private ScrollView scrollView;
+              private TextToSpeech tts; // AI Bolne Wala Engine
+              
               static { System.loadLibrary("z2_engine"); }
               public native String askZ2Native(String p, String m);
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+                  
+                  // AI Text-to-Speech Setup
+                  tts = new TextToSpeech(this, status -> {
+                      if(status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("hi", "IN"));
+                  });
+
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.BLACK);
-                  TextView tv = new TextView(this);
-                  tv.setText("Z+2 Step-By-Step Engine");
-                  tv.setTextColor(Color.WHITE);
-                  Button btn = new Button(this);
-                  btn.setText("START ACCELERATOR");
-                  btn.setOnClickListener(v -> {
-                      new Thread(() -> {
-                          String r = askZ2Native("test", path);
-                          runOnUiThread(() -> tv.setText(r));
-                      }).start();
+                  root.setBackgroundColor(Color.parseColor("#0D1117"));
+                  root.setPadding(20, 20, 20, 20);
+                  
+                  // AI Header with Mic Icon
+                  TextView title = new TextView(this);
+                  title.setText("🎤 Z+2 AI (Active)");
+                  title.setTextColor(Color.parseColor("#0284C7"));
+                  title.setTextSize(22);
+                  title.setGravity(Gravity.CENTER);
+                  title.setPadding(0, 0, 0, 30);
+                  
+                  scrollView = new ScrollView(this);
+                  scrollView.setLayoutParams(new LinearLayout.LayoutParams(-1, 0, 1f));
+                  chat = new LinearLayout(this);
+                  chat.setOrientation(LinearLayout.VERTICAL);
+                  scrollView.addView(chat);
+                  
+                  // Bottom Input Area
+                  LinearLayout bottomBar = new LinearLayout(this);
+                  bottomBar.setOrientation(LinearLayout.HORIZONTAL);
+                  bottomBar.setGravity(Gravity.CENTER_VERTICAL);
+                  
+                  input = new EditText(this);
+                  input.setHint("Yahan likhein...");
+                  input.setTextColor(Color.WHITE);
+                  input.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
+                  
+                  // User Mic Button
+                  Button micBtn = new Button(this);
+                  micBtn.setText("🎤");
+                  micBtn.setTextSize(20);
+                  micBtn.setBackgroundColor(Color.TRANSPARENT);
+                  micBtn.setOnClickListener(v -> {
+                      Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                      intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                      startActivityForResult(intent, 100); // Voice typing open
                   });
-                  root.addView(tv); root.addView(btn);
+                  
+                  // Send Text Button
+                  Button sendBtn = new Button(this);
+                  sendBtn.setText("SEND");
+                  sendBtn.setOnClickListener(v -> processQuestion());
+                  
+                  bottomBar.addView(input);
+                  bottomBar.addView(micBtn);
+                  bottomBar.addView(sendBtn);
+                  
+                  root.addView(title); root.addView(scrollView); root.addView(bottomBar);
                   setContentView(root);
+                  
                   new Thread(this::copyM).start();
               }
+              
+              private void processQuestion() {
+                  String t = input.getText().toString();
+                  if(!t.isEmpty() && !path.isEmpty()) {
+                      addText("You: " + t, "#005C4B");
+                      addText("Z+2: Soch raha hai...", "#D29922");
+                      input.setText("");
+                      
+                      new Thread(() -> {
+                          String r = askZ2Native(t, path);
+                          runOnUiThread(() -> {
+                              chat.removeViewAt(chat.getChildCount() - 1);
+                              addText("Z+2: " + r, "#2EA043");
+                              // AI Bol kar sunayega
+                              tts.speak(r, TextToSpeech.QUEUE_FLUSH, null, null);
+                          });
+                      }).start();
+                  }
+              }
+
+              // User Mic ka Jawab Pakadna
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if(requestCode == 100 && resultCode == RESULT_OK && data != null) {
+                      ArrayList<String> res = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                      if(res != null && !res.isEmpty()) {
+                          input.setText(res.get(0)); // Mic ka text box me dalna
+                      }
+                  }
+              }
+              
+              private void addText(String txt, String color) {
+                  TextView tv = new TextView(this);
+                  tv.setText(txt);
+                  tv.setTextColor(Color.parseColor(color));
+                  tv.setPadding(0, 15, 0, 15);
+                  tv.setTextSize(16);
+                  chat.addView(tv);
+                  scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+              }
+
               private void copyM() {
                   try {
                       File f = new File(getFilesDir(), "z2_model.gguf");
@@ -153,7 +282,14 @@ jobs:
                           while ((l = is.read(b)) > 0) os.write(b, 0, l);
                           os.close(); is.close();
                       }
+                      runOnUiThread(() -> addText("System: AI Mic aur User Mic Ready!", "#0284C7"));
                   } catch (Exception e) {}
+              }
+              
+              @Override
+              protected void onDestroy() {
+                  if (tts != null) tts.shutdown();
+                  super.onDestroy();
               }
           }
           EOF
@@ -161,6 +297,7 @@ jobs:
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <application android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
@@ -172,7 +309,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: 9. Final Build (Forced Execution)
+      - name: 9. Final Build
         run: |
           export ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/25.2.9519653
           gradle wrapper --gradle-version 8.5
@@ -182,5 +319,5 @@ jobs:
       - name: 10. Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-StepByStep
+          name: Zeeshan-Ai-Voice-Engine
           path: app/build/outputs/apk/debug/*.apk
