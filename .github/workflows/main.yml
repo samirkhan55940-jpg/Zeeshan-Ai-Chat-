@@ -1,4 +1,4 @@
-name: Build Zeeshan Ai Chat (Accelerator Forced & Repo Fixed)
+name: Build Zeeshan Ai Chat (Step-By-Step Final Force)
 
 on:
   push:
@@ -9,48 +9,46 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: 1. Checkout Code (Code Nikalna)
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: 2. Set up JDK 17 (Java Tayar Karna)
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android NDK
+      - name: 3. Setup Android NDK (C++ Engine Tools)
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r25c
 
-      - name: Create Structure & Download
+      - name: 4. Create Folders & Repositories (Dukan Set Karna)
         run: |
           mkdir -p app/src/main/java/com/zeeshan/ai
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/cpp
-
-          wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_model.gguf
-          git clone --depth 1 https://github.com/ggerganov/llama.cpp app/src/main/cpp/llama
-
-          # FIX: Dukaan (Repositories) ka sahi raasta
+          
+          # Fix: Repositories ko ek dam clear batana
           echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS); repositories { google(); mavenCentral() } }
           include ':app'" > settings.gradle
-
+          
           echo "android.useAndroidX=true
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx6g" > gradle.properties
 
-          cat << 'EOF' > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
-          }
-          allprojects { repositories { google(); mavenCentral() } }
-          EOF
+      - name: 5. Download Alibaba Model (Dimaag Download)
+        run: |
+          wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_model.gguf
 
-          # --- CMake ---
+      - name: 6. Download Llama Engine (Accelerator Engine)
+        run: |
+          git clone --depth 1 https://github.com/ggerganov/llama.cpp app/src/main/cpp/llama
+
+      - name: 7. Write C++ Accelerator Code
+        run: |
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("z2_engine")
@@ -60,7 +58,6 @@ jobs:
           target_link_libraries(${CMAKE_PROJECT_NAME} llama log)
           EOF
 
-          # --- C++ Accelerator Loop ---
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
@@ -73,10 +70,12 @@ jobs:
               auto mparams = llama_model_default_params();
               llama_model * model = llama_load_model_from_file(path, mparams);
               
-              std::string res = "Z+2 Accelerator Connected!";
+              std::string res = "Z+2 Accelerator Mode Active!\n";
               if(model) {
-                  res += "\nEngine is Live in 64-Bit RAM.";
+                  res += "Status: Alibaba AI Model RAM me Load ho gaya hai.";
                   llama_free_model(model);
+              } else {
+                  res += "Error: Memory me jagah kam hai.";
               }
               llama_backend_free();
               env->ReleaseStringUTFChars(modelPath, path);
@@ -84,9 +83,14 @@ jobs:
           }
           EOF
 
-          # --- App Build Config ---
+      - name: 8. Write Java UI & Build Config
+        run: |
+          cat << 'EOF' > build.gradle
+          plugins { id 'com.android.application' version '8.2.0' apply false }
+          EOF
+
           cat << 'EOF' > app/build.gradle
-          apply plugin: 'com.android.application'
+          plugins { id 'com.android.application' }
           android {
               namespace 'com.zeeshan.ai'
               compileSdk 34
@@ -95,15 +99,15 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 1
-                  versionName "12.0-Accelerator-Fixed"
+                  versionName "13.0-StepByStep"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
               externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
           }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
-          # --- Simple Java UI ---
           cat << 'EOF' > app/src/main/java/com/zeeshan/ai/MainActivity.java
           package com.zeeshan.ai;
           import android.graphics.Color;
@@ -124,10 +128,10 @@ jobs:
                   root.setOrientation(LinearLayout.VERTICAL);
                   root.setBackgroundColor(Color.BLACK);
                   TextView tv = new TextView(this);
-                  tv.setText("Z+2 Accelerator Mode");
+                  tv.setText("Z+2 Step-By-Step Engine");
                   tv.setTextColor(Color.WHITE);
                   Button btn = new Button(this);
-                  btn.setText("START ENGINE");
+                  btn.setText("START ACCELERATOR");
                   btn.setOnClickListener(v -> {
                       new Thread(() -> {
                           String r = askZ2Native("test", path);
@@ -168,15 +172,15 @@ jobs:
           </manifest>
           EOF
 
-      - name: Force Build
+      - name: 9. Final Build (Forced Execution)
         run: |
           export ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/25.2.9519653
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: 10. Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Accelerator-Fixed
+          name: Zeeshan-Ai-StepByStep
           path: app/build/outputs/apk/debug/*.apk
