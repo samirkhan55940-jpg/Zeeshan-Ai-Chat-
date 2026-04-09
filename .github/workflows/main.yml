@@ -1,4 +1,4 @@
-name: Build Zeeshan Ai Chat (Maximum Power No Compromise)
+name: Build Zeeshan Ai Chat (Bulletproof Engine Locked)
 
 on:
   push:
@@ -42,11 +42,12 @@ jobs:
         run: |
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_model.gguf
 
-      - name: 6. Download Llama Engine
+      - name: 6. Download Llama Engine (VERSION LOCKED - STABLE)
         run: |
-          git clone --depth 1 https://github.com/ggerganov/llama.cpp app/src/main/cpp/llama
+          # FIX: Yahan humne engine ko 'b2600' stable version par lock kar diya hai taaki naye errors na aayein!
+          git clone --branch b2600 --depth 1 https://github.com/ggerganov/llama.cpp app/src/main/cpp/llama
 
-      - name: 7. Write FULL POWER C++ Loop (Bina Koi Compromise)
+      - name: 7. Write BULLETPROOF C++ Loop (Full Accelerator)
         run: |
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
@@ -75,7 +76,7 @@ jobs:
               if (!model) return env->NewStringUTF("Error: Engine Load Nahi Hua!");
 
               auto cparams = llama_context_default_params();
-              cparams.n_ctx = 2048; // 8GB RAM Full Context
+              cparams.n_ctx = 2048; // 8GB RAM Unlocked
               llama_context * ctx = llama_new_context_with_model(model, cparams);
 
               std::vector<llama_token> tokens(2048);
@@ -88,11 +89,10 @@ jobs:
               int n_vocab = llama_n_vocab(model);
 
               // 🚀 THE UNCOMPROMISED 1024-WORD ACCELERATOR LOOP 🚀
-              // (Manual Math Loop lagaya hai taaki GitHub error na de)
               for (int step = 0; step < 1024; step++) {
                   float * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
 
-                  // Khud ka Custom Shabd Chunne Wala Code (Manual Argmax)
+                  // Sahi shabd chunna (Greedy Logic)
                   llama_token new_token_id = 0;
                   float max_prob = -1e9f;
                   for (int i = 0; i < n_vocab; i++) {
@@ -102,21 +102,20 @@ jobs:
                       }
                   }
 
-                  // Agar thought poora ho jaye toh ruko
+                  // Agar jawab poora ho jaye toh ruko
                   if (llama_token_is_eog(model, new_token_id)) break; 
 
-                  // Token ko text me badalna aur jodna
                   char buf[128];
                   int n_chars = llama_token_to_piece(model, new_token_id, buf, sizeof(buf), 0, true);
                   if (n_chars > 0) {
                       ai_reply += std::string(buf, n_chars);
                   }
 
-                  // Naya shabd AI dimaag me wapas dalna agle step ke liye
                   batch = llama_batch_get_one(&new_token_id, 1, n_tokens + step, 0);
                   if (llama_decode(ctx, batch) != 0) break;
               }
 
+              // Engine Safai (Stable functions)
               llama_free(ctx);
               llama_free_model(model);
               llama_backend_free();
@@ -143,7 +142,7 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 1
-                  versionName "18.0-Maximum-Power"
+                  versionName "19.0-Bulletproof-Engine"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
@@ -190,7 +189,7 @@ jobs:
                   root.setPadding(20, 20, 20, 20);
                   
                   TextView title = new TextView(this);
-                  title.setText("🎤 Z+2 AI (FULL POWER LOOP)");
+                  title.setText("🎤 Z+2 AI (Bulletproof Engine)");
                   title.setTextColor(Color.parseColor("#0284C7"));
                   title.setTextSize(20);
                   title.setGravity(Gravity.CENTER);
@@ -239,7 +238,7 @@ jobs:
                   String t = input.getText().toString();
                   if(!t.isEmpty() && !path.isEmpty()) {
                       addText("You: " + t, "#005C4B");
-                      addText("Z+2: Soch raha hai... (Full Loop Engine Active)", "#D29922");
+                      addText("Z+2: Soch raha hai... (Offline Mode)", "#D29922");
                       input.setText("");
                       
                       new Thread(() -> {
@@ -285,7 +284,7 @@ jobs:
                           while ((l = is.read(b)) > 0) os.write(b, 0, l);
                           os.close(); is.close();
                       }
-                      runOnUiThread(() -> addText("System: Model Ready! Ab aap sawaal pooch sakte hain.", "#0284C7"));
+                      runOnUiThread(() -> addText("System: Version Locked Engine Ready!", "#0284C7"));
                   } catch (Exception e) {}
               }
               
@@ -322,5 +321,5 @@ jobs:
       - name: 10. Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Max-Power
+          name: Zeeshan-Ai-Bulletproof-Engine
           path: app/build/outputs/apk/debug/*.apk
