@@ -1,4 +1,4 @@
-name: Build Zeeshan Ai Chat (Dual Mic Voice Engine)
+name: Build Zeeshan Ai Chat (Maximum Power No Compromise)
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx6g" > gradle.properties
 
-      - name: 5. Download Alibaba Model (The Brain)
+      - name: 5. Download Alibaba Model
         run: |
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_model.gguf
 
@@ -46,7 +46,7 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/ggerganov/llama.cpp app/src/main/cpp/llama
 
-      - name: 7. Write C++ UNLOCKED Accelerator (8GB RAM)
+      - name: 7. Write FULL POWER C++ Loop (Bina Koi Compromise)
         run: |
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
@@ -75,7 +75,7 @@ jobs:
               if (!model) return env->NewStringUTF("Error: Engine Load Nahi Hua!");
 
               auto cparams = llama_context_default_params();
-              cparams.n_ctx = 2048; 
+              cparams.n_ctx = 2048; // 8GB RAM Full Context
               llama_context * ctx = llama_new_context_with_model(model, cparams);
 
               std::vector<llama_token> tokens(2048);
@@ -87,23 +87,33 @@ jobs:
               std::string ai_reply = "";
               int n_vocab = llama_n_vocab(model);
 
-              // 1024 words generation loop
-              for (int i = 0; i < 1024; i++) {
-                  auto logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
-                  std::vector<llama_token_data> candidates;
-                  candidates.reserve(n_vocab);
-                  for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
-                      candidates.push_back(llama_token_data{token_id, logits[token_id], 0.0f});
+              // 🚀 THE UNCOMPROMISED 1024-WORD ACCELERATOR LOOP 🚀
+              // (Manual Math Loop lagaya hai taaki GitHub error na de)
+              for (int step = 0; step < 1024; step++) {
+                  float * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
+
+                  // Khud ka Custom Shabd Chunne Wala Code (Manual Argmax)
+                  llama_token new_token_id = 0;
+                  float max_prob = -1e9f;
+                  for (int i = 0; i < n_vocab; i++) {
+                      if (logits[i] > max_prob) {
+                          max_prob = logits[i];
+                          new_token_id = i;
+                      }
                   }
-                  llama_token_data_array candidates_p = { candidates.data(), candidates.size(), false };
-                  
-                  llama_token new_token_id = llama_sample_token_greedy(ctx, &candidates_p);
+
+                  // Agar thought poora ho jaye toh ruko
                   if (llama_token_is_eog(model, new_token_id)) break; 
 
-                  const char * token_str = llama_token_get_text(model, new_token_id);
-                  if (token_str) ai_reply += token_str;
+                  // Token ko text me badalna aur jodna
+                  char buf[128];
+                  int n_chars = llama_token_to_piece(model, new_token_id, buf, sizeof(buf), 0, true);
+                  if (n_chars > 0) {
+                      ai_reply += std::string(buf, n_chars);
+                  }
 
-                  batch = llama_batch_get_one(&new_token_id, 1, n_tokens + i, 0);
+                  // Naya shabd AI dimaag me wapas dalna agle step ke liye
+                  batch = llama_batch_get_one(&new_token_id, 1, n_tokens + step, 0);
                   if (llama_decode(ctx, batch) != 0) break;
               }
 
@@ -117,7 +127,7 @@ jobs:
           }
           EOF
 
-      - name: 8. Write Java VIP UI (Dual Mic System)
+      - name: 8. Write VIP Dual Mic Java UI
         run: |
           cat << 'EOF' > build.gradle
           plugins { id 'com.android.application' version '8.2.0' apply false }
@@ -133,7 +143,7 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 1
-                  versionName "16.0-Dual-Mic-Engine"
+                  versionName "18.0-Maximum-Power"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
@@ -161,7 +171,7 @@ jobs:
               private LinearLayout chat;
               private EditText input;
               private ScrollView scrollView;
-              private TextToSpeech tts; // AI Bolne Wala Engine
+              private TextToSpeech tts; 
               
               static { System.loadLibrary("z2_engine"); }
               public native String askZ2Native(String p, String m);
@@ -170,7 +180,6 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   
-                  // AI Text-to-Speech Setup
                   tts = new TextToSpeech(this, status -> {
                       if(status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("hi", "IN"));
                   });
@@ -180,11 +189,10 @@ jobs:
                   root.setBackgroundColor(Color.parseColor("#0D1117"));
                   root.setPadding(20, 20, 20, 20);
                   
-                  // AI Header with Mic Icon
                   TextView title = new TextView(this);
-                  title.setText("🎤 Z+2 AI (Active)");
+                  title.setText("🎤 Z+2 AI (FULL POWER LOOP)");
                   title.setTextColor(Color.parseColor("#0284C7"));
-                  title.setTextSize(22);
+                  title.setTextSize(20);
                   title.setGravity(Gravity.CENTER);
                   title.setPadding(0, 0, 0, 30);
                   
@@ -194,17 +202,15 @@ jobs:
                   chat.setOrientation(LinearLayout.VERTICAL);
                   scrollView.addView(chat);
                   
-                  // Bottom Input Area
                   LinearLayout bottomBar = new LinearLayout(this);
                   bottomBar.setOrientation(LinearLayout.HORIZONTAL);
                   bottomBar.setGravity(Gravity.CENTER_VERTICAL);
                   
                   input = new EditText(this);
-                  input.setHint("Yahan likhein...");
+                  input.setHint("Yahan likhein ya bolein...");
                   input.setTextColor(Color.WHITE);
                   input.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
                   
-                  // User Mic Button
                   Button micBtn = new Button(this);
                   micBtn.setText("🎤");
                   micBtn.setTextSize(20);
@@ -212,10 +218,9 @@ jobs:
                   micBtn.setOnClickListener(v -> {
                       Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                       intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                      startActivityForResult(intent, 100); // Voice typing open
+                      startActivityForResult(intent, 100);
                   });
                   
-                  // Send Text Button
                   Button sendBtn = new Button(this);
                   sendBtn.setText("SEND");
                   sendBtn.setOnClickListener(v -> processQuestion());
@@ -234,7 +239,7 @@ jobs:
                   String t = input.getText().toString();
                   if(!t.isEmpty() && !path.isEmpty()) {
                       addText("You: " + t, "#005C4B");
-                      addText("Z+2: Soch raha hai...", "#D29922");
+                      addText("Z+2: Soch raha hai... (Full Loop Engine Active)", "#D29922");
                       input.setText("");
                       
                       new Thread(() -> {
@@ -242,21 +247,19 @@ jobs:
                           runOnUiThread(() -> {
                               chat.removeViewAt(chat.getChildCount() - 1);
                               addText("Z+2: " + r, "#2EA043");
-                              // AI Bol kar sunayega
                               tts.speak(r, TextToSpeech.QUEUE_FLUSH, null, null);
                           });
                       }).start();
                   }
               }
 
-              // User Mic ka Jawab Pakadna
               @Override
               protected void onActivityResult(int requestCode, int resultCode, Intent data) {
                   super.onActivityResult(requestCode, resultCode, data);
                   if(requestCode == 100 && resultCode == RESULT_OK && data != null) {
                       ArrayList<String> res = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                       if(res != null && !res.isEmpty()) {
-                          input.setText(res.get(0)); // Mic ka text box me dalna
+                          input.setText(res.get(0));
                       }
                   }
               }
@@ -282,7 +285,7 @@ jobs:
                           while ((l = is.read(b)) > 0) os.write(b, 0, l);
                           os.close(); is.close();
                       }
-                      runOnUiThread(() -> addText("System: AI Mic aur User Mic Ready!", "#0284C7"));
+                      runOnUiThread(() -> addText("System: Model Ready! Ab aap sawaal pooch sakte hain.", "#0284C7"));
                   } catch (Exception e) {}
               }
               
@@ -319,5 +322,5 @@ jobs:
       - name: 10. Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Ai-Voice-Engine
+          name: Zeeshan-Ai-Max-Power
           path: app/build/outputs/apk/debug/*.apk
