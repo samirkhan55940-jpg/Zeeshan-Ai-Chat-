@@ -1,4 +1,4 @@
-name: Z+2 Monster (Smart Bodyguard Edition)
+name: Z+2 Monster (Download Unlocker Edition)
 
 on:
   push:
@@ -51,8 +51,8 @@ jobs:
                   applicationId "com.zeeshan.monster"
                   minSdk 24
                   targetSdk 34
-                  versionCode 7
-                  versionName "7.0-SmartBodyguard"
+                  versionCode 8
+                  versionName "8.0-DownloadUnlocker"
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_1_8
@@ -70,7 +70,7 @@ jobs:
           }
           EOF
 
-      - name: 5. Manifest (Vibration & Heavy Permissions)
+      - name: 5. Manifest (Vibration & Download Permissions)
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -92,7 +92,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: 6. MainActivity (Smart Logic - No Red Boxes)
+      - name: 6. MainActivity (Cookies & Smart Botal)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/monster/MainActivity.java
           package com.zeeshan.monster;
@@ -213,11 +213,20 @@ jobs:
                   root.addView(botalCounter);
                   setContentView(root);
                   
+                  // ==============================
+                  // FIX 1: COOKIES & VIP IDENTITY
+                  // ==============================
+                  CookieManager cookieManager = CookieManager.getInstance();
+                  cookieManager.setAcceptCookie(true);
+                  cookieManager.setAcceptThirdPartyCookies(webView, true);
+                  
                   WebSettings settings = webView.getSettings();
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   settings.setSupportMultipleWindows(false);
                   settings.setJavaScriptCanOpenWindowsAutomatically(false);
+                  // Spoofing as Latest Android 14 Chrome to bypass checks
+                  settings.setUserAgentString("Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36");
                   
                   webView.addJavascriptInterface(new BotalInterface(), "AndroidBotal");
                   
@@ -239,14 +248,16 @@ jobs:
                               progressBar.setProgress(newProgress);
                           } else {
                               progressBar.setVisibility(View.GONE);
-                              // Saaf suthra Botal script, koi laal dabba nahi
-                              String cleanScript = "javascript:(function() { " +
-                                  "var ads = document.querySelectorAll('iframe, .ad, .ads, [id^=\"div-gpt-ad\"]'); " +
+                              // ==============================
+                              // FIX 2: SMART BOTAL (No iframe ban)
+                              // ==============================
+                              String smartScript = "javascript:(function() { " +
+                                  "var ads = document.querySelectorAll('ins.adsbygoogle, [id^=\"div-gpt-ad\"], .ad-banner, a[href*=\"exclusive-spin\"], a[href*=\"t.me\"]'); " +
                                   "var count = 0; ads.forEach(function(ad) { " +
                                   "if(ad.style.position !== 'absolute') { ad.style.position = 'absolute'; ad.style.left = '-9999px'; ad.style.width = '1px'; count++; } " +
                                   "}); " +
                                   "if(count > 0) AndroidBotal.updateAdCount(count); })();";
-                              view.evaluateJavascript(cleanScript, null);
+                              view.evaluateJavascript(smartScript, null);
                           }
                       }
                   });
@@ -256,7 +267,6 @@ jobs:
                       public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                           String newUrl = request.getUrl().toString();
                           
-                          // Intent System Fix (Telegram apps etc)
                           if (!newUrl.startsWith("http://") && !newUrl.startsWith("https://")) {
                               try {
                                   Intent intent = Intent.parseUri(newUrl, Intent.URI_INTENT_SCHEME);
@@ -265,25 +275,22 @@ jobs:
                               return true;
                           }
                           
-                          // SMART DOMAIN JAIL: Sirf bina touch kiye open hone wali fake sites ko rokega
                           if (!request.hasGesture()) {
                               try {
                                   String currentHost = Uri.parse(view.getUrl()).getHost();
                                   String newHost = Uri.parse(newUrl).getHost();
-                                  // Agar domain alag hai aur user ne touch nahi kiya
                                   if (currentHost != null && newHost != null && !newHost.contains(currentHost) && !currentHost.contains(newHost)) {
                                       if (vibrator != null) vibrator.vibrate(100);
-                                      Toast.makeText(MainActivity.this, "🚨 Fake Auto-Redirect Blocked!", Toast.LENGTH_SHORT).show();
-                                      return true; // Block kar diya!
+                                      return true; 
                                   }
                               } catch (Exception e) {}
                           }
-                          
-                          return false; // User ne khud click kiya hai, toh khulne do
+                          return false; 
                       }
 
                       @Override
                       public void onPageFinished(WebView view, String url) {
+                          CookieManager.getInstance().flush(); // Save cookies securely
                           try {
                               String host = Uri.parse(url).getHost();
                               if(host != null) { urlBar.setText(host); }
@@ -295,6 +302,14 @@ jobs:
                       try {
                           if(isTurboMode) webView.pauseTimers(); 
                           DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+                          
+                          // ==============================
+                          // FIX 3: COOKIES PASS FOR DOWNLOAD
+                          // ==============================
+                          String cookies = CookieManager.getInstance().getCookie(url);
+                          request.addRequestHeader("cookie", cookies);
+                          request.addRequestHeader("User-Agent", userAgent);
+                          
                           request.setMimeType(mimetype);
                           String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
                           request.setTitle(fileName);
@@ -337,5 +352,5 @@ jobs:
       - name: 8. Upload Z+2 Smart Monster
         uses: actions/upload-artifact@v4
         with:
-          name: ZPlus2-Smart-Bodyguard
+          name: ZPlus2-Download-Unlocker
           path: app/build/outputs/apk/debug/*.apk
