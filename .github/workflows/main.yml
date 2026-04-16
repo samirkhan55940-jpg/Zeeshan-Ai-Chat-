@@ -1,4 +1,4 @@
-name: Z+2 Monster (Ultimate Bodyguard)
+name: Z+2 Monster (Smart Bodyguard Edition)
 
 on:
   push:
@@ -51,8 +51,8 @@ jobs:
                   applicationId "com.zeeshan.monster"
                   minSdk 24
                   targetSdk 34
-                  versionCode 6
-                  versionName "6.0-Bodyguard"
+                  versionCode 7
+                  versionName "7.0-SmartBodyguard"
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_1_8
@@ -92,7 +92,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: 6. MainActivity (The Bodyguard Logic)
+      - name: 6. MainActivity (Smart Logic - No Red Boxes)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/monster/MainActivity.java
           package com.zeeshan.monster;
@@ -124,18 +124,13 @@ jobs:
               
               private boolean isTurboMode = false;
               private int adsTrapped = 0;
-              private String lockedDomain = ""; // Domain Jail Ke Liye
               private Vibrator vibrator;
               
               public class BotalInterface {
                   @JavascriptInterface
                   public void updateAdCount(int count) {
                       adsTrapped += count;
-                      runOnUiThread(() -> {
-                          botalCounter.setText("🧪 " + adsTrapped);
-                          // Scam Alert Vibration (Short Buzz)
-                          if (vibrator != null) { vibrator.vibrate(50); }
-                      });
+                      runOnUiThread(() -> botalCounter.setText("🧪 " + adsTrapped));
                   }
               }
               
@@ -221,8 +216,6 @@ jobs:
                   WebSettings settings = webView.getSettings();
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
-                  
-                  // POP-UNDER TRAP: Piche se khulne wale tabs ko band karta hai
                   settings.setSupportMultipleWindows(false);
                   settings.setJavaScriptCanOpenWindowsAutomatically(false);
                   
@@ -246,20 +239,14 @@ jobs:
                               progressBar.setProgress(newProgress);
                           } else {
                               progressBar.setVisibility(View.GONE);
-                              
-                              // JS: Ad Botal + Fake Button Filter
-                              String masterScript = "javascript:(function() { " +
+                              // Saaf suthra Botal script, koi laal dabba nahi
+                              String cleanScript = "javascript:(function() { " +
                                   "var ads = document.querySelectorAll('iframe, .ad, .ads, [id^=\"div-gpt-ad\"]'); " +
                                   "var count = 0; ads.forEach(function(ad) { " +
                                   "if(ad.style.position !== 'absolute') { ad.style.position = 'absolute'; ad.style.left = '-9999px'; ad.style.width = '1px'; count++; } " +
                                   "}); " +
-                                  "var links = document.querySelectorAll('a'); " +
-                                  "links.forEach(function(link) { " +
-                                  "if(link.hostname && link.hostname !== window.location.hostname && !link.dataset.checked) { " +
-                                  "link.dataset.checked = 'true'; link.style.filter = 'blur(1px)'; link.style.border = '2px solid red'; " +
-                                  "} }); " +
                                   "if(count > 0) AndroidBotal.updateAdCount(count); })();";
-                              view.evaluateJavascript(masterScript, null);
+                              view.evaluateJavascript(cleanScript, null);
                           }
                       }
                   });
@@ -269,7 +256,7 @@ jobs:
                       public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                           String newUrl = request.getUrl().toString();
                           
-                          // Intent System Fix
+                          // Intent System Fix (Telegram apps etc)
                           if (!newUrl.startsWith("http://") && !newUrl.startsWith("https://")) {
                               try {
                                   Intent intent = Intent.parseUri(newUrl, Intent.URI_INTENT_SCHEME);
@@ -278,18 +265,21 @@ jobs:
                               return true;
                           }
                           
-                          // DOMAIN JAIL SYSTEM
-                          try {
-                              String newHost = Uri.parse(newUrl).getHost();
-                              if (lockedDomain != null && !lockedDomain.isEmpty() && newHost != null && !newHost.contains(lockedDomain) && !lockedDomain.contains(newHost)) {
-                                  // Agar domain badla (Scam Alert)
-                                  if (vibrator != null) vibrator.vibrate(200); // Lamba Buzz
-                                  Toast.makeText(MainActivity.this, "🚨 Domain Jail: Fake Site Blocked!", Toast.LENGTH_SHORT).show();
-                                  return true; // Piche wali fake site band!
-                              }
-                          } catch (Exception e) {}
+                          // SMART DOMAIN JAIL: Sirf bina touch kiye open hone wali fake sites ko rokega
+                          if (!request.hasGesture()) {
+                              try {
+                                  String currentHost = Uri.parse(view.getUrl()).getHost();
+                                  String newHost = Uri.parse(newUrl).getHost();
+                                  // Agar domain alag hai aur user ne touch nahi kiya
+                                  if (currentHost != null && newHost != null && !newHost.contains(currentHost) && !currentHost.contains(newHost)) {
+                                      if (vibrator != null) vibrator.vibrate(100);
+                                      Toast.makeText(MainActivity.this, "🚨 Fake Auto-Redirect Blocked!", Toast.LENGTH_SHORT).show();
+                                      return true; // Block kar diya!
+                                  }
+                              } catch (Exception e) {}
+                          }
                           
-                          return false; 
+                          return false; // User ne khud click kiya hai, toh khulne do
                       }
 
                       @Override
@@ -323,18 +313,10 @@ jobs:
                       if(!url.startsWith("http")) {
                           url = "https://www.google.com/search?q=" + url;
                       }
-                      
-                      // Lock The Domain
-                      try {
-                          lockedDomain = Uri.parse(url).getHost();
-                      } catch (Exception e) { lockedDomain = ""; }
-                      
                       webView.loadUrl(url);
                       if(!isTurboMode) webView.resumeTimers();
                   });
                   
-                  // Initial Load Lock
-                  lockedDomain = "www.google.com";
                   webView.loadUrl("https://www.google.com");
               }
               
@@ -352,8 +334,8 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: 8. Upload Z+2 Bodyguard Monster
+      - name: 8. Upload Z+2 Smart Monster
         uses: actions/upload-artifact@v4
         with:
-          name: ZPlus2-Bodyguard-Monster
+          name: ZPlus2-Smart-Bodyguard
           path: app/build/outputs/apk/debug/*.apk
