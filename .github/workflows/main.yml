@@ -1,4 +1,4 @@
-name: Zeeshan Z+2 Browser (Notification Pro Fix)
+name: Zeeshan Z+2 Browser (Ironclad Guard)
 
 on:
   push:
@@ -51,8 +51,8 @@ jobs:
                   applicationId "com.zeeshan.browser"
                   minSdk 24
                   targetSdk 34
-                  versionCode 16
-                  versionName "16.1-NotificationProFixed"
+                  versionCode 17
+                  versionName "17.0-IroncladGuard"
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_1_8
@@ -65,7 +65,7 @@ jobs:
           }
           EOF
 
-      - name: 5. App Name & Icon (FIXED PATH)
+      - name: 5. App Name & Icon
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
@@ -80,7 +80,7 @@ jobs:
           </vector>
           EOF
 
-      - name: 6. Manifest (Icon path updated)
+      - name: 6. Manifest
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -184,7 +184,7 @@ jobs:
           }
           EOF
 
-      - name: 8. MainActivity (Notification Trigger)
+      - name: 8. MainActivity (The Ironclad Lock)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/browser/MainActivity.java
           package com.zeeshan.browser;
@@ -192,6 +192,8 @@ jobs:
           import android.content.Intent;
           import android.graphics.Color;
           import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.Looper;
           import android.view.View;
           import android.webkit.*;
           import android.widget.*;
@@ -201,7 +203,10 @@ jobs:
           public class MainActivity extends AppCompatActivity {
               private WebView webView;
               private EditText urlBar;
+              private TextView botalCounter;
               private String downloadUrl = "", currentFileName = "";
+              private int adsTrapped = 0;
+              private boolean doubleBackToExitPressedOnce = false;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -232,12 +237,36 @@ jobs:
                   wvParams.addRule(RelativeLayout.BELOW, toolbar.getId());
                   webView.setLayoutParams(wvParams);
 
-                  root.addView(webView); root.addView(toolbar);
+                  botalCounter = new TextView(this);
+                  botalCounter.setText("🧪 0");
+                  botalCounter.setTextColor(Color.GREEN);
+                  RelativeLayout.LayoutParams bLp = new RelativeLayout.LayoutParams(-2, -2);
+                  bLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM); bLp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                  bLp.setMargins(40,0,0,40);
+                  botalCounter.setLayoutParams(bLp);
+
+                  root.addView(webView); root.addView(toolbar); root.addView(botalCounter);
                   setContentView(root);
 
-                  webView.getSettings().setJavaScriptEnabled(true);
-                  webView.getSettings().setDomStorageEnabled(true);
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36");
                   
+                  // ==========================================
+                  // THE IRONCLAD LOCK: Block "New Tab" escapes
+                  // ==========================================
+                  settings.setSupportMultipleWindows(false);
+                  settings.setJavaScriptCanOpenWindowsAutomatically(false);
+                  
+                  webView.addJavascriptInterface(new Object() {
+                      @JavascriptInterface
+                      public void updateAdCount(int count) {
+                          adsTrapped += count;
+                          runOnUiThread(() -> botalCounter.setText("🧪 " + adsTrapped));
+                      }
+                  }, "AndroidBotal");
+
                   webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
                       downloadUrl = url;
                       currentFileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
@@ -250,7 +279,50 @@ jobs:
                       webView.loadUrl(url);
                   });
 
+                  // THE ULTIMATE TRAP
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                          String url = request.getUrl().toString();
+                          
+                          if (url.startsWith("http://") || url.startsWith("https://")) {
+                              // ZABARDASTI APNE ANDAR LOAD KARO
+                              view.loadUrl(url);
+                              return true; // System ko bolo "Maine sambhal liya, tum mat kholo"
+                          }
+                          
+                          Toast.makeText(MainActivity.this, "🛡️ Ironclad Guard: Bahar Jana Mana Hai!", Toast.LENGTH_SHORT).show();
+                          return true;
+                      }
+                  });
+                  
+                  webView.setWebChromeClient(new WebChromeClient() {
+                      public void onProgressChanged(WebView view, int p) {
+                          if(p > 80) {
+                              view.evaluateJavascript("javascript:(function() { " +
+                                  "var ads = document.querySelectorAll('ins.adsbygoogle, [id^=\"div-gpt-ad\"], a[href*=\"t.me\"]'); " +
+                                  "if(ads.length > 0) AndroidBotal.updateAdCount(ads.length); " +
+                                  "ads.forEach(ad => { ad.style.display='none'; }); })();", null);
+                          }
+                      }
+                  });
+
                   webView.loadUrl("https://www.google.com");
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (webView.canGoBack()) {
+                      webView.goBack(); 
+                  } else {
+                      if (doubleBackToExitPressedOnce) {
+                          super.onBackPressed(); 
+                          return;
+                      }
+                      this.doubleBackToExitPressedOnce = true;
+                      Toast.makeText(this, "Press BACK again to exit", Toast.LENGTH_SHORT).show();
+                      new Handler(Looper.getMainLooper()).postDelayed(() -> doubleBackToExitPressedOnce = false, 2000);
+                  }
               }
 
               private void showDownloadDialog() {
@@ -278,5 +350,5 @@ jobs:
       - name: 10. Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Z2-Fixed-NotificationPro
+          name: Zeeshan-Z2-Ironclad
           path: app/build/outputs/apk/debug/*.apk
