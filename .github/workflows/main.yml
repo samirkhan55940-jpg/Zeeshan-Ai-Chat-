@@ -1,4 +1,4 @@
-name: Zeeshan Z+2 Browser (Notification Pro)
+name: Zeeshan Z+2 Browser (Notification Pro Fix)
 
 on:
   push:
@@ -20,7 +20,6 @@ jobs:
           mkdir -p app/src/main/java/com/zeeshan/browser
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
-          mkdir -p app/src/main/res/mipmap-anydpi-v26
 
       - name: 3. Setup Gradle
         run: |
@@ -53,7 +52,7 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 16
-                  versionName "16.0-NotificationPro"
+                  versionName "16.1-NotificationProFixed"
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_1_8
@@ -66,7 +65,7 @@ jobs:
           }
           EOF
 
-      - name: 5. App Name & Icon
+      - name: 5. App Name & Icon (FIXED PATH)
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
@@ -81,7 +80,7 @@ jobs:
           </vector>
           EOF
 
-      - name: 6. Manifest (Notification Permission)
+      - name: 6. Manifest (Icon path updated)
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -93,7 +92,7 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
               
-              <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@style/Theme.AppCompat.Light.NoActionBar" android:usesCleartextTraffic="true">
+              <application android:label="@string/app_name" android:icon="@drawable/ic_monster_logo" android:roundIcon="@drawable/ic_monster_logo" android:theme="@style/Theme.AppCompat.Light.NoActionBar" android:usesCleartextTraffic="true">
                   <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -145,13 +144,12 @@ jobs:
                               .setProgress(100, 0, false);
 
                       startForeground(101, builder.build());
-                      simulateProgress(); // Yahan asli 10-tukre engine sync hota hai
+                      simulateProgress(); 
                   }
                   return START_NOT_STICKY;
               }
 
               private void simulateProgress() {
-                  // Notification update logic
                   new Timer().scheduleAtFixedRate(new TimerTask() {
                       int progress = 0;
                       @Override
@@ -280,5 +278,5 @@ jobs:
       - name: 10. Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Z2-NotificationPro
+          name: Zeeshan-Z2-Fixed-NotificationPro
           path: app/build/outputs/apk/debug/*.apk
