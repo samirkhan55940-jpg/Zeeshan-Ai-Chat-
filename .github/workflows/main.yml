@@ -1,4 +1,4 @@
-name: Z+2 Monster (Mirror Engine & Turbo)
+name: Z+2 Monster (Perfect Overlay Edition)
 
 on:
   push:
@@ -51,8 +51,8 @@ jobs:
                   applicationId "com.zeeshan.monster"
                   minSdk 24
                   targetSdk 34
-                  versionCode 4
-                  versionName "4.0-Monster"
+                  versionCode 5
+                  versionName "5.0-PerfectMonster"
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_1_8
@@ -91,13 +91,14 @@ jobs:
           </manifest>
           EOF
 
-      - name: 6. MainActivity (The Monster Engine)
+      - name: 6. MainActivity (Overlay UI & Clean Logic)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/monster/MainActivity.java
           package com.zeeshan.monster;
           
           import android.Manifest;
           import android.app.DownloadManager;
+          import android.content.Intent;
           import android.content.pm.PackageManager;
           import android.graphics.Color;
           import android.net.Uri;
@@ -121,12 +122,11 @@ jobs:
               private boolean isTurboMode = false;
               private int adsTrapped = 0;
               
-              // Botal Interface: JS se Android mein data laane ke liye
               public class BotalInterface {
                   @JavascriptInterface
                   public void updateAdCount(int count) {
                       adsTrapped += count;
-                      runOnUiThread(() -> botalCounter.setText("🧪 Botal: " + adsTrapped));
+                      runOnUiThread(() -> botalCounter.setText("🧪 " + adsTrapped));
                   }
               }
               
@@ -140,60 +140,78 @@ jobs:
                       }
                   }
                   
-                  // VAJUDDHARI UI LAYOUT
-                  LinearLayout root = new LinearLayout(this);
-                  root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.parseColor("#0F172A")); // Deep Monster Blue/Grey
+                  // RELATIVE LAYOUT: Ye cheezon ko ek dusre ke upar (overlay) rakhne ki ijazat deta hai
+                  RelativeLayout root = new RelativeLayout(this);
+                  root.setBackgroundColor(Color.parseColor("#0F172A"));
                   
-                  LinearLayout toolbar1 = new LinearLayout(this);
-                  toolbar1.setOrientation(LinearLayout.HORIZONTAL);
-                  toolbar1.setPadding(10, 10, 10, 5);
+                  // 1. TOP URL BAR (Patli patti)
+                  LinearLayout toolbar = new LinearLayout(this);
+                  toolbar.setId(View.generateViewId());
+                  toolbar.setOrientation(LinearLayout.HORIZONTAL);
+                  toolbar.setPadding(10, 10, 10, 10);
+                  toolbar.setBackgroundColor(Color.parseColor("#1E293B"));
                   
                   urlBar = new EditText(this);
-                  urlBar.setHint("Search Internet...");
+                  urlBar.setHint("Search Google...");
                   urlBar.setTextColor(Color.WHITE);
                   urlBar.setHintTextColor(Color.GRAY);
                   urlBar.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
+                  urlBar.setMaxLines(1);
+                  urlBar.setSingleLine(true);
                   
                   Button btnGo = new Button(this);
                   btnGo.setText("GO");
                   btnGo.setBackgroundColor(Color.parseColor("#3B82F6"));
                   btnGo.setTextColor(Color.WHITE);
                   
-                  toolbar1.addView(urlBar);
-                  toolbar1.addView(btnGo);
+                  toolbar.addView(urlBar);
+                  toolbar.addView(btnGo);
                   
-                  // TOOLS ROW (Turbo & Botal)
-                  LinearLayout toolbar2 = new LinearLayout(this);
-                  toolbar2.setOrientation(LinearLayout.HORIZONTAL);
-                  toolbar2.setPadding(10, 5, 10, 10);
+                  // 2. MAIN WEBVIEW (Website poori screen legi)
+                  webView = new WebView(this);
+                  RelativeLayout.LayoutParams wvParams = new RelativeLayout.LayoutParams(-1, -1);
+                  wvParams.addRule(RelativeLayout.BELOW, toolbar.getId());
+                  webView.setLayoutParams(wvParams);
                   
-                  btnTurbo = new Button(this);
-                  btnTurbo.setText("⚡ TURBO: OFF");
-                  btnTurbo.setBackgroundColor(Color.DKGRAY);
-                  btnTurbo.setTextColor(Color.WHITE);
-                  btnTurbo.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
-                  
-                  botalCounter = new TextView(this);
-                  botalCounter.setText("🧪 Botal: 0");
-                  botalCounter.setTextColor(Color.parseColor("#10B981")); // Neon Green
-                  botalCounter.setTextSize(16);
-                  botalCounter.setPadding(30, 10, 10, 10);
-                  
-                  toolbar2.addView(btnTurbo);
-                  toolbar2.addView(botalCounter);
-                  
+                  // 3. PROGRESS BAR
                   progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
                   progressBar.setMax(100);
                   progressBar.setVisibility(View.GONE);
+                  RelativeLayout.LayoutParams progParams = new RelativeLayout.LayoutParams(-1, 10);
+                  progParams.addRule(RelativeLayout.BELOW, toolbar.getId());
+                  progressBar.setLayoutParams(progParams);
                   
-                  webView = new WebView(this);
-                  webView.setLayoutParams(new LinearLayout.LayoutParams(-1, -1));
+                  // 4. FLOATING TURBO BUTTON (Kone mein transparent)
+                  btnTurbo = new Button(this);
+                  btnTurbo.setText("⚡"); 
+                  btnTurbo.setTextSize(20);
+                  btnTurbo.setBackgroundColor(Color.parseColor("#99000000")); // Transparent Black
+                  btnTurbo.setTextColor(Color.WHITE);
+                  RelativeLayout.LayoutParams turboParams = new RelativeLayout.LayoutParams(-2, -2);
+                  turboParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                  turboParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                  turboParams.setMargins(0, 0, 40, 40);
+                  btnTurbo.setLayoutParams(turboParams);
                   
-                  root.addView(toolbar1);
-                  root.addView(toolbar2);
-                  root.addView(progressBar);
+                  // 5. FLOATING BOTAL INDICATOR (Kone mein transparent)
+                  botalCounter = new TextView(this);
+                  botalCounter.setText("🧪 0");
+                  botalCounter.setTextSize(18);
+                  botalCounter.setBackgroundColor(Color.parseColor("#99000000")); // Transparent Black
+                  botalCounter.setTextColor(Color.parseColor("#10B981"));
+                  botalCounter.setPadding(30, 20, 30, 20);
+                  RelativeLayout.LayoutParams botalParams = new RelativeLayout.LayoutParams(-2, -2);
+                  botalParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                  botalParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                  botalParams.setMargins(40, 0, 0, 40);
+                  botalCounter.setLayoutParams(botalParams);
+                  
+                  // Add items to screen
                   root.addView(webView);
+                  root.addView(toolbar);
+                  root.addView(progressBar);
+                  root.addView(btnTurbo);
+                  root.addView(botalCounter);
                   setContentView(root);
                   
                   // ENGINE SETTINGS
@@ -201,22 +219,17 @@ jobs:
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   settings.setDatabaseEnabled(true);
-                  settings.setUseWideViewPort(true);
                   
-                  // Connect Botal Interface
                   webView.addJavascriptInterface(new BotalInterface(), "AndroidBotal");
                   
-                  // TURBO BUTTON LOGIC
                   btnTurbo.setOnClickListener(v -> {
                       isTurboMode = !isTurboMode;
                       if(isTurboMode) {
-                          btnTurbo.setText("🚀 TURBO: MAX POWER");
-                          btnTurbo.setBackgroundColor(Color.parseColor("#EF4444")); // Red Monster Mode
-                          Toast.makeText(this, "ALL POWER DIVERTED TO DOWNLOADS!", Toast.LENGTH_SHORT).show();
+                          btnTurbo.setBackgroundColor(Color.parseColor("#E11D48")); // Red Turbo
+                          Toast.makeText(this, "MAX TURBO DOWNLOAD ON!", Toast.LENGTH_SHORT).show();
                       } else {
-                          btnTurbo.setText("⚡ TURBO: OFF");
-                          btnTurbo.setBackgroundColor(Color.DKGRAY);
-                          Toast.makeText(this, "Turbo Mode Disabled", Toast.LENGTH_SHORT).show();
+                          btnTurbo.setBackgroundColor(Color.parseColor("#99000000")); // Normal Black
+                          Toast.makeText(this, "Turbo Mode Off", Toast.LENGTH_SHORT).show();
                       }
                   });
                   
@@ -228,64 +241,66 @@ jobs:
                               progressBar.setProgress(newProgress);
                           } else {
                               progressBar.setVisibility(View.GONE);
-                              // BOTAL SCRIPT: Ye ads ko 1 pixel ka karke piche dhakel dega (Dhokha System)
                               String botalScript = "javascript:(function() { " +
-                                  "var ads = document.querySelectorAll('iframe, .ad, .ads, [id^=\"div-gpt-ad\"], ins.adsbygoogle'); " +
-                                  "var count = 0; " +
-                                  "ads.forEach(function(ad) { " +
-                                  "  if(ad.style.position !== 'absolute') { " +
-                                  "    ad.style.position = 'absolute'; " +
-                                  "    ad.style.left = '-9999px'; " +
-                                  "    ad.style.width = '1px'; " +
-                                  "    ad.style.height = '1px'; " +
-                                  "    ad.style.opacity = '0.01'; " +
-                                  "    count++; " +
-                                  "  } " +
-                                  "}); " +
-                                  "if(count > 0) AndroidBotal.updateAdCount(count); " +
-                                  "})();";
+                                  "var ads = document.querySelectorAll('iframe, .ad, .ads, [id^=\"div-gpt-ad\"]'); " +
+                                  "var count = 0; ads.forEach(function(ad) { " +
+                                  "if(ad.style.position !== 'absolute') { ad.style.position = 'absolute'; ad.style.left = '-9999px'; ad.style.width = '1px'; count++; } " +
+                                  "}); if(count > 0) AndroidBotal.updateAdCount(count); })();";
                               view.evaluateJavascript(botalScript, null);
                           }
                       }
                   });
                   
                   webView.setWebViewClient(new WebViewClient() {
+                      // 1st Fix: Intent Scheme Blocker / Handler (White Screen Fix)
+                      @Override
+                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                          String url = request.getUrl().toString();
+                          if (url.startsWith("http://") || url.startsWith("https://")) {
+                              return false; // Let website load normally
+                          }
+                          try {
+                              Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+                              if (intent != null) { view.getContext().startActivity(intent); }
+                          } catch (Exception e) {
+                              // Chup chap block kar do, error nahi dikhega
+                          }
+                          return true; 
+                      }
+
+                      // 2nd Fix: Clean URL in Search Bar (Google Kachra Fix)
                       @Override
                       public void onPageFinished(WebView view, String url) {
-                          urlBar.setText(url);
+                          try {
+                              String host = Uri.parse(url).getHost();
+                              if(host != null) { urlBar.setText(host); }
+                          } catch (Exception e) {
+                              urlBar.setText(url);
+                          }
                       }
                   });
                   
                   webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
                       try {
-                          if(isTurboMode) {
-                              // Turbo Mode: Pause webview background tasks to give RAM to downloader
-                              webView.pauseTimers(); 
-                          }
-                          
+                          if(isTurboMode) webView.pauseTimers(); 
                           DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
                           request.setMimeType(mimetype);
                           String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
-                          request.setTitle("Z+2 Monster: " + fileName);
-                          request.setDescription("Turbo Engine Running...");
-                          request.setAllowedOverMetered(true); // Force download on any network
+                          request.setTitle(fileName);
+                          request.setAllowedOverMetered(true);
                           request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
                           request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
                           
                           DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
                           dm.enqueue(request);
-                          
-                          Toast.makeText(MainActivity.this, "🔥 MONSTER DOWNLOAD STARTED", Toast.LENGTH_LONG).show();
-                      } catch (Exception e) {
-                          Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                      }
+                          Toast.makeText(MainActivity.this, "🔥 DOWNLOADING STARTED", Toast.LENGTH_LONG).show();
+                      } catch (Exception e) {}
                   });
                   
                   btnGo.setOnClickListener(v -> {
                       String url = urlBar.getText().toString();
                       if(!url.startsWith("http")) url = "https://www.google.com/search?q=" + url;
                       webView.loadUrl(url);
-                      // Reset webview timers if Turbo was off
                       if(!isTurboMode) webView.resumeTimers();
                   });
                   
@@ -306,8 +321,8 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: 8. Upload APK
+      - name: 8. Upload Final Monster
         uses: actions/upload-artifact@v4
         with:
-          name: ZPlus2-Monster-Engine
+          name: ZPlus2-Monster-Perfect
           path: app/build/outputs/apk/debug/*.apk
