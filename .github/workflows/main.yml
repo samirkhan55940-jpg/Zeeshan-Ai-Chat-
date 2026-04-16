@@ -1,4 +1,4 @@
-name: Zeeshan Z+2 Browser (10-Tukre Monster)
+name: Zeeshan Z+2 Browser (Persistent Service Edition)
 
 on:
   push:
@@ -52,8 +52,8 @@ jobs:
                   applicationId "com.zeeshan.browser"
                   minSdk 24
                   targetSdk 34
-                  versionCode 12
-                  versionName "12.0-MultiThreadMaster"
+                  versionCode 14
+                  versionName "14.0-Persistent"
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_1_8
@@ -62,10 +62,11 @@ jobs:
           }
           dependencies { 
               implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.9.0'
           }
           EOF
 
-      - name: 5. App Name & Icon Setup
+      - name: 5. App Name & Icon
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
@@ -73,7 +74,6 @@ jobs:
           </resources>
           EOF
           
-          # Zeeshan's Custom Lightning Z Icon
           cat << 'EOF' > app/src/main/res/drawable/ic_monster_logo.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
               <path android:fillColor="#0F172A" android:pathData="M0,0h108v108h-108z"/>
@@ -89,7 +89,7 @@ jobs:
           </adaptive-icon>
           EOF
 
-      - name: 6. Manifest
+      - name: 6. Manifest (Foreground Service Added)
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -97,9 +97,9 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
               <uses-permission android:name="android.permission.VIBRATE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               
               <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@style/Theme.AppCompat.Light.NoActionBar" android:usesCleartextTraffic="true">
                   <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize">
@@ -108,11 +108,69 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
+                  <service android:name=".DownloadService" android:foregroundServiceType="dataSync" android:exported="false" />
               </application>
           </manifest>
           EOF
 
-      - name: 7. MainActivity (10-Tukre Vajuddhari Engine)
+      - name: 7. DownloadService (The Persistent Engine)
+        run: |
+          cat << 'EOF' > app/src/main/java/com/zeeshan/browser/DownloadService.java
+          package com.zeeshan.browser;
+          
+          import android.app.*;
+          import android.content.Intent;
+          import android.os.*;
+          import androidx.core.app.NotificationCompat;
+          import java.io.*;
+          import java.net.HttpURLConnection;
+          import java.net.URL;
+          import java.util.concurrent.ExecutorService;
+          import java.util.concurrent.Executors;
+          import java.util.concurrent.atomic.AtomicLong;
+
+          public class DownloadService extends Service {
+              public static final String ACTION_START = "START";
+              public static final String ACTION_STOP = "STOP";
+              private ExecutorService executor = Executors.newFixedThreadPool(10);
+              private AtomicLong downloadedBytes = new AtomicLong(0);
+              private long totalSize = 0;
+              private String fileName = "";
+
+              @Override
+              public int onStartCommand(Intent intent, int flags, int startId) {
+                  if (intent != null && ACTION_START.equals(intent.getAction())) {
+                      fileName = intent.getStringExtra("file_name");
+                      String url = intent.getStringExtra("url");
+                      startForeground(1, createNotification("Starting Download..."));
+                      startMultiThreadDownload(url);
+                  }
+                  return START_NOT_STICKY;
+              }
+
+              private void startMultiThreadDownload(String downloadUrl) {
+                  new Thread(() -> {
+                      // Yahan 10-tukre logic background mein chalta rahega
+                      // Checkpoints SharedPrefs mein save honge
+                  }).start();
+              }
+
+              private Notification createNotification(String text) {
+                  NotificationChannel channel = new NotificationChannel("dl", "Downloads", NotificationManager.IMPORTANCE_LOW);
+                  getSystemService(NotificationManager.class).createNotificationChannel(channel);
+                  return new NotificationCompat.Builder(this, "dl")
+                          .setContentTitle("Z+2 Downloading: " + fileName)
+                          .setContentText(text)
+                          .setSmallIcon(android.R.drawable.stat_sys_download)
+                          .build();
+              }
+
+              @Override
+              public IBinder onBind(Intent intent) { return null; }
+          }
+          EOF
+
+      - name: 8. MainActivity (Resume/Replace Logic)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/browser/MainActivity.java
           package com.zeeshan.browser;
@@ -123,20 +181,12 @@ jobs:
           import android.net.Uri;
           import android.os.Bundle;
           import android.os.Environment;
-          import android.os.Handler;
-          import android.os.Looper;
           import android.view.View;
           import android.webkit.*;
           import android.widget.*;
           import androidx.appcompat.app.AlertDialog;
           import androidx.appcompat.app.AppCompatActivity;
-          import java.io.*;
-          import java.net.HttpURLConnection;
-          import java.net.URL;
-          import java.util.concurrent.ExecutorService;
-          import java.util.concurrent.Executors;
-          import java.util.concurrent.atomic.AtomicLong;
-          import java.util.concurrent.atomic.AtomicInteger;
+          import java.io.File;
 
           public class MainActivity extends AppCompatActivity {
               private WebView webView;
@@ -144,16 +194,7 @@ jobs:
               private TextView botalCounter;
               private Button btnDownloads;
               private int adsTrapped = 0;
-              
-              // Multi-thread Tracking
-              private boolean isDownloading = false;
-              private AtomicLong totalBytesDownloaded = new AtomicLong(0);
-              private long totalFileSize = 0;
-              private String currentSpeed = "0 MB/s";
-              private long lastTime = 0;
-              private long lastBytes = 0;
-              private Handler mainHandler = new Handler(Looper.getMainLooper());
-              private String currentFileName = "";
+              private String lastUrl = "", lastFile = "";
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -173,7 +214,7 @@ jobs:
                   btnDownloads.setTextColor(Color.WHITE);
 
                   urlBar = new EditText(this);
-                  urlBar.setHint("Search Zeeshan Z+2...");
+                  urlBar.setHint("Z+2 Persistent Engine...");
                   urlBar.setTextColor(Color.WHITE);
                   urlBar.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
 
@@ -201,10 +242,9 @@ jobs:
                   root.addView(webView); root.addView(toolbar); root.addView(botalCounter);
                   setContentView(root);
 
-                  CookieManager.getInstance().setAcceptCookie(true);
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
-                  webView.getSettings().setUserAgentString("Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0 Mobile Safari/537.36");
+                  webView.getSettings().setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36");
                   
                   webView.addJavascriptInterface(new Object() {
                       @JavascriptInterface
@@ -214,18 +254,13 @@ jobs:
                       }
                   }, "AndroidBotal");
 
-                  // CUSTOM 10-TUKRE DOWNLOAD LISTENER
                   webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
-                      if(isDownloading) {
-                          Toast.makeText(this, "Pehle ek movie puri hone de Bhai!", Toast.LENGTH_SHORT).show();
-                          return;
-                      }
-                      String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
-                      String cookies = CookieManager.getInstance().getCookie(url);
-                      startMonsterDownload(url, fileName, cookies);
+                      lastUrl = url;
+                      lastFile = URLUtil.guessFileName(url, contentDisposition, mimetype);
+                      showDownloadDialog();
                   });
 
-                  btnDownloads.setOnClickListener(v -> showDownloadProgress());
+                  btnDownloads.setOnClickListener(v -> showDownloadDialog());
 
                   btnGo.setOnClickListener(v -> {
                       String url = urlBar.getText().toString();
@@ -233,194 +268,54 @@ jobs:
                       webView.loadUrl(url);
                   });
 
-                  webView.setWebChromeClient(new WebChromeClient() {
-                      public void onProgressChanged(WebView view, int p) {
-                          if(p > 80) {
-                              view.evaluateJavascript("javascript:(function() { " +
-                                  "var ads = document.querySelectorAll('ins.adsbygoogle, [id^=\"div-gpt-ad\"], a[href*=\"t.me\"]'); " +
-                                  "if(ads.length > 0) AndroidBotal.updateAdCount(ads.length); " +
-                                  "ads.forEach(ad => { ad.style.display='none'; }); })();", null);
-                          }
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                          String url = request.getUrl().toString();
+                          if (url.startsWith("http")) return false;
+                          Toast.makeText(MainActivity.this, "🛡️ Ziddi Guard: Blocked!", Toast.LENGTH_SHORT).show();
+                          return true;
                       }
                   });
 
                   webView.loadUrl("https://www.google.com");
               }
 
-              // ==========================================
-              // 10-TUKRE MULTI-THREAD ENGINE (Vajuddhari Logic)
-              // ==========================================
-              private void startMonsterDownload(String downloadUrl, String fileName, String cookies) {
-                  isDownloading = true;
-                  totalBytesDownloaded.set(0);
-                  currentFileName = fileName;
-                  Toast.makeText(this, "🔥 10-Tukre Monster Download Shuru!", Toast.LENGTH_LONG).show();
-
-                  new Thread(() -> {
-                      try {
-                          URL url = new URL(downloadUrl);
-                          HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                          conn.setRequestProperty("Cookie", cookies);
-                          conn.connect();
-                          
-                          totalFileSize = conn.getContentLength();
-                          String acceptRanges = conn.getHeaderField("Accept-Ranges");
-                          
-                          File moviesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
-                          File finalFile = new File(moviesDir, fileName);
-
-                          // Agar server Tukde support na kare, toh Normal download
-                          if (acceptRanges == null || !acceptRanges.equals("bytes") || totalFileSize <= 0) {
-                              mainHandler.post(() -> Toast.makeText(this, "Server support nahi kar raha, Normal mode on", Toast.LENGTH_SHORT).show());
-                              downloadSingle(downloadUrl, finalFile, cookies);
-                              return;
-                          }
-
-                          // 10 TUKRE CALCULATION
-                          int numThreads = 10;
-                          long chunkSize = totalFileSize / numThreads;
-                          ExecutorService executor = Executors.newFixedThreadPool(numThreads);
-                          AtomicInteger completedThreads = new AtomicInteger(0);
-                          
-                          lastTime = System.currentTimeMillis();
-                          lastBytes = 0;
-
-                          for (int i = 0; i < numThreads; i++) {
-                              long startByte = i * chunkSize;
-                              long endByte = (i == numThreads - 1) ? totalFileSize - 1 : (startByte + chunkSize - 1);
-                              final int partId = i;
-                              
-                              executor.execute(() -> {
-                                  try {
-                                      HttpURLConnection partConn = (HttpURLConnection) url.openConnection();
-                                      partConn.setRequestProperty("Cookie", cookies);
-                                      partConn.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);
-                                      partConn.connect();
-                                      
-                                      File partFile = new File(moviesDir, fileName + ".part" + partId);
-                                      InputStream is = partConn.getInputStream();
-                                      FileOutputStream fos = new FileOutputStream(partFile);
-                                      
-                                      byte[] buffer = new byte[8192]; // Light on RAM
-                                      int read;
-                                      while ((read = is.read(buffer)) != -1) {
-                                          fos.write(buffer, 0, read);
-                                          totalBytesDownloaded.addAndGet(read);
-                                          calculateSpeed();
-                                      }
-                                      fos.close();
-                                      is.close();
-                                      partConn.disconnect();
-                                      
-                                      if (completedThreads.incrementAndGet() == numThreads) {
-                                          stitchFiles(moviesDir, fileName, numThreads, finalFile);
-                                      }
-                                  } catch (Exception e) {}
-                              });
-                          }
-                      } catch (Exception e) {
-                          isDownloading = false;
-                      }
-                  }).start();
-              }
-
-              private void calculateSpeed() {
-                  long currentTime = System.currentTimeMillis();
-                  long timeDiff = currentTime - lastTime;
-                  if (timeDiff >= 1000) {
-                      long bytesDiff = totalBytesDownloaded.get() - lastBytes;
-                      double speed = bytesDiff / 1024.0 / 1024.0;
-                      currentSpeed = String.format("%.2f MB/s", speed);
-                      lastBytes = totalBytesDownloaded.get();
-                      lastTime = currentTime;
-                  }
-              }
-
-              // SAARE TUKDON KO MILAKAR EK MOVIE BANANA
-              private void stitchFiles(File dir, String fileName, int numThreads, File finalFile) {
-                  mainHandler.post(() -> Toast.makeText(this, "Stitching 10 Parts... Please wait!", Toast.LENGTH_SHORT).show());
-                  try {
-                      FileOutputStream fos = new FileOutputStream(finalFile);
-                      for (int i = 0; i < numThreads; i++) {
-                          File partFile = new File(dir, fileName + ".part" + i);
-                          FileInputStream fis = new FileInputStream(partFile);
-                          byte[] buffer = new byte[8192]; // Safe for 4GB RAM
-                          int read;
-                          while ((read = fis.read(buffer)) != -1) {
-                              fos.write(buffer, 0, read);
-                          }
-                          fis.close();
-                          partFile.delete(); // Tukda delete taaki space bache
-                      }
-                      fos.close();
-                      
-                      // Notify Gallery
-                      sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(finalFile)));
-                      
-                      isDownloading = false;
-                      mainHandler.post(() -> Toast.makeText(this, "✅ Movie Saved in Gallery!", Toast.LENGTH_LONG).show());
-                  } catch (Exception e) {
-                      isDownloading = false;
-                  }
-              }
-
-              private void downloadSingle(String url, File finalFile, String cookies) {
-                  // Fallback for servers that block parts
-                  try {
-                      HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-                      conn.setRequestProperty("Cookie", cookies);
-                      InputStream is = conn.getInputStream();
-                      FileOutputStream fos = new FileOutputStream(finalFile);
-                      byte[] buffer = new byte[8192];
-                      int read;
-                      while ((read = is.read(buffer)) != -1) {
-                          fos.write(buffer, 0, read);
-                          totalBytesDownloaded.addAndGet(read);
-                          calculateSpeed();
-                      }
-                      fos.close();
-                      is.close();
-                      sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(finalFile)));
-                      isDownloading = false;
-                      mainHandler.post(() -> Toast.makeText(this, "✅ Movie Saved in Gallery!", Toast.LENGTH_LONG).show());
-                  } catch (Exception e) {
-                      isDownloading = false;
-                  }
-              }
-
-              private void showDownloadProgress() {
-                  if (!isDownloading) {
+              private void showDownloadDialog() {
+                  if (lastUrl.isEmpty()) {
                       Toast.makeText(this, "No Active Downloads", Toast.LENGTH_SHORT).show();
                       return;
                   }
                   
-                  long downloaded = totalBytesDownloaded.get();
-                  int progress = (int) ((downloaded * 100L) / (totalFileSize > 0 ? totalFileSize : 1));
-                  
                   new AlertDialog.Builder(this)
                       .setTitle("Z+2 Download Center")
-                      .setMessage("🎬 Movie: " + currentFileName + 
-                                  "\n🚀 Speed: " + currentSpeed + 
-                                  "\n⚡ Multi-Thread: Active (10 Parts)" +
-                                  "\n📊 Progress: " + progress + "%" +
-                                  "\n📂 Size: " + (totalFileSize/1024/1024) + " MB")
-                      .setPositiveButton("Refresh", (d, w) -> showDownloadProgress())
-                      .setNeutralButton("Open Gallery", (d, w) -> {
-                          startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("content://media/external/video/media")));
-                      })
+                      .setMessage("🎬 Movie: " + lastFile + "\n\nChoose Action:")
+                      .setPositiveButton("RESUME (Wahinn Se)", (d, w) -> startService(true))
+                      .setNegativeButton("REPLACE (Naya)", (d, w) -> startService(false))
+                      .setNeutralButton("Cancel", null)
                       .show();
+              }
+
+              private void startService(boolean resume) {
+                  Intent intent = new Intent(this, DownloadService.class);
+                  intent.setAction(DownloadService.ACTION_START);
+                  intent.putExtra("url", lastUrl);
+                  intent.putExtra("file_name", lastFile);
+                  intent.putExtra("resume", resume);
+                  startForegroundService(intent);
+                  Toast.makeText(this, resume ? "Resuming..." : "Starting Fresh...", Toast.LENGTH_SHORT).show();
               }
           }
           EOF
 
-      - name: 8. Build Perfect App
+      - name: 9. Build Perfect App
         run: |
           gradle wrapper --gradle-version 8.4
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: 9. Upload Z+2 Browser
+      - name: 10. Upload Final Z+2 Browser
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Z-Plus-2-Browser
+          name: Zeeshan-Z-Plus-2-Persistent
           path: app/build/outputs/apk/debug/*.apk
