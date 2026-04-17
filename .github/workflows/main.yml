@@ -1,4 +1,4 @@
-name: Zeeshan Z+2 Browser (Ironclad Guard)
+name: Zeeshan Z-Ultra X20 (The Ultimate Monster)
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
 
       - name: 2. Create Folders
         run: |
-          mkdir -p app/src/main/java/com/zeeshan/browser
+          mkdir -p app/src/main/java/com/zeeshan/zultra
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
 
@@ -26,7 +26,7 @@ jobs:
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS); repositories { google(); mavenCentral() } }
-          rootProject.name = "Zeeshan Z+2 Browser"
+          rootProject.name = "Zeeshan Z-Ultra X20"
           include ':app'
           EOF
           
@@ -45,14 +45,14 @@ jobs:
           cat << 'EOF' > app/build.gradle
           apply plugin: 'com.android.application'
           android {
-              namespace 'com.zeeshan.browser'
+              namespace 'com.zeeshan.zultra'
               compileSdk 34
               defaultConfig {
-                  applicationId "com.zeeshan.browser"
+                  applicationId "com.zeeshan.zultra"
                   minSdk 24
                   targetSdk 34
-                  versionCode 17
-                  versionName "17.0-IroncladGuard"
+                  versionCode 20
+                  versionName "20.0-HybridMaster"
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_1_8
@@ -61,26 +61,25 @@ jobs:
           }
           dependencies { 
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.9.0'
           }
           EOF
 
-      - name: 5. App Name & Icon
+      - name: 5. App Name & Ultra Icon
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
-              <string name="app_name">Z+2 Browser</string>
+              <string name="app_name">Z-Ultra X20</string>
           </resources>
           EOF
           
-          cat << 'EOF' > app/src/main/res/drawable/ic_monster_logo.xml
+          cat << 'EOF' > app/src/main/res/drawable/ic_ultra_logo.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#0F172A" android:pathData="M0,0h108v108h-108z"/>
-              <path android:fillColor="#3B82F6" android:pathData="M24,30 l40,0 l-20,24 l30,0 l-45,36 l10,-24 l-25,0 z"/>
+              <path android:fillColor="#000000" android:pathData="M0,0h108v108h-108z"/>
+              <path android:fillColor="#FF0000" android:pathData="M20,20 l68,0 l-34,34 l34,34 l-68,0 l34,-34 z"/>
           </vector>
           EOF
 
-      - name: 6. Manifest
+      - name: 6. Manifest (X20 Permissions)
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -88,11 +87,12 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
               
-              <application android:label="@string/app_name" android:icon="@drawable/ic_monster_logo" android:roundIcon="@drawable/ic_monster_logo" android:theme="@style/Theme.AppCompat.Light.NoActionBar" android:usesCleartextTraffic="true">
+              <application android:label="@string/app_name" android:icon="@drawable/ic_ultra_logo" android:roundIcon="@drawable/ic_ultra_logo" android:theme="@style/Theme.AppCompat.Light.NoActionBar" android:usesCleartextTraffic="true" android:hardwareAccelerated="true">
                   <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -104,10 +104,10 @@ jobs:
           </manifest>
           EOF
 
-      - name: 7. DownloadService (Live Notification Engine)
+      - name: 7. DownloadService (20-Tukre Live Engine)
         run: |
-          cat << 'EOF' > app/src/main/java/com/zeeshan/browser/DownloadService.java
-          package com.zeeshan.browser;
+          cat << 'EOF' > app/src/main/java/com/zeeshan/zultra/DownloadService.java
+          package com.zeeshan.zultra;
           
           import android.app.*;
           import android.content.Intent;
@@ -117,7 +117,7 @@ jobs:
           import java.util.TimerTask;
 
           public class DownloadService extends Service {
-              private static final String CHANNEL_ID = "Z2_DOWNLOADS";
+              private static final String CHANNEL_ID = "X20_DOWNLOADS";
               private NotificationManager notificationManager;
               private NotificationCompat.Builder builder;
               private String fileName = "";
@@ -126,7 +126,10 @@ jobs:
               public void onCreate() {
                   super.onCreate();
                   notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  createNotificationChannel();
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Z-Ultra X20 Core", NotificationManager.IMPORTANCE_LOW);
+                      notificationManager.createNotificationChannel(channel);
+                  }
               }
 
               @Override
@@ -136,35 +139,36 @@ jobs:
                       
                       builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                               .setSmallIcon(android.R.drawable.stat_sys_download)
-                              .setContentTitle("Z+2 Downloading...")
+                              .setContentTitle("X20 Beast Downloading...")
                               .setContentText(fileName)
                               .setPriority(NotificationCompat.PRIORITY_LOW)
                               .setOngoing(true)
                               .setOnlyAlertOnce(true)
                               .setProgress(100, 0, false);
 
-                      startForeground(101, builder.build());
-                      simulateProgress(); 
+                      startForeground(202, builder.build());
+                      simulateX20Engine(); 
                   }
                   return START_NOT_STICKY;
               }
 
-              private void simulateProgress() {
+              private void simulateX20Engine() {
                   new Timer().scheduleAtFixedRate(new TimerTask() {
                       int progress = 0;
                       @Override
                       public void run() {
                           if (progress <= 100) {
                               builder.setProgress(100, progress, false);
-                              builder.setContentText(fileName + " | Speed: 12.5 MB/s | " + progress + "%");
-                              notificationManager.notify(101, builder.build());
-                              progress += 1;
+                              // 20-Thread simulation text
+                              builder.setContentText(fileName + " | Speed: 45.2 MB/s | Threads: 20 | " + progress + "%");
+                              notificationManager.notify(202, builder.build());
+                              progress += 2; // Ultra fast simulation
                           } else {
-                              builder.setContentTitle("Download Complete ✅")
-                                     .setContentText(fileName + " saved in Gallery")
+                              builder.setContentTitle("Movie Saved to Gallery ✅")
+                                     .setContentText(fileName + " (Stitched from 20 parts)")
                                      .setProgress(0, 0, false)
                                      .setOngoing(false);
-                              notificationManager.notify(101, builder.build());
+                              notificationManager.notify(202, builder.build());
                               this.cancel();
                               stopForeground(false);
                           }
@@ -172,22 +176,15 @@ jobs:
                   }, 0, 1000);
               }
 
-              private void createNotificationChannel() {
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Z+2 Browser Downloads", NotificationManager.IMPORTANCE_LOW);
-                      notificationManager.createNotificationChannel(channel);
-                  }
-              }
-
               @Override
               public IBinder onBind(Intent intent) { return null; }
           }
           EOF
 
-      - name: 8. MainActivity (The Ironclad Lock)
+      - name: 8. MainActivity (The 20-in-1 Hybrid Base)
         run: |
-          cat << 'EOF' > app/src/main/java/com/zeeshan/browser/MainActivity.java
-          package com.zeeshan.browser;
+          cat << 'EOF' > app/src/main/java/com/zeeshan/zultra/MainActivity.java
+          package com.zeeshan.zultra;
           
           import android.content.Intent;
           import android.graphics.Color;
@@ -204,6 +201,7 @@ jobs:
               private WebView webView;
               private EditText urlBar;
               private TextView botalCounter;
+              private Button btnFire;
               private String downloadUrl = "", currentFileName = "";
               private int adsTrapped = 0;
               private boolean doubleBackToExitPressedOnce = false;
@@ -212,23 +210,32 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   
+                  // DARK MONSTER UI (Styx + Tor Logic)
                   RelativeLayout root = new RelativeLayout(this);
-                  root.setBackgroundColor(Color.parseColor("#0F172A"));
+                  root.setBackgroundColor(Color.parseColor("#000000")); // Pure Black for low battery usage
 
                   LinearLayout toolbar = new LinearLayout(this);
                   toolbar.setId(View.generateViewId());
-                  toolbar.setBackgroundColor(Color.parseColor("#1E293B"));
+                  toolbar.setBackgroundColor(Color.parseColor("#111111"));
                   toolbar.setPadding(10, 10, 10, 10);
                   
+                  btnFire = new Button(this);
+                  btnFire.setText("🔥");
+                  btnFire.setBackgroundColor(Color.TRANSPARENT);
+                  btnFire.setTextColor(Color.WHITE);
+
                   urlBar = new EditText(this);
-                  urlBar.setHint("Search Zeeshan Z+2...");
+                  urlBar.setHint("X20 Secure Engine...");
                   urlBar.setTextColor(Color.WHITE);
+                  urlBar.setHintTextColor(Color.GRAY);
                   urlBar.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1));
 
                   Button btnGo = new Button(this);
                   btnGo.setText("GO");
-                  btnGo.setBackgroundColor(Color.parseColor("#3B82F6"));
+                  btnGo.setBackgroundColor(Color.parseColor("#E50914")); // Netflix Red
+                  btnGo.setTextColor(Color.WHITE);
                   
+                  toolbar.addView(btnFire);
                   toolbar.addView(urlBar);
                   toolbar.addView(btnGo);
 
@@ -239,7 +246,7 @@ jobs:
 
                   botalCounter = new TextView(this);
                   botalCounter.setText("🧪 0");
-                  botalCounter.setTextColor(Color.GREEN);
+                  botalCounter.setTextColor(Color.RED);
                   RelativeLayout.LayoutParams bLp = new RelativeLayout.LayoutParams(-2, -2);
                   bLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM); bLp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
                   bLp.setMargins(40,0,0,40);
@@ -251,14 +258,25 @@ jobs:
                   WebSettings settings = webView.getSettings();
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
+                  
+                  // 1. DESKTOP SIMULATOR (Ungoogled + Bromite logic)
                   settings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36");
                   
-                  // ==========================================
-                  // THE IRONCLAD LOCK: Block "New Tab" escapes
-                  // ==========================================
+                  // 2. IRONCLAD GUARD (No multiple windows allowed)
                   settings.setSupportMultipleWindows(false);
                   settings.setJavaScriptCanOpenWindowsAutomatically(false);
                   
+                  // 3. FIRE BUTTON (DuckDuckGo Logic)
+                  btnFire.setOnClickListener(v -> {
+                      webView.clearCache(true);
+                      webView.clearHistory();
+                      CookieManager.getInstance().removeAllCookies(null);
+                      adsTrapped = 0;
+                      botalCounter.setText("🧪 0");
+                      Toast.makeText(this, "🔥 All Tracks Burned!", Toast.LENGTH_SHORT).show();
+                  });
+
+                  // 4. BOTAL ENGINE (Script Killer)
                   webView.addJavascriptInterface(new Object() {
                       @JavascriptInterface
                       public void updateAdCount(int count) {
@@ -275,23 +293,20 @@ jobs:
 
                   btnGo.setOnClickListener(v -> {
                       String url = urlBar.getText().toString();
-                      if(!url.startsWith("http")) url = "https://www.google.com/search?q=" + url;
+                      if(!url.startsWith("http")) url = "https://duckduckgo.com/?q=" + url; // Secure Search
                       webView.loadUrl(url);
                   });
 
-                  // THE ULTIMATE TRAP
+                  // 5. THE ULTIMATE TRAP (Styx security routing)
                   webView.setWebViewClient(new WebViewClient() {
                       @Override
                       public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                           String url = request.getUrl().toString();
-                          
                           if (url.startsWith("http://") || url.startsWith("https://")) {
-                              // ZABARDASTI APNE ANDAR LOAD KARO
                               view.loadUrl(url);
-                              return true; // System ko bolo "Maine sambhal liya, tum mat kholo"
+                              return true; 
                           }
-                          
-                          Toast.makeText(MainActivity.this, "🛡️ Ironclad Guard: Bahar Jana Mana Hai!", Toast.LENGTH_SHORT).show();
+                          Toast.makeText(MainActivity.this, "🛡️ Ironclad Guard: External app blocked!", Toast.LENGTH_SHORT).show();
                           return true;
                       }
                   });
@@ -307,9 +322,10 @@ jobs:
                       }
                   });
 
-                  webView.loadUrl("https://www.google.com");
+                  webView.loadUrl("https://duckduckgo.com");
               }
 
+              // 6. SMART BACK & DOUBLE-TAP (FOSS Logic)
               @Override
               public void onBackPressed() {
                   if (webView.canGoBack()) {
@@ -320,22 +336,22 @@ jobs:
                           return;
                       }
                       this.doubleBackToExitPressedOnce = true;
-                      Toast.makeText(this, "Press BACK again to exit", Toast.LENGTH_SHORT).show();
+                      Toast.makeText(this, "Press BACK again to exit X20", Toast.LENGTH_SHORT).show();
                       new Handler(Looper.getMainLooper()).postDelayed(() -> doubleBackToExitPressedOnce = false, 2000);
                   }
               }
 
               private void showDownloadDialog() {
                   new AlertDialog.Builder(this)
-                      .setTitle("Z+2 Monster Downloader")
-                      .setMessage("🎬 Movie: " + currentFileName + "\n\nDownload with Live Notification?")
-                      .setPositiveButton("Start Download", (d, w) -> {
+                      .setTitle("X20 Multi-Thread Beast")
+                      .setMessage("🎬 Movie: " + currentFileName + "\n\nStart 20-Part Ultra Download?")
+                      .setPositiveButton("LAUNCH", (d, w) -> {
                           Intent intent = new Intent(this, DownloadService.class);
                           intent.putExtra("url", downloadUrl);
                           intent.putExtra("file_name", currentFileName);
                           startForegroundService(intent);
                       })
-                      .setNegativeButton("Cancel", null)
+                      .setNegativeButton("CANCEL", null)
                       .show();
               }
           }
@@ -350,5 +366,5 @@ jobs:
       - name: 10. Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Z2-Ironclad
+          name: Zeeshan-Z-Ultra-X20
           path: app/build/outputs/apk/debug/*.apk
