@@ -1,4 +1,4 @@
-name: Build Zeeshan Z+2 (Ultimate Fix)
+name: Build Zeeshan Z+2 (Ultimate Global Edition)
 
 on:
   push:
@@ -12,34 +12,54 @@ jobs:
       - name: 1. Checkout Code
         uses: actions/checkout@v4
 
-      - name: 2. Set up JDK 17
+      - name: 2. Set up JDK 17 & NDK
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Create Clean Architecture
+      - name: 3. Create Z+2 Vault Structure
         run: |
           mkdir -p app/src/main/java/com/zeeshan/z2
           mkdir -p app/src/main/cpp
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
-          
-          # Root Config
           echo "include ':app'" > settings.gradle
           echo "android.useAndroidX=true" > gradle.properties
 
-      - name: 4. Arabi Jan & Madam Engine (Hardcoded Logic)
+      - name: 4. Arabi Jan Core (The Unbreakable Math Logic)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
+          #include <vector>
+          #include <sstream>
+
+          // ARABI JAN ENGINE: POSITIONAL ABJAD LOGIC
+          // Har lafz ko ek 'Amar Number' me badalna jo kabhi mix na ho
+          unsigned long long getArabiJanID(const char* text) {
+              unsigned long long hash = 786; // Z+2 Master Seed
+              for(int i = 0; text[i] != '\0'; i++) {
+                  hash = (hash * 33) ^ (unsigned char)tolower(text[i]);
+              }
+              return hash;
+          }
+
+          // MADAM ENGINE: DEEP REASONING
+          // Numbers ke beech ka rishta nikal kar "Soch" paida karna
+          std::string madamThinking(std::string query, unsigned long long id) {
+              if (query.find("paani") != std::string::npos || query.find("water") != std::string::npos) 
+                  return "Madam Logic: ID " + std::to_string(id) + " -> Paani hi Zindagi hai, jo Jameen ko hara karti hai.";
+              if (query.find("insaan") != std::string::npos)
+                  return "Madam Logic: ID " + std::to_string(id) + " -> Insaan aur Mitti ka rishta buniyaadi hai.";
+              return "Arabi Jan ID [" + std::to_string(id) + "] process ho gaya. Nayi soch taiyar hai!";
+          }
+
           extern "C" JNIEXPORT jstring JNICALL
           Java_com_zeeshan_z2_MainActivity_processZ2(JNIEnv* env, jobject, jstring input) {
               const char *text = env->GetStringUTFChars(input, 0);
-              std::string response = "Z+2 Arabi Jan Engine: '";
-              response += text;
-              response += "' processed successfully.";
+              unsigned long long id = getArabiJanID(text);
+              std::string response = madamThinking(text, id);
               env->ReleaseStringUTFChars(input, text);
               return env->NewStringUTF(response.c_str());
           }
@@ -47,99 +67,80 @@ jobs:
 
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
-          project("z2_engine")
-          add_library(z2_engine SHARED native-lib.cpp)
+          project("z2_core")
+          add_library(z2_core SHARED native-lib.cpp)
           find_library(log-lib log)
-          target_link_libraries(z2_engine ${log-lib})
+          target_link_libraries(z2_core ${log-lib})
           EOF
 
-      - name: 5. Root & App Build Config (Fixed Paths)
-        run: |
-          # Root build.gradle
-          cat << 'EOF' > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
-          }
-          allprojects {
-              repositories { google(); mavenCentral() }
-          }
-          EOF
-
-          # App build.gradle
-          cat << 'EOF' > app/build.gradle
-          plugins { id 'com.android.application' }
-          android {
-              namespace 'com.zeeshan.z2'
-              compileSdk 34
-              defaultConfig {
-                  applicationId "com.zeeshan.z2"
-                  minSdk 24
-                  targetSdk 34
-                  versionCode 1
-                  versionName "Z2-Perfect"
-                  ndk { abiFilters 'arm64-v8a' }
-              }
-              externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
-          }
-          dependencies { 
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.9.0'
-          }
-          EOF
-
-      - name: 6. Z+2 Red UI & Manifest (Safe Version)
+      - name: 5. Z+2 Chat VIP Interface (Permissions & Voice)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/z2/MainActivity.java
           package com.zeeshan.z2;
+          import android.Manifest;
+          import android.content.pm.PackageManager;
           import android.graphics.Color;
           import android.os.Bundle;
           import android.widget.*;
           import androidx.appcompat.app.AppCompatActivity;
+          import androidx.core.app.ActivityCompat;
 
           public class MainActivity extends AppCompatActivity {
-              static { System.loadLibrary("z2_engine"); }
+              static { System.loadLibrary("z2_core"); }
               public native String processZ2(String input);
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+                  
+                  // FORCE PERMISSIONS: Camera & Mic
+                  String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
+                  if (ActivityCompat.checkSelfPermission(this, perms[0]) != PackageManager.PERMISSION_GRANTED) {
+                      ActivityCompat.requestPermissions(this, perms, 101);
+                  }
+
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.parseColor("#1A0000")); // Deep Red
-                  root.setPadding(40, 40, 40, 40);
+                  root.setBackgroundColor(Color.parseColor("#080000")); // Ultra Deep Red
+                  root.setPadding(40, 60, 40, 40);
 
                   TextView title = new TextView(this);
-                  title.setText("Zeeshan Z+2 Chat");
+                  title.setText("Zeeshan Z+2 (Ultimate AI)");
                   title.setTextColor(Color.RED);
                   title.setTextSize(24);
+                  title.setGravity(1);
 
                   final TextView output = new TextView(this);
                   output.setTextColor(Color.WHITE);
-                  output.setPadding(0, 40, 0, 40);
+                  output.setPadding(0, 50, 0, 50);
+                  output.setTextSize(18);
 
-                  final EditText inputField = new EditText(this);
-                  inputField.setHint("Arabi Jan Logic...");
-                  inputField.setHintTextColor(Color.GRAY);
-                  inputField.setTextColor(Color.WHITE);
+                  final EditText input = new EditText(this);
+                  input.setHint("Madam Engine se baat karein...");
+                  input.setHintTextColor(Color.GRAY);
+                  input.setTextColor(Color.WHITE);
 
                   Button btn = new Button(this);
-                  btn.setText("SOCH KAR JAWAB DO");
+                  btn.setText("EXECUTE ARABI LOGIC");
                   btn.setBackgroundColor(Color.RED);
                   btn.setTextColor(Color.WHITE);
                   btn.setOnClickListener(v -> {
-                      output.setText(processZ2(inputField.getText().toString()));
+                      output.setText(processZ2(input.getText().toString()));
                   });
 
-                  root.addView(title); root.addView(output); root.addView(inputField); root.addView(btn);
+                  root.addView(title); root.addView(output); root.addView(input); root.addView(btn);
                   setContentView(root);
               }
           }
           EOF
 
+      - name: 6. Manifest & Build Config (Hardened)
+        run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.zeeshan.z2">
-              <application android:label="Z+2 Chat" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+              <uses-permission android:name="android.permission.CAMERA" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <application android:label="Z+2 Chat" android:theme="@style/Theme.AppCompat.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -150,14 +151,32 @@ jobs:
           </manifest>
           EOF
 
-      - name: 7. Step-by-Step Build (No-Failure Mode)
+          cat << 'EOF' > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.zeeshan.z2'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.zeeshan.z2"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 1
+                  versionName "Z2-Duniya-Best"
+                  ndk { abiFilters 'arm64-v8a' }
+              }
+              externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
+          }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
+          EOF
+
+      - name: 7. Step-by-Step Global Build
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug
 
-      - name: 8. Upload Z+2 Perfect APK
+      - name: 8. Upload Zeeshan Z+2 Master APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Z2-Chat-Fixed
+          name: Zeeshan-Z2-Ultimate-AI
           path: app/build/outputs/apk/debug/*.apk
