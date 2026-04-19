@@ -1,4 +1,4 @@
-name: Build Zeeshan Husain Smile (Stable Engine Lock)
+name: Build Zeeshan Husain Smile (100% Fixed ZIP Engine)
 
 on:
   push:
@@ -48,12 +48,13 @@ jobs:
         run: |
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z_brain.gguf
 
-      - name: 6. Download Llama Engine (Locked to Stable Version b2600)
+      - name: 6. Download Stable Llama Engine (Guaranteed ZIP Method)
         run: |
-          # YAHAN FIX HAI: Hum engine ko ek stable tag par lock kar rahe hain taaki API error na aaye
-          git clone https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama
-          cd app/src/main/cpp/llama
-          git checkout b2600
+          # YAHAN MASTER FIX HAI: Git clone ki jagah direct ZIP download
+          wget -q https://github.com/ggerganov/llama.cpp/archive/refs/tags/b2400.zip -O llama.zip
+          unzip -q llama.zip
+          # Folder ka naam jo bhi ho, use 'llama' bana do
+          find . -maxdepth 1 -name "llama.cpp-*" -exec mv {} app/src/main/cpp/llama \;
 
       - name: 7. Connect Engine to Vault (Perfect C++ Logic)
         run: |
@@ -83,7 +84,7 @@ jobs:
               std::string response = "Zeeshan Husain Smile AI (Real Engine): \n";
               std::vector<llama_token> tokens(512);
               
-              // b2600 API format
+              // Stable b2400 API math logic
               int n_tokens = llama_tokenize(model, prompt, strlen(prompt), tokens.data(), tokens.size(), true, true);
               
               if (n_tokens > 0) {
@@ -131,7 +132,7 @@ jobs:
           cmake_minimum_required(VERSION 3.22.1)
           project("z_engine")
           
-          # Stable Android Ninja Flags
+          # Stable Android Ninja Flags (No OpenMP crash)
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
           set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
           set(GGML_RPC OFF CACHE BOOL "" FORCE)
@@ -331,8 +332,8 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 8
-                  versionName "8.0-Stable-Engine"
+                  versionCode 9
+                  versionName "9.0-Final-ZIP-Engine"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
