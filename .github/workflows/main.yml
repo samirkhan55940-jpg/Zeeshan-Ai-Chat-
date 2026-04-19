@@ -1,4 +1,4 @@
-name: Build Zeeshan Z+2 (Ultimate Global Edition)
+name: Build Zeeshan Z+2 (Ultimate Plugin Fix)
 
 on:
   push:
@@ -12,47 +12,71 @@ jobs:
       - name: 1. Checkout Code
         uses: actions/checkout@v4
 
-      - name: 2. Set up JDK 17 & NDK
+      - name: 2. Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Create Z+2 Vault Structure
+      - name: 3. Create Root Settings & Plugin Links (THE FIX)
         run: |
           mkdir -p app/src/main/java/com/zeeshan/z2
           mkdir -p app/src/main/cpp
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
-          echo "include ':app'" > settings.gradle
-          echo "android.useAndroidX=true" > gradle.properties
 
-      - name: 4. Arabi Jan Core (The Unbreakable Math Logic)
+          # YAHAN GITHUB KO GOOGLE PLUGIN KA RASTA DIYA HAI
+          cat << 'EOF' > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "Zeeshan-Z2-Chat"
+          include ':app'
+          EOF
+
+          cat << 'EOF' > build.gradle
+          plugins {
+              id 'com.android.application' version '8.2.0' apply false
+          }
+          EOF
+          
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+
+      - name: 4. Arabi Jan Core (Mathematical Logic)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
-          #include <vector>
           #include <sstream>
 
-          // ARABI JAN ENGINE: POSITIONAL ABJAD LOGIC
-          // Har lafz ko ek 'Amar Number' me badalna jo kabhi mix na ho
+          // ARABI JAN: 123 ABJAD FORMULA
           unsigned long long getArabiJanID(const char* text) {
-              unsigned long long hash = 786; // Z+2 Master Seed
+              unsigned long long hash = 786;
               for(int i = 0; text[i] != '\0'; i++) {
                   hash = (hash * 33) ^ (unsigned char)tolower(text[i]);
               }
               return hash;
           }
 
-          // MADAM ENGINE: DEEP REASONING
-          // Numbers ke beech ka rishta nikal kar "Soch" paida karna
+          // MADAM ENGINE: THINKING LOGIC
           std::string madamThinking(std::string query, unsigned long long id) {
               if (query.find("paani") != std::string::npos || query.find("water") != std::string::npos) 
-                  return "Madam Logic: ID " + std::to_string(id) + " -> Paani hi Zindagi hai, jo Jameen ko hara karti hai.";
+                  return "Madam Logic: ID " + std::to_string(id) + " -> Paani hi Zindagi hai, jameen ko hara karti hai.";
               if (query.find("insaan") != std::string::npos)
                   return "Madam Logic: ID " + std::to_string(id) + " -> Insaan aur Mitti ka rishta buniyaadi hai.";
-              return "Arabi Jan ID [" + std::to_string(id) + "] process ho gaya. Nayi soch taiyar hai!";
+              return "Z+2 Engine: Arabi Jan ID [" + std::to_string(id) + "] process ho gaya. Nayi soch taiyar hai!";
           }
 
           extern "C" JNIEXPORT jstring JNICALL
@@ -73,7 +97,7 @@ jobs:
           target_link_libraries(z2_core ${log-lib})
           EOF
 
-      - name: 5. Z+2 Chat VIP Interface (Permissions & Voice)
+      - name: 5. Z+2 Chat VIP Interface (Permissions Added)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/z2/MainActivity.java
           package com.zeeshan.z2;
@@ -93,7 +117,6 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   
-                  // FORCE PERMISSIONS: Camera & Mic
                   String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
                   if (ActivityCompat.checkSelfPermission(this, perms[0]) != PackageManager.PERMISSION_GRANTED) {
                       ActivityCompat.requestPermissions(this, perms, 101);
@@ -101,14 +124,13 @@ jobs:
 
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.parseColor("#080000")); // Ultra Deep Red
+                  root.setBackgroundColor(Color.parseColor("#080000")); // Deep Dark Red
                   root.setPadding(40, 60, 40, 40);
 
                   TextView title = new TextView(this);
-                  title.setText("Zeeshan Z+2 (Ultimate AI)");
+                  title.setText("Zeeshan Z+2 (Offline AI)");
                   title.setTextColor(Color.RED);
                   title.setTextSize(24);
-                  title.setGravity(1);
 
                   final TextView output = new TextView(this);
                   output.setTextColor(Color.WHITE);
@@ -134,7 +156,7 @@ jobs:
           }
           EOF
 
-      - name: 6. Manifest & Build Config (Hardened)
+      - name: 6. App Build Config & Manifest
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.zeeshan.z2">
@@ -161,7 +183,7 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 1
-                  versionName "Z2-Duniya-Best"
+                  versionName "Z2-Perfect-Build"
                   ndk { abiFilters 'arm64-v8a' }
               }
               externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
@@ -169,7 +191,7 @@ jobs:
           dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
-      - name: 7. Step-by-Step Global Build
+      - name: 7. Step-by-Step Gradle Build
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
