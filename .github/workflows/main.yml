@@ -1,4 +1,4 @@
-name: Build Zeeshan Husain Smile (Latest Engine Fix)
+name: Build Zeeshan Husain Smile (Stable Engine Lock)
 
 on:
   push:
@@ -48,12 +48,14 @@ jobs:
         run: |
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z_brain.gguf
 
-      - name: 6. Download Llama Engine (Latest Master)
+      - name: 6. Download Llama Engine (Locked to Stable Version b2600)
         run: |
-          # Yahan se branch restriction hata di gayi hai. Ab ye direct latest engine layega.
-          git clone --depth 1 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama
+          # YAHAN FIX HAI: Hum engine ko ek stable tag par lock kar rahe hain taaki API error na aaye
+          git clone https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama
+          cd app/src/main/cpp/llama
+          git checkout b2600
 
-      - name: 7. Connect Engine to Vault (Fixed API & OpenMP Off)
+      - name: 7. Connect Engine to Vault (Perfect C++ Logic)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
@@ -78,8 +80,10 @@ jobs:
               ctx_params.n_ctx = 512;
               llama_context * ctx = llama_new_context_with_model(model, ctx_params);
 
-              std::string response = "Zeeshan Husain Smile AI (Asli Soch): \n";
+              std::string response = "Zeeshan Husain Smile AI (Real Engine): \n";
               std::vector<llama_token> tokens(512);
+              
+              // b2600 API format
               int n_tokens = llama_tokenize(model, prompt, strlen(prompt), tokens.data(), tokens.size(), true, true);
               
               if (n_tokens > 0) {
@@ -112,9 +116,8 @@ jobs:
                   }
               }
 
-              // LATEST API FIXES
               llama_free(ctx);
-              llama_model_free(model);
+              llama_free_model(model);
               llama_backend_free();
 
               env->ReleaseStringUTFChars(input, prompt);
@@ -128,7 +131,7 @@ jobs:
           cmake_minimum_required(VERSION 3.22.1)
           project("z_engine")
           
-          # Android Ninja Build Fixes (No crash)
+          # Stable Android Ninja Flags
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
           set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
           set(GGML_RPC OFF CACHE BOOL "" FORCE)
@@ -328,8 +331,8 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 7
-                  versionName "7.0-Real-Engine"
+                  versionCode 8
+                  versionName "8.0-Stable-Engine"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
