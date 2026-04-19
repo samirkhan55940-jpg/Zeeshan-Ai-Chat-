@@ -1,4 +1,4 @@
-name: Build Zeeshan Husain Smile (Bulletproof RAM Fix)
+name: Build Zeeshan Husain Smile (Ninja Memory Fix)
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
 
-      - name: 4. Gradle Setup (RAM Optimized)
+      - name: 4. Gradle Setup (RAM Balanced)
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
@@ -38,7 +38,6 @@ jobs:
           plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
           
-          # YAHAN FIX HAI: RAM ko strictly control kiya gaya hai aur parallel builds band kiye hain
           cat << 'EOF' > gradle.properties
           android.useAndroidX=true
           android.enableJetifier=true
@@ -306,7 +305,7 @@ jobs:
           }
           EOF
 
-      - name: 9. App Configuration
+      - name: 9. App Configuration (The Final Lock)
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.zeeshan.smile">
@@ -331,9 +330,15 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 11
-                  versionName "11.0-Bulletproof-Engine"
+                  versionCode 12
+                  versionName "12.0-Ninja-Fixed"
                   ndk { abiFilters 'arm64-v8a' }
+                  // YAHAN MASTER FIX HAI: Ninja ko dimaag ke andar se lock kiya hai '-j1' de kar
+                  externalNativeBuild { 
+                      cmake { 
+                          arguments "-j1" 
+                      } 
+                  }
               }
               aaptOptions { noCompress 'gguf' }
               externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
@@ -342,13 +347,9 @@ jobs:
           EOF
 
       - name: 10. Compile Asli Engine & Build APK
-        env:
-          # YAHAN MASTER FIX HAI: Engine ko strictly sirf '1 worker' (Single Core) use karne ka order diya hai
-          CMAKE_BUILD_PARALLEL_LEVEL: "1"
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
-          # --no-daemon lagane se Gradle background me RAM nahi khata
           ./gradlew :app:assembleDebug --no-daemon
 
       - name: 11. Upload Final Master APK
