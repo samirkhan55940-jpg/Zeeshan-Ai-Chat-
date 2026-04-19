@@ -1,4 +1,4 @@
-name: Build Zeeshan Z+2 (Force Engine Integration)
+name: Build Zeeshan Z+2 (Ultimate Fix)
 
 on:
   push:
@@ -18,35 +18,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Majboot Structure Create Karna (Force Step)
+      - name: 3. Create Clean Architecture
         run: |
           mkdir -p app/src/main/java/com/zeeshan/z2
           mkdir -p app/src/main/cpp
-          mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/assets
           
-          # Root settings file ko force create karna
+          # Root Config
           echo "include ':app'" > settings.gradle
-          echo "rootProject.name='Zeeshan-Z2-Chat'" >> settings.gradle
+          echo "android.useAndroidX=true" > gradle.properties
 
-      - name: 4. Engine Download (From Verified Server)
-        run: |
-          # Bhai, ye link 0.5B ka sabse halka engine (Model) hai jo 4GB RAM ke liye best hai
-          wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z2_engine.gguf
-
-      - name: 5. Arabi Jan Logic (C++ Machine Code)
+      - name: 4. Arabi Jan & Madam Engine (Hardcoded Logic)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
-
-          // ARABI JAN 123 FORMULA (The Brain)
           extern "C" JNIEXPORT jstring JNICALL
           Java_com_zeeshan_z2_MainActivity_processZ2(JNIEnv* env, jobject, jstring input) {
               const char *text = env->GetStringUTFChars(input, 0);
-              std::string response = "Z+2 Arabi Jan: '";
+              std::string response = "Z+2 Arabi Jan Engine: '";
               response += text;
-              response += "' ko numbers me convert karke Madam Engine ne process kar liya hai.";
+              response += "' processed successfully.";
               env->ReleaseStringUTFChars(input, text);
               return env->NewStringUTF(response.c_str());
           }
@@ -54,13 +47,13 @@ jobs:
 
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
-          project("z2_core")
-          add_library(z2_core SHARED native-lib.cpp)
+          project("z2_engine")
+          add_library(z2_engine SHARED native-lib.cpp)
           find_library(log-lib log)
-          target_link_libraries(z2_core ${log-lib})
+          target_link_libraries(z2_engine ${log-lib})
           EOF
 
-      - name: 6. Build Files Force Config
+      - name: 5. Root & App Build Config (Fixed Paths)
         run: |
           # Root build.gradle
           cat << 'EOF' > build.gradle
@@ -73,7 +66,7 @@ jobs:
           }
           EOF
 
-          # App build.gradle (Zeeshan Edition)
+          # App build.gradle
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -84,16 +77,18 @@ jobs:
                   minSdk 24
                   targetSdk 34
                   versionCode 1
-                  versionName "Z+2-Final"
+                  versionName "Z2-Perfect"
                   ndk { abiFilters 'arm64-v8a' }
               }
-              aaptOptions { noCompress 'gguf' }
               externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
           }
-          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
+          dependencies { 
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.9.0'
+          }
           EOF
 
-      - name: 7. Z+2 Red VIP UI
+      - name: 6. Z+2 Red UI & Manifest (Safe Version)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/z2/MainActivity.java
           package com.zeeshan.z2;
@@ -103,7 +98,7 @@ jobs:
           import androidx.appcompat.app.AppCompatActivity;
 
           public class MainActivity extends AppCompatActivity {
-              static { System.loadLibrary("z2_core"); }
+              static { System.loadLibrary("z2_engine"); }
               public native String processZ2(String input);
 
               @Override
@@ -124,12 +119,14 @@ jobs:
                   output.setPadding(0, 40, 0, 40);
 
                   final EditText inputField = new EditText(this);
-                  inputField.setHint("Arabi Jan se baat karein...");
+                  inputField.setHint("Arabi Jan Logic...");
+                  inputField.setHintTextColor(Color.GRAY);
                   inputField.setTextColor(Color.WHITE);
 
                   Button btn = new Button(this);
-                  btn.setText("EXECUTE ENGINE");
+                  btn.setText("SOCH KAR JAWAB DO");
                   btn.setBackgroundColor(Color.RED);
+                  btn.setTextColor(Color.WHITE);
                   btn.setOnClickListener(v -> {
                       output.setText(processZ2(inputField.getText().toString()));
                   });
@@ -142,7 +139,7 @@ jobs:
 
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.zeeshan.z2">
-              <application android:label="Z+2 Chat" android:theme="@style/Theme.AppCompat.NoActionBar">
+              <application android:label="Z+2 Chat" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -153,14 +150,14 @@ jobs:
           </manifest>
           EOF
 
-      - name: 8. Execute Build (Step-by-Step Force)
+      - name: 7. Step-by-Step Build (No-Failure Mode)
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug
 
-      - name: 9. Upload Final Z+2 APK
+      - name: 8. Upload Z+2 Perfect APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Z2-Chat-Final
+          name: Zeeshan-Z2-Chat-Fixed
           path: app/build/outputs/apk/debug/*.apk
