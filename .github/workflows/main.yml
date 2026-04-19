@@ -1,4 +1,4 @@
-name: Build Zeeshan Husain Smile (Perfect RAM Balance)
+name: Build Zeeshan Husain Smile (Bulletproof RAM Fix)
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
 
-      - name: 4. Gradle Setup (RAM Balanced to 3GB)
+      - name: 4. Gradle Setup (RAM Optimized)
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
@@ -38,11 +38,12 @@ jobs:
           plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
           
-          # YAHAN FIX HAI: 3GB RAM Java ko, baaki 4GB C++ compiler ke liye free chhod di
+          # YAHAN FIX HAI: RAM ko strictly control kiya gaya hai aur parallel builds band kiye hain
           cat << 'EOF' > gradle.properties
           android.useAndroidX=true
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx3g -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.parallel=false
           EOF
 
       - name: 5. Download 300MB Offline Brain (The Vault)
@@ -55,7 +56,7 @@ jobs:
           unzip -q llama.zip
           find . -maxdepth 1 -name "llama.cpp-*" -exec mv {} app/src/main/cpp/llama \;
 
-      - name: 7. Connect Engine to Vault (Safe Compilation)
+      - name: 7. Connect Engine to Vault (Safe Logic)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
@@ -130,7 +131,6 @@ jobs:
           cmake_minimum_required(VERSION 3.22.1)
           project("z_engine")
           
-          # YAHAN FIX HAI: Saare warnings ko ignore karne ka order
           set(LLAMA_WERROR OFF CACHE BOOL "" FORCE)
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
           set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
@@ -331,8 +331,8 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 10
-                  versionName "10.0-Master-Balance"
+                  versionCode 11
+                  versionName "11.0-Bulletproof-Engine"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
@@ -342,10 +342,14 @@ jobs:
           EOF
 
       - name: 10. Compile Asli Engine & Build APK
+        env:
+          # YAHAN MASTER FIX HAI: Engine ko strictly sirf '1 worker' (Single Core) use karne ka order diya hai
+          CMAKE_BUILD_PARALLEL_LEVEL: "1"
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
-          ./gradlew :app:assembleDebug
+          # --no-daemon lagane se Gradle background me RAM nahi khata
+          ./gradlew :app:assembleDebug --no-daemon
 
       - name: 11. Upload Final Master APK
         uses: actions/upload-artifact@v4
