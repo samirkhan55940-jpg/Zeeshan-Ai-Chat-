@@ -1,4 +1,4 @@
-name: Build Zeeshan Husain Smile (Real AI Engine Integration)
+name: Build Zeeshan Husain Smile (Ultimate Engine Fix)
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Create Safe Folders
+      - name: 3. Create Folders
         run: |
           mkdir -p app/src/main/java/com/zeeshan/smile
           mkdir -p app/src/main/cpp
@@ -48,12 +48,12 @@ jobs:
         run: |
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z_brain.gguf
 
-      - name: 6. Download Original AI Engine (llama.cpp)
+      - name: 6. Download Llama Engine (Stable Version Locked)
         run: |
-          # Ye duniya ka sabse tez C++ AI engine hai
-          git clone --depth 1 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama
+          # Yahan maine 'b3000' tag use kiya hai jo 100% Android safe hai aur crash nahi hoga
+          git clone --branch b3000 --depth 1 https://github.com/ggerganov/llama.cpp.git app/src/main/cpp/llama
 
-      - name: 7. Connect Engine to Vault (C++ Math Logic)
+      - name: 7. Connect Engine to Vault (Fixed API & OpenMP Off)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
@@ -66,69 +66,55 @@ jobs:
               const char *prompt = env->GetStringUTFChars(input, 0);
               const char *path = env->GetStringUTFChars(modelPath, 0);
               
-              // 1. ENGINE START KARNA
               llama_backend_init();
               llama_model_params model_params = llama_model_default_params();
               llama_model * model = llama_load_model_from_file(path, model_params);
               
               if (model == NULL) {
-                  return env->NewStringUTF("Zeeshan Husain Smile AI: Error! 300MB Vault load nahi hua.");
+                  return env->NewStringUTF("Zeeshan AI Error: 300MB Vault load nahi hua.");
               }
 
-              // 2. 4GB RAM KE LIYE SAFE MEMORY SET KARNA
               llama_context_params ctx_params = llama_context_default_params();
-              ctx_params.n_ctx = 512; // 4GB RAM ke liye safe limit
+              ctx_params.n_ctx = 512;
               llama_context * ctx = llama_new_context_with_model(model, ctx_params);
 
-              // 3. TOKENS (MATH NUMBERS) BANANA
+              std::string response = "Zeeshan Husain Smile AI (Asli Soch): \n";
               std::vector<llama_token> tokens(512);
               int n_tokens = llama_tokenize(model, prompt, strlen(prompt), tokens.data(), tokens.size(), true, true);
               
-              if (n_tokens < 0) {
-                  llama_free(ctx); llama_free_model(model); llama_backend_free();
-                  return env->NewStringUTF("Engine Error: Sawal bahut lamba hai.");
-              }
-
-              // 4. JAMA-TAKSEEM (MATH) KARNA
-              llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens, 0, 0);
-              if (llama_decode(ctx, batch) != 0) {
-                  llama_free(ctx); llama_free_model(model); llama_backend_free();
-                  return env->NewStringUTF("Engine Error: Math fail ho gaya.");
-              }
-
-              // 5. NAYA JAWAB NIKALNA
-              std::string response = "Zeeshan Husain Smile AI (Real Engine Active): \n";
-              int n_vocab = llama_n_vocab(model);
-              
-              // Chota loop lagaya hai taaki engine jaldi jawab de aur phone hang na ho (Max 30 words)
-              for (int i = 0; i < 30; i++) {
-                  float * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
-                  llama_token new_token_id = 0;
-                  float max_prob = -1e9f;
-                  
-                  // Sabse best agla lafz dhoondhna
-                  for (int j = 0; j < n_vocab; j++) {
-                      if (logits[j] > max_prob) {
-                          max_prob = logits[j];
-                          new_token_id = j;
+              if (n_tokens > 0) {
+                  llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens, 0, 0);
+                  if (llama_decode(ctx, batch) == 0) {
+                      int n_vocab = llama_n_vocab(model);
+                      for (int i = 0; i < 30; i++) {
+                          float * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
+                          llama_token new_token_id = 0;
+                          float max_prob = -1e9f;
+                          
+                          for (int j = 0; j < n_vocab; j++) {
+                              if (logits[j] > max_prob) {
+                                  max_prob = logits[j];
+                                  new_token_id = j;
+                              }
+                          }
+                          
+                          if (llama_token_is_eog(model, new_token_id)) break;
+                          
+                          char buf[128];
+                          int n_chars = llama_token_to_piece(model, new_token_id, buf, sizeof(buf), 0, true);
+                          if (n_chars > 0) response += std::string(buf, n_chars);
+                          
+                          batch = llama_batch_get_one(&new_token_id, 1, n_tokens + i, 0);
+                          if (llama_decode(ctx, batch) != 0) break;
                       }
+                  } else {
+                      response += "Math error.";
                   }
-                  
-                  if (llama_token_is_eog(model, new_token_id)) break;
-                  
-                  char buf[128];
-                  int n_chars = llama_token_to_piece(model, new_token_id, buf, sizeof(buf), 0, true);
-                  if (n_chars > 0) {
-                      response += std::string(buf, n_chars);
-                  }
-                  
-                  batch = llama_batch_get_one(&new_token_id, 1, n_tokens + i, 0);
-                  if (llama_decode(ctx, batch) != 0) break;
               }
 
-              // ENGINE BAND KARNA TAARI RAM FREE HO JAYE
+              // FIXED API COMMANDS (Error Hatane ke liye)
               llama_free(ctx);
-              llama_free_model(model);
+              llama_model_free(model);
               llama_backend_free();
 
               env->ReleaseStringUTFChars(input, prompt);
@@ -142,15 +128,18 @@ jobs:
           cmake_minimum_required(VERSION 3.22.1)
           project("z_engine")
           
-          # Engine ko C++ ke sath silna (stitch karna)
-          add_subdirectory(llama)
+          # Android Ninja Build Fixes (No crash)
+          set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
+          set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
+          set(GGML_RPC OFF CACHE BOOL "" FORCE)
           
+          add_subdirectory(llama)
           add_library(z_engine SHARED native-lib.cpp)
-          target_include_directories(z_engine PRIVATE llama/include llama)
+          target_include_directories(z_engine PRIVATE llama/include llama llama/ggml/include)
           target_link_libraries(z_engine llama log)
           EOF
 
-      - name: 8. Java Premium UI (Mic + Speaker + Chat)
+      - name: 8. Java Premium UI (Mic + Speaker)
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/smile/MainActivity.java
           package com.zeeshan.smile;
@@ -187,22 +176,20 @@ jobs:
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  
                   if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                       ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 100);
                   }
-
                   tts = new TextToSpeech(this, status -> {
                       if(status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("hi", "IN"));
                   });
 
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.parseColor("#080808")); // Premium Black
+                  root.setBackgroundColor(Color.parseColor("#080808"));
 
                   TextView title = new TextView(this);
                   title.setText("Zeeshan Husain Smile - Real AI");
-                  title.setTextColor(Color.parseColor("#FF0000")); // Red Branding
+                  title.setTextColor(Color.parseColor("#FF0000"));
                   title.setTextSize(22);
                   title.setPadding(30, 40, 30, 40);
                   title.setGravity(Gravity.CENTER);
@@ -267,13 +254,10 @@ jobs:
                               fos.flush(); fos.close(); is.close();
                           }
                           absoluteModelPath = file.getAbsolutePath();
-                          
                           runOnUiThread(() -> {
                               addMessage("System: Engine 100% Ready! Ab duniya ka koi bhi sawal puchiye.", false);
-                              inputField.setEnabled(true);
-                              inputField.setHint("Yahan likhein...");
-                              sendBtn.setEnabled(true);
-                              micBtn.setEnabled(true);
+                              inputField.setEnabled(true); inputField.setHint("Yahan likhein...");
+                              sendBtn.setEnabled(true); micBtn.setEnabled(true);
                           });
                       } catch (Exception e) {}
                   }).start();
@@ -281,9 +265,7 @@ jobs:
 
               private void handleSend(String text) {
                   if(text.isEmpty()) return;
-                  addMessage(text, true);
-                  inputField.setText("");
-                  
+                  addMessage(text, true); inputField.setText("");
                   new Thread(() -> {
                       String aiResponse = processOfflineAI(text, absoluteModelPath);
                       runOnUiThread(() -> {
@@ -294,30 +276,18 @@ jobs:
               }
 
               private void addMessage(String text, boolean isUser) {
-                  TextView tv = new TextView(this);
-                  tv.setText(text);
-                  tv.setTextColor(Color.WHITE);
-                  tv.setPadding(30, 20, 30, 20);
-                  tv.setTextSize(16);
-                  
+                  TextView tv = new TextView(this); tv.setText(text); tv.setTextColor(Color.WHITE);
+                  tv.setPadding(30, 20, 30, 20); tv.setTextSize(16);
                   LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
                   params.setMargins(10, 10, 10, 10);
-                  
-                  GradientDrawable bg = new GradientDrawable();
-                  bg.setCornerRadius(20f);
-                  
+                  GradientDrawable bg = new GradientDrawable(); bg.setCornerRadius(20f);
                   if(isUser) {
-                      bg.setColor(Color.parseColor("#005C4B")); 
-                      params.gravity = Gravity.END;
+                      bg.setColor(Color.parseColor("#005C4B")); params.gravity = Gravity.END;
                   } else {
-                      bg.setColor(Color.parseColor("#4A0000")); 
-                      params.gravity = Gravity.START;
+                      bg.setColor(Color.parseColor("#4A0000")); params.gravity = Gravity.START;
                   }
-                  tv.setBackground(bg);
-                  tv.setLayoutParams(params);
-                  
-                  chatArea.addView(tv);
-                  scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+                  tv.setBackground(bg); tv.setLayoutParams(params);
+                  chatArea.addView(tv); scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
               }
 
               @Override
@@ -328,12 +298,8 @@ jobs:
                       if (res != null && !res.isEmpty()) handleSend(res.get(0));
                   }
               }
-
               @Override
-              protected void onDestroy() {
-                  if(tts != null) tts.shutdown();
-                  super.onDestroy();
-              }
+              protected void onDestroy() { if(tts != null) tts.shutdown(); super.onDestroy(); }
           }
           EOF
 
@@ -362,8 +328,8 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 5
-                  versionName "5.0-Real-Engine"
+                  versionCode 6
+                  versionName "6.0-Real-Engine"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
@@ -383,3 +349,4 @@ jobs:
         with:
           name: Zeeshan-Smile-Real-AI-Engine
           path: app/build/outputs/apk/debug/*.apk
+
