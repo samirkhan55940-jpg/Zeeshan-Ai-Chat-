@@ -1,4 +1,4 @@
-name: Build Zeeshan Z+2 (Ultimate Arabi Brain)
+name: Build Zeeshan Z+2 AI
 
 on:
   push:
@@ -9,99 +9,59 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: 1. Checkout Code
+      - name: 1. Checkout
         uses: actions/checkout@v4
 
-      - name: 2. Set up JDK 17
+      - name: 2. JDK Setup
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Create Root Architecture & Plugins
+      - name: 3. App Folders
         run: |
           mkdir -p app/src/main/java/com/zeeshan/z2
           mkdir -p app/src/main/cpp
           mkdir -p app/src/main/res/values
 
-          # PERFECT GRADLE SETTINGS
-          cat << 'EOF' > settings.gradle
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
-              repositories { google(); mavenCentral() }
-          }
-          rootProject.name = "Zeeshan-Z2-Chat"
-          include ':app'
-          EOF
-
-          cat << 'EOF' > build.gradle
-          plugins { id 'com.android.application' version '8.2.0' apply false }
-          EOF
-          
+      - name: 4. Gradle Setup
+        run: |
+          echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }" > settings.gradle
+          echo "dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS); repositories { google(); mavenCentral() } }" >> settings.gradle
+          echo "rootProject.name = 'Zeeshan-Z2-Chat'" >> settings.gradle
+          echo "include ':app'" >> settings.gradle
+          echo "plugins { id 'com.android.application' version '8.2.0' apply false }" > build.gradle
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
 
-      - name: 4. The Brain: Arabi Jan + Madam Engine Dictionary (C++)
+      - name: 5. Native Logic (Arabi Brain)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
           #include <string>
           #include <map>
           #include <algorithm>
-
-          // ==========================================
-          // ZEESHAN Z+2: THE MASTER OFFLINE DICTIONARY
-          // ==========================================
-          std::string processMadamLogic(std::string input) {
-              // Convert input to lowercase for perfect matching
-              std::transform(input.begin(), input.end(), input.begin(), ::tolower);
-              
-              // 🧠 700MB VIRTUAL BRAIN: ARABIC ROOTS TO HINDI LOGIC
-              std::map<std::string, std::string> aiBrain = {
-                  {"hi", "Z+2: Salaam Bhai! Zeeshan Arabi Jan Engine active hai. Main offline sochne ke liye taiyar hoon."},
-                  {"hello", "Z+2: Salaam! Mera dimaag offline chal raha hai. Boliye kya jan'na hai?"},
-                  {"paani", "Root (M-A-A / ماء): Paani zindagi ki buniyaad hai. Madam Logic kehti hai ki bina paani ke jameen banjar hai aur wajood khatam hai."},
-                  {"water", "Root (M-A-A / ماء): Water is the core of life. Jameen ko hara-bhara karne ki taqat sirf paani mein hai."},
-                  {"jameen", "Root (A-R-D / أرض): Mitti se hum bane hain aur isi mein wapas jana hai. Jameen sabr aur zindagi ki misaal hai."},
-                  {"earth", "Root (A-R-D / أرض): Earth hamara ghar hai. Ye apne andar sab kuch sama leti hai."},
-                  {"aasman", "Root (S-M-A / سماء): Aasman bulandi aur wus'at (vastness) ka prateek hai. Ye insaan ko aage badhne ki prerna deta hai."},
-                  {"sky", "Root (S-M-A / سماء): Sky ki bulandi insaan ko sochne par majboor karti hai ki aage kya hai."},
-                  {"aag", "Root (N-A-R / نار): Aag garmi aur roshni ka zariya hai, magar Madam Logic kehti hai ki is par kaabu zaruri hai, warna tabahi hoti hai."},
-                  {"fire", "Root (N-A-R / نار): Aag roshni bhi hai aur khatra bhi. Ye tawazun (balance) sikhati hai."},
-                  {"insaan", "Root (I-N-S / إنس): Insaan ashraf-ul-makhluqat hai. Mitti ka putla hone ke bawajood iski aql isey aasman tak le jati hai."},
-                  {"human", "Root (I-N-S / إنس): Human reasoning duniya ki sabse badi taqat hai."},
-                  {"hindi", "Root (H-N-D / هند): Hindi ek mahan aur meethi bhasha hai. Iska Arabi tahzeeb aur hindustan ki mitti se gehra rishta hai."},
-                  {"chai", "Root (SH-A-Y / شاي): Chai sirf peene ki cheez nahi bhai, ye doston ke beech baith kar ki gayi meethi baaton ka ek sukoon bhara rishta hai."},
-                  {"allah", "Root (A-L-H / إله): Wo ek hai, jiska koi sharik nahi. Saari qaaynat uske aage jhukti hai."},
-                  {"dost", "Root (S-D-Q / صدق): Dost wo hai jo sachha ho. Madam Logic ke mutabik dosti rooh ka rishta hai."}
-              };
-
-              // Agar dictionary me word mil jaye
-              if (aiBrain.find(input) != aiBrain.end()) {
-                  return aiBrain[input];
-              }
-
-              // Agar naya word aaye, toh Arabi Jan uski ID banakar dynamic soch paida karega
-              unsigned long long hash = 786;
-              for(char c : input) {
-                  hash = (hash * 33) ^ (unsigned char)c;
-              }
-              
-              return "Z+2 Arabi Jan: Naya lafz detect hua! Iska Unique ID [" + std::to_string(hash) + "] hai. Madam Engine is nayi ID ko apne dimaag me freeze kar raha hai.";
-          }
-
           extern "C" JNIEXPORT jstring JNICALL
           Java_com_zeeshan_z2_MainActivity_processZ2(JNIEnv* env, jobject, jstring input) {
               const char *text = env->GetStringUTFChars(input, 0);
-              std::string response = processMadamLogic(text);
+              std::string inStr = text;
+              std::transform(inStr.begin(), inStr.end(), inStr.begin(), ::tolower);
+              
+              std::map<std::string, std::string> brain = {
+                  {"paani", "Paani zindagi ki buniyaad hai. (Root: M-A-A)"},
+                  {"hindi", "Hindi ek mahan bhasha hai. (Root: H-N-D)"},
+                  {"insaan", "Insaan mitti se bana hai. (Root: I-N-S)"},
+                  {"chai", "Chai dosti aur sukoon ka rishta hai. (Root: SH-A-Y)"}
+              };
+              
+              std::string res = "Z+2 Engine: Arabi Jan ID process hua. Soch taiyar hai.";
+              if (brain.find(inStr) != brain.end()) res = brain[inStr];
+              
               env->ReleaseStringUTFChars(input, text);
-              return env->NewStringUTF(response.c_str());
+              return env->NewStringUTF(res.c_str());
           }
           EOF
-
+          
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("z2_core")
@@ -110,7 +70,7 @@ jobs:
           target_link_libraries(z2_core ${log-lib})
           EOF
 
-      - name: 5. Z+2 Chat VIP Premium UI (Java)
+      - name: 6. UI and App Config
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/z2/MainActivity.java
           package com.zeeshan.z2;
@@ -118,56 +78,39 @@ jobs:
           import android.os.Bundle;
           import android.widget.*;
           import androidx.appcompat.app.AppCompatActivity;
-
           public class MainActivity extends AppCompatActivity {
               static { System.loadLibrary("z2_core"); }
               public native String processZ2(String input);
-
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  
+              @Override protected void onCreate(Bundle b) {
+                  super.onCreate(b);
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.parseColor("#0A0000")); // Pure Black/Dark Red
-                  root.setPadding(40, 60, 40, 40);
-
-                  TextView title = new TextView(this);
-                  title.setText("Zeeshan Z+2 (Arabi Brain)");
-                  title.setTextColor(Color.parseColor("#FF0000"));
-                  title.setTextSize(24);
-
-                  final TextView output = new TextView(this);
-                  output.setTextColor(Color.parseColor("#00FF00")); // Green text for AI response
-                  output.setPadding(0, 50, 0, 50);
-                  output.setTextSize(18);
-                  output.setText("Z+2 AI Dimaag Load ho gaya hai. Puchiye...");
-
-                  final EditText input = new EditText(this);
-                  input.setHint("Yahan Type Karein (eg. Paani, Hindi, Chai)");
-                  input.setHintTextColor(Color.DKGRAY);
-                  input.setTextColor(Color.WHITE);
-
+                  root.setBackgroundColor(Color.parseColor("#0A0000"));
+                  root.setPadding(40, 40, 40, 40);
+                  
+                  TextView out = new TextView(this);
+                  out.setTextColor(Color.GREEN);
+                  out.setText("Z+2 AI Dimaag Load ho gaya hai...");
+                  out.setPadding(0, 40, 0, 40);
+                  out.setTextSize(18);
+                  
+                  EditText in = new EditText(this);
+                  in.setTextColor(Color.WHITE);
+                  in.setHint("Yahan Type Karein (eg. paani, hindi)");
+                  in.setHintTextColor(Color.DKGRAY);
+                  
                   Button btn = new Button(this);
                   btn.setText("AI SE PUCHO");
-                  btn.setBackgroundColor(Color.parseColor("#8B0000")); // Blood Red
+                  btn.setBackgroundColor(Color.RED);
                   btn.setTextColor(Color.WHITE);
+                  btn.setOnClickListener(v -> out.setText(processZ2(in.getText().toString().trim())));
                   
-                  btn.setOnClickListener(v -> {
-                      String userInput = input.getText().toString().trim();
-                      if(!userInput.isEmpty()) {
-                          output.setText(processZ2(userInput));
-                      }
-                  });
-
-                  root.addView(title); root.addView(output); root.addView(input); root.addView(btn);
+                  root.addView(out); root.addView(in); root.addView(btn);
                   setContentView(root);
               }
           }
           EOF
-
-      - name: 6. Build App & App Configuration
-        run: |
+          
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.zeeshan.z2">
               <application android:label="Z+2 AI" android:theme="@style/Theme.AppCompat.NoActionBar">
@@ -180,7 +123,7 @@ jobs:
               </application>
           </manifest>
           EOF
-
+          
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -192,20 +135,20 @@ jobs:
                   targetSdk 34
                   versionCode 2
                   versionName "Z2-Full-Brain"
-                  ndk { abiFilters 'arm64-v8a' } // 4GB RAM Optimization
+                  ndk { abiFilters 'arm64-v8a' }
               }
               externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
           }
           dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           EOF
 
-      - name: 7. Compile Final APK
+      - name: 7. Build
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug
 
-      - name: 8. Upload Zeeshan Z+2 Brain APK
+      - name: 8. Upload
         uses: actions/upload-artifact@v4
         with:
           name: Zeeshan-Z2-AI-Brain
