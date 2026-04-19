@@ -1,4 +1,4 @@
-name: Build Zeeshan Husain Smile (100% Fixed ZIP Engine)
+name: Build Zeeshan Husain Smile (Perfect RAM Balance)
 
 on:
   push:
@@ -18,14 +18,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Create Folders
+      - name: 3. Create Architecture Folders
         run: |
           mkdir -p app/src/main/java/com/zeeshan/smile
           mkdir -p app/src/main/cpp
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
 
-      - name: 4. Gradle Setup (6GB RAM Boost)
+      - name: 4. Gradle Setup (RAM Balanced to 3GB)
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
@@ -38,25 +38,24 @@ jobs:
           plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
           
+          # YAHAN FIX HAI: 3GB RAM Java ko, baaki 4GB C++ compiler ke liye free chhod di
           cat << 'EOF' > gradle.properties
           android.useAndroidX=true
           android.enableJetifier=true
-          org.gradle.jvmargs=-Xmx6g -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.jvmargs=-Xmx3g -XX:+HeapDumpOnOutOfMemoryError
           EOF
 
-      - name: 5. Download 300MB Offline Brain
+      - name: 5. Download 300MB Offline Brain (The Vault)
         run: |
           wget -q --show-progress https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf -O app/src/main/assets/z_brain.gguf
 
-      - name: 6. Download Stable Llama Engine (Guaranteed ZIP Method)
+      - name: 6. Download Stable Llama Engine (ZIP Method)
         run: |
-          # YAHAN MASTER FIX HAI: Git clone ki jagah direct ZIP download
           wget -q https://github.com/ggerganov/llama.cpp/archive/refs/tags/b2400.zip -O llama.zip
           unzip -q llama.zip
-          # Folder ka naam jo bhi ho, use 'llama' bana do
           find . -maxdepth 1 -name "llama.cpp-*" -exec mv {} app/src/main/cpp/llama \;
 
-      - name: 7. Connect Engine to Vault (Perfect C++ Logic)
+      - name: 7. Connect Engine to Vault (Safe Compilation)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
@@ -84,7 +83,6 @@ jobs:
               std::string response = "Zeeshan Husain Smile AI (Real Engine): \n";
               std::vector<llama_token> tokens(512);
               
-              // Stable b2400 API math logic
               int n_tokens = llama_tokenize(model, prompt, strlen(prompt), tokens.data(), tokens.size(), true, true);
               
               if (n_tokens > 0) {
@@ -132,7 +130,8 @@ jobs:
           cmake_minimum_required(VERSION 3.22.1)
           project("z_engine")
           
-          # Stable Android Ninja Flags (No OpenMP crash)
+          # YAHAN FIX HAI: Saare warnings ko ignore karne ka order
+          set(LLAMA_WERROR OFF CACHE BOOL "" FORCE)
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
           set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
           set(GGML_RPC OFF CACHE BOOL "" FORCE)
@@ -332,8 +331,8 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 9
-                  versionName "9.0-Final-ZIP-Engine"
+                  versionCode 10
+                  versionName "10.0-Master-Balance"
                   ndk { abiFilters 'arm64-v8a' }
               }
               aaptOptions { noCompress 'gguf' }
