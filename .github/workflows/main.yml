@@ -18,12 +18,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Setup Virtual RAM (8GB Swap)
+      - name: 3. Setup Virtual RAM (8GB Swap Fix)
         run: |
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          # YAHAN FIX HAI: Nayi jagah par Virtual RAM banayi gayi hai taaki 'busy' error na aaye
+          sudo fallocate -l 8G /mnt/swapfile2
+          sudo chmod 600 /mnt/swapfile2
+          sudo mkswap /mnt/swapfile2
+          sudo swapon /mnt/swapfile2
 
       - name: 4. Create Folders
         run: |
@@ -157,9 +158,8 @@ jobs:
               private void setupWhatsAppUI() {
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.parseColor("#121B22")); // WhatsApp Dark
+                  root.setBackgroundColor(Color.parseColor("#121B22"));
 
-                  // Header
                   TextView header = new TextView(this);
                   header.setText("Zeeshan Husain Smile AI");
                   header.setTextColor(Color.WHITE);
@@ -176,7 +176,6 @@ jobs:
                   scrollView.addView(chatContainer);
                   root.addView(scrollView);
 
-                  // Input Bar
                   LinearLayout inputBar = new LinearLayout(this);
                   inputBar.setPadding(20, 20, 20, 20);
                   inputBar.setBackgroundColor(Color.parseColor("#1F2C34"));
@@ -206,7 +205,6 @@ jobs:
                   inputEdit.setText("");
                   
                   new Thread(() -> {
-                      // Check for correction logic
                       if(text.toLowerCase().contains("correct answer is")) {
                           String key = text.split("correct answer is")[0].trim();
                           String value = text.split("correct answer is")[1].trim();
@@ -215,7 +213,6 @@ jobs:
                           return;
                       }
 
-                      // Check History first
                       String savedResponse = history.getString(text, null);
                       String finalResponse = (savedResponse != null) ? "Saved: " + savedResponse : processOfflineAI(text, modelPath);
 
@@ -276,8 +273,8 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 16
-                  versionName "16.0-NH-Wikipedia"
+                  versionCode 17
+                  versionName "17.0-RAM-Fixed"
                   ndk { abiFilters 'arm64-v8a' }
                   externalNativeBuild { cmake { arguments "-j1" } }
               }
