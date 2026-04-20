@@ -20,7 +20,6 @@ jobs:
 
       - name: 3. Setup Virtual RAM (8GB Swap Fix)
         run: |
-          # YAHAN FIX HAI: Nayi jagah par Virtual RAM banayi gayi hai taaki 'busy' error na aaye
           sudo fallocate -l 8G /mnt/swapfile2
           sudo chmod 600 /mnt/swapfile2
           sudo mkswap /mnt/swapfile2
@@ -32,13 +31,26 @@ jobs:
           mkdir -p app/src/main/cpp
           mkdir -p app/src/main/res/values
 
-      - name: 5. Download Stable Arabi Jan Engine
+      - name: 5. Gradle Setup (Jo pichli baar chhut gaya tha)
+        run: |
+          cat << 'EOF' > settings.gradle
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS); repositories { google(); mavenCentral() } }
+          rootProject.name = 'Zeeshan-Smile-AI'
+          include ':app'
+          EOF
+
+          cat << 'EOF' > build.gradle
+          plugins { id 'com.android.application' version '8.2.0' apply false }
+          EOF
+
+      - name: 6. Download Stable Arabi Jan Engine
         run: |
           wget -q https://github.com/ggerganov/llama.cpp/archive/refs/tags/b2400.zip -O llama.zip
           unzip -q llama.zip
           find . -maxdepth 1 -name "llama.cpp-*" -exec mv {} app/src/main/cpp/llama \;
 
-      - name: 6. Connect NH Engine (Correction & History Logic)
+      - name: 7. Connect NH Engine (Correction & History Logic)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
@@ -53,14 +65,13 @@ jobs:
               
               llama_backend_init();
               llama_model_params model_params = llama_model_default_params();
-              // Enable mmap for Samsung A12 memory efficiency
               model_params.use_mmap = true; 
               
               llama_model * model = llama_load_model_from_file(path, model_params);
               if (model == NULL) return env->NewStringUTF("Error: Engine Load Fail.");
 
               llama_context_params ctx_params = llama_context_default_params();
-              ctx_params.n_ctx = 1024; // Bigger history window
+              ctx_params.n_ctx = 1024; 
               llama_context * ctx = llama_new_context_with_model(model, ctx_params);
 
               std::string response = "";
@@ -71,7 +82,7 @@ jobs:
                   llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens, 0, 0);
                   if (llama_decode(ctx, batch) == 0) {
                       int n_vocab = llama_n_vocab(model);
-                      for (int i = 0; i < 150; i++) { // Wikipedia style detailed response
+                      for (int i = 0; i < 150; i++) { 
                           float * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
                           llama_token new_token_id = 0;
                           float max_prob = -1e9f;
@@ -108,7 +119,7 @@ jobs:
           target_link_libraries(z_engine llama log)
           EOF
 
-      - name: 7. Build WhatsApp UI & Smart Logic
+      - name: 8. Build WhatsApp UI & Smart Logic
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/smile/MainActivity.java
           package com.zeeshan.smile;
@@ -262,7 +273,7 @@ jobs:
           }
           EOF
 
-      - name: 8. Setup Build Configuration
+      - name: 9. Setup Build Configuration
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -273,8 +284,8 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 17
-                  versionName "17.0-RAM-Fixed"
+                  versionCode 18
+                  versionName "18.0-Flawless-Master"
                   ndk { abiFilters 'arm64-v8a' }
                   externalNativeBuild { cmake { arguments "-j1" } }
               }
@@ -304,13 +315,13 @@ jobs:
           android.enableJetifier=true
           EOF
 
-      - name: 9. Build Master APK
+      - name: 10. Build Master APK
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --no-daemon
 
-      - name: 10. Upload Final Master APK
+      - name: 11. Upload Final Master APK
         uses: actions/upload-artifact@v4
         with:
           name: Zeeshan-Husain-Smile-NH-Wikipedia
