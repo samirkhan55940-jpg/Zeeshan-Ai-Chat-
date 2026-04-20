@@ -1,4 +1,4 @@
-name: Build Zeeshan Husain Smile (Ninja Memory Fix)
+name: Build Zeeshan Husain Smile (Clean & Fast Engine)
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
 
-      - name: 4. Gradle Setup (RAM Balanced)
+      - name: 4. Gradle Setup (Safe Memory)
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
@@ -38,11 +38,12 @@ jobs:
           plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
           
+          # Yahan maine RAM ko balance rakha hai
           cat << 'EOF' > gradle.properties
           android.useAndroidX=true
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx3g -XX:+HeapDumpOnOutOfMemoryError
-          org.gradle.parallel=false
+          org.gradle.workers.max=2
           EOF
 
       - name: 5. Download 300MB Offline Brain (The Vault)
@@ -55,7 +56,7 @@ jobs:
           unzip -q llama.zip
           find . -maxdepth 1 -name "llama.cpp-*" -exec mv {} app/src/main/cpp/llama \;
 
-      - name: 7. Connect Engine to Vault (Safe Logic)
+      - name: 7. Connect Engine to Vault (Super Clean C++)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
@@ -80,7 +81,7 @@ jobs:
               ctx_params.n_ctx = 512;
               llama_context * ctx = llama_new_context_with_model(model, ctx_params);
 
-              std::string response = "Zeeshan Husain Smile AI (Real Engine): \n";
+              std::string response = "Zeeshan Husain Smile AI: \n";
               std::vector<llama_token> tokens(512);
               
               int n_tokens = llama_tokenize(model, prompt, strlen(prompt), tokens.data(), tokens.size(), true, true);
@@ -89,7 +90,7 @@ jobs:
                   llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens, 0, 0);
                   if (llama_decode(ctx, batch) == 0) {
                       int n_vocab = llama_n_vocab(model);
-                      for (int i = 0; i < 30; i++) {
+                      for (int i = 0; i < 40; i++) {
                           float * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
                           llama_token new_token_id = 0;
                           float max_prob = -1e9f;
@@ -130,10 +131,13 @@ jobs:
           cmake_minimum_required(VERSION 3.22.1)
           project("z_engine")
           
+          # YAHAN MASTER FIX HAI: Faltu kachra, tests, aur examples build hone se rok diye
+          set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+          set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+          set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
           set(LLAMA_WERROR OFF CACHE BOOL "" FORCE)
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
           set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
-          set(GGML_RPC OFF CACHE BOOL "" FORCE)
           
           add_subdirectory(llama)
           add_library(z_engine SHARED native-lib.cpp)
@@ -305,7 +309,7 @@ jobs:
           }
           EOF
 
-      - name: 9. App Configuration (The Final Lock)
+      - name: 9. App Configuration
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.zeeshan.smile">
@@ -330,15 +334,9 @@ jobs:
                   applicationId "com.zeeshan.smile"
                   minSdk 24
                   targetSdk 34
-                  versionCode 12
-                  versionName "12.0-Ninja-Fixed"
+                  versionCode 13
+                  versionName "13.0-Clean-Build"
                   ndk { abiFilters 'arm64-v8a' }
-                  // YAHAN MASTER FIX HAI: Ninja ko dimaag ke andar se lock kiya hai '-j1' de kar
-                  externalNativeBuild { 
-                      cmake { 
-                          arguments "-j1" 
-                      } 
-                  }
               }
               aaptOptions { noCompress 'gguf' }
               externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
