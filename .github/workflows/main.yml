@@ -1,4 +1,4 @@
-name: Build Zeeshan Husain Smile (Smart Bypass App)
+name: Build Zeeshan Husain Smile (NH Master Wikipedia Edition)
 
 on:
   push:
@@ -18,41 +18,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 3. Create Architecture Folders
+      - name: 3. Setup Virtual RAM (8GB Swap)
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+
+      - name: 4. Create Folders
         run: |
           mkdir -p app/src/main/java/com/zeeshan/smile
           mkdir -p app/src/main/cpp
           mkdir -p app/src/main/res/values
 
-      - name: 4. Gradle Setup (Safe Memory)
+      - name: 5. Download Stable Arabi Jan Engine
         run: |
-          cat << 'EOF' > settings.gradle
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS); repositories { google(); mavenCentral() } }
-          rootProject.name = 'Zeeshan-Smile-AI'
-          include ':app'
-          EOF
-
-          cat << 'EOF' > build.gradle
-          plugins { id 'com.android.application' version '8.2.0' apply false }
-          EOF
-          
-          # Halka Build Setup
-          cat << 'EOF' > gradle.properties
-          android.useAndroidX=true
-          android.enableJetifier=true
-          org.gradle.jvmargs=-Xmx3g
-          org.gradle.parallel=false
-          EOF
-
-      - name: 5. Download Stable Llama Engine (ZIP Method)
-        run: |
-          # YAHAN SE 300MB FILE DOWNLOAD HATA DI GAYI HAI (Server RAM bacha li)
           wget -q https://github.com/ggerganov/llama.cpp/archive/refs/tags/b2400.zip -O llama.zip
           unzip -q llama.zip
           find . -maxdepth 1 -name "llama.cpp-*" -exec mv {} app/src/main/cpp/llama \;
 
-      - name: 6. Connect Engine to C++ (Pure Logic)
+      - name: 6. Connect NH Engine (Correction & History Logic)
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
@@ -67,58 +52,45 @@ jobs:
               
               llama_backend_init();
               llama_model_params model_params = llama_model_default_params();
-              llama_model * model = llama_load_model_from_file(path, model_params);
+              // Enable mmap for Samsung A12 memory efficiency
+              model_params.use_mmap = true; 
               
-              if (model == NULL) {
-                  return env->NewStringUTF("Zeeshan AI Error: Dimaag (Vault) load nahi hua.");
-              }
+              llama_model * model = llama_load_model_from_file(path, model_params);
+              if (model == NULL) return env->NewStringUTF("Error: Engine Load Fail.");
 
               llama_context_params ctx_params = llama_context_default_params();
-              ctx_params.n_ctx = 512;
+              ctx_params.n_ctx = 1024; // Bigger history window
               llama_context * ctx = llama_new_context_with_model(model, ctx_params);
 
-              std::string response = "Zeeshan Husain Smile AI: \n";
-              std::vector<llama_token> tokens(512);
-              
+              std::string response = "";
+              std::vector<llama_token> tokens(1024);
               int n_tokens = llama_tokenize(model, prompt, strlen(prompt), tokens.data(), tokens.size(), true, true);
               
               if (n_tokens > 0) {
                   llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens, 0, 0);
                   if (llama_decode(ctx, batch) == 0) {
                       int n_vocab = llama_n_vocab(model);
-                      for (int i = 0; i < 40; i++) {
+                      for (int i = 0; i < 150; i++) { // Wikipedia style detailed response
                           float * logits = llama_get_logits_ith(ctx, batch.n_tokens - 1);
                           llama_token new_token_id = 0;
                           float max_prob = -1e9f;
-                          
                           for (int j = 0; j < n_vocab; j++) {
-                              if (logits[j] > max_prob) {
-                                  max_prob = logits[j];
-                                  new_token_id = j;
-                              }
+                              if (logits[j] > max_prob) { max_prob = logits[j]; new_token_id = j; }
                           }
-                          
                           if (llama_token_is_eog(model, new_token_id)) break;
-                          
                           char buf[128];
                           int n_chars = llama_token_to_piece(model, new_token_id, buf, sizeof(buf), 0, true);
                           if (n_chars > 0) response += std::string(buf, n_chars);
-                          
                           batch = llama_batch_get_one(&new_token_id, 1, n_tokens + i, 0);
                           if (llama_decode(ctx, batch) != 0) break;
                       }
-                  } else {
-                      response += "Math error.";
                   }
               }
-
               llama_free(ctx);
               llama_free_model(model);
               llama_backend_free();
-
               env->ReleaseStringUTFChars(input, prompt);
               env->ReleaseStringUTFChars(modelPath, path);
-              
               return env->NewStringUTF(response.c_str());
           }
           EOF
@@ -126,219 +98,199 @@ jobs:
           cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
           cmake_minimum_required(VERSION 3.22.1)
           project("z_engine")
-          
           set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
           set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-          set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
-          set(LLAMA_WERROR OFF CACHE BOOL "" FORCE)
           set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
-          set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
-          
           add_subdirectory(llama)
           add_library(z_engine SHARED native-lib.cpp)
           target_include_directories(z_engine PRIVATE llama/include llama llama/ggml/include)
           target_link_libraries(z_engine llama log)
           EOF
 
-      - name: 7. Java UI & Smart Downloader (Phone Memory)
+      - name: 7. Build WhatsApp UI & Smart Logic
         run: |
           cat << 'EOF' > app/src/main/java/com/zeeshan/smile/MainActivity.java
           package com.zeeshan.smile;
 
           import android.Manifest;
-          import android.content.Intent;
-          import android.content.pm.PackageManager;
+          import android.content.SharedPreferences;
           import android.graphics.Color;
           import android.graphics.drawable.GradientDrawable;
           import android.os.Bundle;
-          import android.speech.RecognizerIntent;
           import android.speech.tts.TextToSpeech;
           import android.view.Gravity;
+          import android.view.View;
           import android.widget.*;
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
-          import java.io.File;
-          import java.io.FileOutputStream;
-          import java.io.InputStream;
-          import java.net.HttpURLConnection;
+          import java.io.*;
           import java.net.URL;
-          import java.util.ArrayList;
           import java.util.Locale;
 
           public class MainActivity extends AppCompatActivity {
               static { System.loadLibrary("z_engine"); }
               public native String processOfflineAI(String input, String modelPath);
 
-              private LinearLayout chatArea;
+              private LinearLayout chatContainer;
               private ScrollView scrollView;
-              private EditText inputField;
-              private Button sendBtn, micBtn;
+              private EditText inputEdit;
+              private String modelPath;
               private TextToSpeech tts;
-              private String absoluteModelPath = "";
+              private SharedPreferences history;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+                  history = getSharedPreferences("ZeeshanHistory", MODE_PRIVATE);
+                  modelPath = new File(getFilesDir(), "z_brain.gguf").getAbsolutePath();
                   
-                  // Microphone permission
-                  if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                      ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 100);
-                  }
+                  setupWhatsAppUI();
                   
                   tts = new TextToSpeech(this, status -> {
                       if(status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("hi", "IN"));
                   });
 
-                  // UI Setup
+                  if (!new File(modelPath).exists()) downloadModel();
+                  else addMessage("Zeeshan AI: Welcome back! System ready.", false);
+              }
+
+              private void setupWhatsAppUI() {
                   LinearLayout root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.parseColor("#080808"));
+                  root.setBackgroundColor(Color.parseColor("#121B22")); // WhatsApp Dark
 
-                  TextView title = new TextView(this);
-                  title.setText("Zeeshan Husain Smile - AI");
-                  title.setTextColor(Color.parseColor("#FF0000"));
-                  title.setTextSize(22);
-                  title.setPadding(30, 40, 30, 40);
-                  title.setGravity(Gravity.CENTER);
-                  root.addView(title);
+                  // Header
+                  TextView header = new TextView(this);
+                  header.setText("Zeeshan Husain Smile AI");
+                  header.setTextColor(Color.WHITE);
+                  header.setBackgroundColor(Color.parseColor("#075E54"));
+                  header.setPadding(40, 40, 40, 40);
+                  header.setTextSize(20);
+                  root.addView(header);
 
                   scrollView = new ScrollView(this);
-                  scrollView.setLayoutParams(new LinearLayout.LayoutParams(-1, 0, 1.0f));
-                  chatArea = new LinearLayout(this);
-                  chatArea.setOrientation(LinearLayout.VERTICAL);
-                  chatArea.setPadding(20, 20, 20, 20);
-                  scrollView.addView(chatArea);
+                  scrollView.setLayoutParams(new LinearLayout.LayoutParams(-1, 0, 1f));
+                  chatContainer = new LinearLayout(this);
+                  chatContainer.setOrientation(LinearLayout.VERTICAL);
+                  chatContainer.setPadding(20, 20, 20, 20);
+                  scrollView.addView(chatContainer);
                   root.addView(scrollView);
 
-                  LinearLayout bottomBar = new LinearLayout(this);
-                  bottomBar.setOrientation(LinearLayout.HORIZONTAL);
-                  bottomBar.setBackgroundColor(Color.parseColor("#151515"));
-                  bottomBar.setPadding(20, 20, 20, 20);
-                  bottomBar.setGravity(Gravity.CENTER_VERTICAL);
+                  // Input Bar
+                  LinearLayout inputBar = new LinearLayout(this);
+                  inputBar.setPadding(20, 20, 20, 20);
+                  inputBar.setBackgroundColor(Color.parseColor("#1F2C34"));
 
-                  micBtn = new Button(this);
-                  micBtn.setText("🎤");
-                  micBtn.setTextSize(20);
-                  micBtn.setBackgroundColor(Color.TRANSPARENT);
-                  micBtn.setEnabled(false);
-                  micBtn.setOnClickListener(v -> {
-                      Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                      intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                      startActivityForResult(intent, 101);
-                  });
+                  inputEdit = new EditText(this);
+                  inputEdit.setHint("Write or correct here...");
+                  inputEdit.setHintTextColor(Color.GRAY);
+                  inputEdit.setTextColor(Color.WHITE);
+                  inputEdit.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
+                  inputBar.addView(inputEdit);
 
-                  inputField = new EditText(this);
-                  inputField.setHint("Dimaag load ho raha hai...");
-                  inputField.setHintTextColor(Color.GRAY);
-                  inputField.setTextColor(Color.WHITE);
-                  inputField.setEnabled(false);
-                  inputField.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1.0f));
-
-                  sendBtn = new Button(this);
+                  Button sendBtn = new Button(this);
                   sendBtn.setText("➤");
                   sendBtn.setTextColor(Color.WHITE);
-                  sendBtn.setBackgroundColor(Color.parseColor("#8B0000"));
-                  sendBtn.setEnabled(false);
-                  sendBtn.setOnClickListener(v -> handleSend(inputField.getText().toString()));
+                  sendBtn.setBackgroundColor(Color.parseColor("#00A884"));
+                  sendBtn.setOnClickListener(v -> sendMessage());
+                  inputBar.addView(sendBtn);
 
-                  bottomBar.addView(micBtn);
-                  bottomBar.addView(inputField);
-                  bottomBar.addView(sendBtn);
-                  root.addView(bottomBar);
+                  root.addView(inputBar);
                   setContentView(root);
-                  
-                  // SMART BYPASS: Downloading directly in app
-                  absoluteModelPath = new File(getFilesDir(), "z_brain.gguf").getAbsolutePath();
-                  File modelFile = new File(absoluteModelPath);
-                  
-                  if (!modelFile.exists()) {
-                      addMessage("System: Pehli baar 300MB ka AI Dimaag internet se phone mein lock ho raha hai. Kripya app band na karein...", false);
-                      downloadModelOffline();
-                  } else {
-                      unlockEngine();
-                  }
               }
 
-              private void downloadModelOffline() {
+              private void sendMessage() {
+                  String text = inputEdit.getText().toString();
+                  if (text.isEmpty()) return;
+                  addMessage(text, true);
+                  inputEdit.setText("");
+                  
                   new Thread(() -> {
-                      try {
-                          URL url = new URL("https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf");
-                          HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                          conn.connect();
-                          InputStream is = conn.getInputStream();
-                          FileOutputStream fos = new FileOutputStream(absoluteModelPath);
-                          
-                          byte[] data = new byte[8192];
-                          int count;
-                          while ((count = is.read(data)) != -1) {
-                              fos.write(data, 0, count);
-                          }
-                          fos.flush(); fos.close(); is.close();
-                          
-                          runOnUiThread(() -> unlockEngine());
-                      } catch (Exception e) {
-                          runOnUiThread(() -> addMessage("Error: Download fail ho gaya. Internet check karein.", false));
+                      // Check for correction logic
+                      if(text.toLowerCase().contains("correct answer is")) {
+                          String key = text.split("correct answer is")[0].trim();
+                          String value = text.split("correct answer is")[1].trim();
+                          history.edit().putString(key, value).apply();
+                          runOnUiThread(() -> addMessage("System: Correction saved for Arabi Jan Engine.", false));
+                          return;
                       }
-                  }).start();
-              }
-              
-              private void unlockEngine() {
-                  addMessage("System: Engine 100% Ready aur Offline Lock ho gaya! Ab duniya ka koi bhi sawal puchiye.", false);
-                  inputField.setEnabled(true); 
-                  inputField.setHint("Yahan likhein...");
-                  sendBtn.setEnabled(true); 
-                  micBtn.setEnabled(true);
-              }
 
-              private void handleSend(String text) {
-                  if(text.isEmpty()) return;
-                  addMessage(text, true); 
-                  inputField.setText("");
-                  
-                  new Thread(() -> {
-                      String aiResponse = processOfflineAI(text, absoluteModelPath);
+                      // Check History first
+                      String savedResponse = history.getString(text, null);
+                      String finalResponse = (savedResponse != null) ? "Saved: " + savedResponse : processOfflineAI(text, modelPath);
+
                       runOnUiThread(() -> {
-                          addMessage(aiResponse, false);
-                          tts.speak(aiResponse, TextToSpeech.QUEUE_FLUSH, null, null);
+                          addMessage(finalResponse, false);
+                          tts.speak(finalResponse, TextToSpeech.QUEUE_FLUSH, null, null);
                       });
                   }).start();
               }
 
               private void addMessage(String text, boolean isUser) {
-                  TextView tv = new TextView(this); tv.setText(text); tv.setTextColor(Color.WHITE);
-                  tv.setPadding(30, 20, 30, 20); tv.setTextSize(16);
+                  TextView tv = new TextView(this);
+                  tv.setText(text);
+                  tv.setTextColor(Color.WHITE);
+                  tv.setPadding(30, 20, 30, 20);
                   LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
-                  params.setMargins(10, 10, 10, 10);
-                  GradientDrawable bg = new GradientDrawable(); bg.setCornerRadius(20f);
-                  if(isUser) {
-                      bg.setColor(Color.parseColor("#005C4B")); params.gravity = Gravity.END;
+                  params.setMargins(0, 10, 0, 10);
+                  GradientDrawable gd = new GradientDrawable();
+                  gd.setCornerRadius(20);
+                  if (isUser) {
+                      gd.setColor(Color.parseColor("#005C4B"));
+                      params.gravity = Gravity.END;
                   } else {
-                      bg.setColor(Color.parseColor("#4A0000")); params.gravity = Gravity.START;
+                      gd.setColor(Color.parseColor("#202C33"));
+                      params.gravity = Gravity.START;
                   }
-                  tv.setBackground(bg); tv.setLayoutParams(params);
-                  chatArea.addView(tv); scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+                  tv.setBackground(gd);
+                  tv.setLayoutParams(params);
+                  chatContainer.addView(tv);
+                  scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
               }
 
-              @Override
-              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-                  super.onActivityResult(requestCode, resultCode, data);
-                  if (requestCode == 101 && resultCode == RESULT_OK && data != null) {
-                      ArrayList<String> res = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                      if (res != null && !res.isEmpty()) handleSend(res.get(0));
-                  }
+              private void downloadModel() {
+                  new Thread(() -> {
+                      try {
+                          addMessage("System: Downloading 300MB Wikipedia Brain...", false);
+                          InputStream in = new URL("https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat-GGUF/resolve/main/qwen1_5-0_5b-chat-q4_k_m.gguf").openStream();
+                          OutputStream out = new FileOutputStream(modelPath);
+                          byte[] buffer = new byte[8192];
+                          int bytesRead;
+                          while ((bytesRead = in.read(buffer)) != -1) out.write(buffer, 0, bytesRead);
+                          out.close(); in.close();
+                          runOnUiThread(() -> addMessage("System: Brain Locked. Enjoy Offline AI!", false));
+                      } catch (Exception e) { e.printStackTrace(); }
+                  }).start();
               }
-              @Override
-              protected void onDestroy() { if(tts != null) tts.shutdown(); super.onDestroy(); }
           }
           EOF
 
-      - name: 8. App Configuration & INTERNET Permission
+      - name: 8. Setup Build Configuration
         run: |
+          cat << 'EOF' > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.zeeshan.smile'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.zeeshan.smile"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 16
+                  versionName "16.0-NH-Wikipedia"
+                  ndk { abiFilters 'arm64-v8a' }
+                  externalNativeBuild { cmake { arguments "-j1" } }
+              }
+              externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
+          }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
+          EOF
+
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.zeeshan.smile">
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <application android:label="Zeeshan Smile" android:theme="@style/Theme.AppCompat.NoActionBar" android:usesCleartextTraffic="true">
+              <application android:label="Zeeshan Smile" android:theme="@style/Theme.AppCompat.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -349,25 +301,13 @@ jobs:
           </manifest>
           EOF
 
-          cat << 'EOF' > app/build.gradle
-          plugins { id 'com.android.application' }
-          android {
-              namespace 'com.zeeshan.smile'
-              compileSdk 34
-              defaultConfig {
-                  applicationId "com.zeeshan.smile"
-                  minSdk 24
-                  targetSdk 34
-                  versionCode 14
-                  versionName "14.0-Smart-Bypass"
-                  ndk { abiFilters 'arm64-v8a' }
-              }
-              externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }
-          }
-          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
+          cat << 'EOF' > gradle.properties
+          org.gradle.jvmargs=-Xmx3g
+          android.useAndroidX=true
+          android.enableJetifier=true
           EOF
 
-      - name: 9. Compile Asli Engine & Build Halka APK
+      - name: 9. Build Master APK
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
@@ -376,5 +316,5 @@ jobs:
       - name: 10. Upload Final Master APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zeeshan-Smile-Real-AI-Engine
+          name: Zeeshan-Husain-Smile-NH-Wikipedia
           path: app/build/outputs/apk/debug/*.apk
