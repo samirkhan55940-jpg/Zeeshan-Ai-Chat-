@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (Jarvis, Scanner, Auto-Clicker & 50MB Brain)"
+name: "Build Z+2 Chat (Auto-Jarvis, 50MB Brain, No ABCD)"
 
 on:
   push:
@@ -49,7 +49,7 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Android Native Config (50MB Fix Included)"
+      - name: "5. Android Native Config"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -60,8 +60,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 16
-                  versionName "16.0-Master-Jarvis-Clean"
+                  versionCode 17
+                  versionName "17.0-Jarvis-Fixed"
               }
               buildTypes {
                   release {
@@ -85,12 +85,12 @@ jobs:
         run: |
           dd if=/dev/zero of=app/src/main/assets/story_database_50mb.db bs=1M count=50
 
-      - name: "7. App Resources & UI Drawables"
+      - name: "7. App Resources & UI Drawables (THE FIX: Removed '&' symbol)"
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
               <string name="app_name">Z+2 Global Jarvis</string>
-              <string name="accessibility_desc">Z+2 Jarvis Ghost Keyboard & Auto-Clicker.</string>
+              <string name="accessibility_desc">Z+2 Jarvis Ghost Keyboard aur Auto-Clicker.</string>
           </resources>
           EOF
 
@@ -176,7 +176,7 @@ jobs:
 
               <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/top_bar" android:padding="10dp">
                   <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Main Jarvis hoon. ABCD aur Ginti delete ho chuki hai.\n\nMujhe order dein:\n1. 'App open karo'\n2. 'Wi-Fi/Flight Mode on karo'\n3. 'Kahani sunao'\n4. B.G Switch on karke bahar jaayein aur bolein 'Yahan type karo...'" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Main Jarvis hoon. ABCD aur Ginti delete ho chuki hai.\n\nMujhe order dein:\n1. 'App open karo'\n2. 'Wi-Fi ya Flight Mode on karo'\n3. 'Kahani sunao'\n4. B.G Switch on karke bahar jaayein aur bolein 'Yahan type karo...'" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
                   </LinearLayout>
               </ScrollView>
 
@@ -194,7 +194,7 @@ jobs:
           </LinearLayout>
           EOF
 
-      - name: "10. AndroidManifest.xml (CRITICAL: FOREGROUND SERVICE PERMISSIONS ADDED)"
+      - name: "10. AndroidManifest.xml"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -228,7 +228,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "11. Java Code: THE GHOST FINGER (AutoClickerService)"
+      - name: "11. Java Code: AUTO-CLICKER & GHOST KEYBOARD"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/AutoClickerService.java
           package com.zplus2.chat;
@@ -250,18 +250,16 @@ jobs:
                   AccessibilityNodeInfo rootNode = getRootInActiveWindow();
                   if (rootNode == null) return;
 
-                  // Ghost Keyboard Logic: Find focused text box and type
                   if (!pendingTextToType.isEmpty()) {
                       AccessibilityNodeInfo focusedNode = findFocusedEditText(rootNode);
                       if (focusedNode != null) {
                           Bundle arguments = new Bundle();
                           arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, pendingTextToType);
                           focusedNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);
-                          pendingTextToType = ""; // Reset after typing
+                          pendingTextToType = ""; 
                       }
                   }
 
-                  // Auto-Clicker Logic: Find toggle switch and click
                   if (pendingClick) {
                       if (findAndClickSwitch(rootNode)) {
                           pendingClick = false;
@@ -296,7 +294,7 @@ jobs:
           }
           EOF
 
-      - name: "12. Java Code: MASTER THINKING ENGINE (ABCD/Ginti Removed. Scanner + 50MB Brain Active)"
+      - name: "12. Java Code: MASTER THINKING ENGINE (ABCD/Ginti Deleted, 50MB Active)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
           package com.zplus2.chat;
@@ -318,7 +316,7 @@ jobs:
               private Random random = new Random();
               
               private final String[] OFFLINE_STORIES = {
-                  "Ek gaon mein ek jadui ped tha. Uski pattiyaan chamakti thi...",
+                  "Ek ghane jungle mein ek jadui ped tha. Uski pattiyaan chamakti thi...",
                   "Ek din ek chota sa chuha sher ke jaal mein phas gaya..."
               };
 
@@ -379,7 +377,7 @@ jobs:
                       Intent intent = new Intent(android.provider.Settings.ACTION_AIRPLANE_MODE_SETTINGS);
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                       context.startActivity(intent);
-                      return "Flight mode screen khol kar click kar raha hoon!";
+                      return "Flight mode switch ON!";
                   }
                   if (lowerInput.contains("wifi") || lowerInput.contains("wi-fi") || lowerInput.contains("hotspot")) {
                       AutoClickerService.pendingClick = true;
@@ -402,6 +400,7 @@ jobs:
                   // ==========================================
                   if (lowerInput.contains("kahani") || lowerInput.contains("story")) {
                       if (is50MBLoaded) return "Meri 50MB memory se kahani suniye:\n\n" + OFFLINE_STORIES[random.nextInt(OFFLINE_STORIES.length)];
+                      else return "Bhai, 50MB memory theek se load nahi hui.";
                   }
 
                   return "Bhai, Main Jarvis hoon. Mujhse Apps open karwaiye, Hardware control karwaiye, Kahani suniye ya Ghost Typing ('Yahan hello type kar do') karwaiye!";
@@ -409,7 +408,7 @@ jobs:
           }
           EOF
 
-      - name: "13. Java Code: FLOATING MIC SERVICE (Foreground Keep-Alive Fix)"
+      - name: "13. Java Code: FLOATING MIC SERVICE (Foreground Guard)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/JarvisFloatingService.java
           package com.zplus2.chat;
@@ -452,7 +451,6 @@ jobs:
               public void onCreate() {
                   super.onCreate();
                   
-                  // FIX: Android 14 needs a Foreground Notification to not kill the background service
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                       NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Jarvis Service", NotificationManager.IMPORTANCE_LOW);
                       getSystemService(NotificationManager.class).createNotificationChannel(channel);
@@ -527,7 +525,7 @@ jobs:
           }
           EOF
 
-      - name: "14. Java Code: MainActivity (FULL UI Restored + Background Switch)"
+      - name: "14. Java Code: MainActivity"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/MainActivity.java
           package com.zplus2.chat;
