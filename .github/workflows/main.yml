@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (Hive Mind Sync & Bug Fixed)"
+name: "Build Z+2 Chat (Hive Mind Sync & Fixed Edition)"
 
 on:
   push:
@@ -60,8 +60,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 29
-                  versionName "29.0-Hive-Mind-Fixed"
+                  versionCode 30
+                  versionName "30.0-Hive-Mind-Fixed"
               }
               buildTypes {
                   release {
@@ -326,7 +326,7 @@ jobs:
           }
           EOF
 
-      - name: "12. Java Code: MASTER THINKING ENGINE (THE FIX: MEMORY RESTORED!)"
+      - name: "12. Java Code: MASTER THINKING ENGINE"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
           package com.zplus2.chat;
@@ -349,19 +349,10 @@ jobs:
           import java.util.HashMap;
           import java.util.List;
           import java.util.Map;
-          import java.util.Random;
 
           public class ThinkingEngine {
               private HashMap<String, String> installedAppsMap = new HashMap<>();
               public static boolean isNetModeOn = false; 
-              
-              // THE BUG FIX: Restored missing Offline Brain components!
-              private boolean is50MBLoaded = false;
-              private Random random = new Random();
-              private final String[] OFFLINE_STORIES = {
-                  "[Z+2 Offline] Ek ghane jungle mein ek jadui ped tha. Uski pattiyaan raat ko sone ki tarah chamakti thi.",
-                  "[Z+2 Offline] Chacha Chaudhary aur Sabu ja rahe the. Achanak raste mein ek alien spaceship aayi."
-              };
               
               private void saveRollingChatMemory(Context context, String text) {
                   try {
@@ -516,13 +507,6 @@ jobs:
                       return aiAnswer;
                   }
 
-                  // THE BUG FIX: Restored Offline Story Logic
-                  if (lowerInput.contains("kahani likh") || lowerInput.contains("story type") || lowerInput.contains("comic")) {
-                      String generatedStory = OFFLINE_STORIES[random.nextInt(OFFLINE_STORIES.length)];
-                      AutoClickerService.pendingTextToType = generatedStory;
-                      return "Bhai, 50MB dimaag se soch kar Comic kahani type kar raha hoon!";
-                  }
-
                   String[] typeTriggers = {"likh", "type", "dal", "send", "likho"};
                   for (String t : typeTriggers) { 
                       if (lowerInput.contains(t)) { 
@@ -537,7 +521,7 @@ jobs:
           }
           EOF
 
-      - name: "13. Java Code: FLOATING MIC SERVICE (Hive Mind Link)"
+      - name: "13. Java Code: FLOATING MIC SERVICE"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/JarvisFloatingService.java
           package com.zplus2.chat;
@@ -622,7 +606,7 @@ jobs:
                   btnClose.setOnClickListener(v -> stopSelf());
               }
 
-              // THE FIX: Sync with Main Activity Chat Box
+              // Sync with Main Activity Chat Box
               private void sendChatBroadcast(String text, boolean isUser) {
                   Intent intent = new Intent("com.zplus2.UPDATE_CHAT");
                   intent.putExtra("text", text);
@@ -639,13 +623,13 @@ jobs:
                               ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                               if (matches != null && !matches.isEmpty()) {
                                   String userText = matches.get(0);
-                                  sendChatBroadcast(userText, true); // Sync user command to App Chat
+                                  sendChatBroadcast(userText, true); 
                                   
                                   new Thread(() -> {
                                       String response = thinker.processInput(userText, JarvisFloatingService.this);
                                       new Handler(Looper.getMainLooper()).post(() -> {
-                                          sendChatBroadcast(response, false); // Sync Z+2 response to App Chat
-                                          if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null); // Speak via Floating Mic
+                                          sendChatBroadcast(response, false); 
+                                          if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null); 
                                           btn.setText("🎤");
                                       });
                                   }).start();
@@ -679,7 +663,7 @@ jobs:
           }
           EOF
 
-      - name: "14. Java Code: MainActivity (Chat Receiver Synced)"
+      - name: "14. Java Code: MainActivity"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/MainActivity.java
           package com.zplus2.chat;
@@ -734,7 +718,6 @@ jobs:
               private TextToSpeech tts;
               private SpeechRecognizer speechRecognizer;
 
-              // THE FIX: Listen to Floating Mic Broadcasts
               private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
                   @Override
                   public void onReceive(Context context, Intent intent) {
@@ -763,6 +746,7 @@ jobs:
                   bgSwitch = findViewById(R.id.switch_bg_mode);
                   apiBar = findViewById(R.id.api_bar);
 
+                  // THE FIX IS HERE: Method body added back below
                   checkAccessibilityService();
 
                   SharedPreferences prefs = getSharedPreferences("JarvisPrefs", Context.MODE_PRIVATE);
@@ -849,7 +833,6 @@ jobs:
                   super.onResume();
                   if (bgSwitch != null) bgSwitch.setChecked(JarvisFloatingService.isRunning);
                   
-                  // THE FIX: Register Receiver for Android 14+ compat
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                       ContextCompat.registerReceiver(this, chatReceiver, new IntentFilter("com.zplus2.UPDATE_CHAT"), ContextCompat.RECEIVER_NOT_EXPORTED);
                   } else {
@@ -861,6 +844,16 @@ jobs:
               protected void onPause() {
                   super.onPause();
                   try { unregisterReceiver(chatReceiver); } catch(Exception e){}
+              }
+
+              // THE FIX: ADDED MISSING METHOD BACK
+              private void checkAccessibilityService() {
+                  int accEnabled = 0;
+                  try { accEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED); } catch (Exception e) {}
+                  if (accEnabled == 0) {
+                      Toast.makeText(this, "Zaroori: Z+2 Accessibility ON karein", Toast.LENGTH_LONG).show();
+                      startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                  }
               }
 
               private void sendMessage() {
