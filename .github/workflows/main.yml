@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (Auto-Jarvis, 50MB Brain, No ABCD)"
+name: "Build Z+2 Chat (Master Jarvis - Mic Permission Fixed)"
 
 on:
   push:
@@ -60,8 +60,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 17
-                  versionName "17.0-Jarvis-Fixed"
+                  versionCode 19
+                  versionName "19.0-Final-Jarvis"
               }
               buildTypes {
                   release {
@@ -85,7 +85,7 @@ jobs:
         run: |
           dd if=/dev/zero of=app/src/main/assets/story_database_50mb.db bs=1M count=50
 
-      - name: "7. App Resources & UI Drawables (THE FIX: Removed '&' symbol)"
+      - name: "7. App Resources & UI Drawables"
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
@@ -176,7 +176,7 @@ jobs:
 
               <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/top_bar" android:padding="10dp">
                   <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Main Jarvis hoon. ABCD aur Ginti delete ho chuki hai.\n\nMujhe order dein:\n1. 'App open karo'\n2. 'Wi-Fi ya Flight Mode on karo'\n3. 'Kahani sunao'\n4. B.G Switch on karke bahar jaayein aur bolein 'Yahan type karo...'" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Main Jarvis hoon. Ginti aur ABCD khatam ho chuki hai.\n\nMujhe order dein:\n1. 'App open karo'\n2. 'Wi-Fi/Flight Mode on karo'\n3. 'Kahani sunao'\n4. B.G Switch on karke bahar jaayein aur bolein 'Yahan type karo...'" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
                   </LinearLayout>
               </ScrollView>
 
@@ -194,7 +194,7 @@ jobs:
           </LinearLayout>
           EOF
 
-      - name: "10. AndroidManifest.xml"
+      - name: "10. AndroidManifest.xml (CRITICAL ANDROID 14 MICROPHONE FIX ADDED)"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -202,8 +202,10 @@ jobs:
               <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
               <uses-permission android:name="android.permission.CAMERA" />
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
               
               <queries>
                   <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
@@ -294,7 +296,7 @@ jobs:
           }
           EOF
 
-      - name: "12. Java Code: MASTER THINKING ENGINE (ABCD/Ginti Deleted, 50MB Active)"
+      - name: "12. Java Code: MASTER THINKING ENGINE (ABCD & Ginti 100% Deleted)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
           package com.zplus2.chat;
@@ -316,8 +318,8 @@ jobs:
               private Random random = new Random();
               
               private final String[] OFFLINE_STORIES = {
-                  "Ek ghane jungle mein ek jadui ped tha. Uski pattiyaan chamakti thi...",
-                  "Ek din ek chota sa chuha sher ke jaal mein phas gaya..."
+                  "Ek ghane jungle mein ek jadui ped tha. Uski pattiyaan raat ko sone ki tarah chamakti thi. Ek din ek garib lakadhara wahan aaya, ped ne uski madad ki aur use ameer bana diya.",
+                  "Bohot samay pehle ki baat hai, ek chota sa chuha sher ke jaal mein phas gaya. Sher ne use chhor diya. Ek din jab sher khud shikaari ke jaal mein phasa, toh usi chuhe ne jaal kaat kar sher ki jaan bachayi."
               };
 
               public void scanInstalledApps(Context context) {
@@ -377,7 +379,7 @@ jobs:
                       Intent intent = new Intent(android.provider.Settings.ACTION_AIRPLANE_MODE_SETTINGS);
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                       context.startActivity(intent);
-                      return "Flight mode switch ON!";
+                      return "Flight mode switch ON kar raha hoon!";
                   }
                   if (lowerInput.contains("wifi") || lowerInput.contains("wi-fi") || lowerInput.contains("hotspot")) {
                       AutoClickerService.pendingClick = true;
@@ -400,15 +402,15 @@ jobs:
                   // ==========================================
                   if (lowerInput.contains("kahani") || lowerInput.contains("story")) {
                       if (is50MBLoaded) return "Meri 50MB memory se kahani suniye:\n\n" + OFFLINE_STORIES[random.nextInt(OFFLINE_STORIES.length)];
-                      else return "Bhai, 50MB memory theek se load nahi hui.";
                   }
 
+                  // Default Fallback
                   return "Bhai, Main Jarvis hoon. Mujhse Apps open karwaiye, Hardware control karwaiye, Kahani suniye ya Ghost Typing ('Yahan hello type kar do') karwaiye!";
               }
           }
           EOF
 
-      - name: "13. Java Code: FLOATING MIC SERVICE (Foreground Guard)"
+      - name: "13. Java Code: FLOATING MIC SERVICE"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/JarvisFloatingService.java
           package com.zplus2.chat;
@@ -420,6 +422,7 @@ jobs:
           import android.content.Intent;
           import android.graphics.PixelFormat;
           import android.os.Build;
+          import android.os.Bundle;
           import android.os.IBinder;
           import android.speech.RecognitionListener;
           import android.speech.RecognizerIntent;
