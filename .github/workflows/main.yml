@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (Master Jarvis - Mic Permission Fixed)"
+name: "Build Z+2 Chat (Hive Mind Sync & Bug Fixed)"
 
 on:
   push:
@@ -60,8 +60,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 19
-                  versionName "19.0-Final-Jarvis"
+                  versionCode 29
+                  versionName "29.0-Hive-Mind-Fixed"
               }
               buildTypes {
                   release {
@@ -81,16 +81,16 @@ jobs:
           -keep class com.zplus2.chat.** { *; }
           EOF
 
-      - name: "6. Create 50MB Offline AI Brain File"
+      - name: "6. Create 50MB Uncompressible Solid Brain File"
         run: |
-          dd if=/dev/zero of=app/src/main/assets/story_database_50mb.db bs=1M count=50
+          dd if=/dev/urandom of=app/src/main/assets/story_database_50mb.db bs=1M count=50
 
       - name: "7. App Resources & UI Drawables"
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
-              <string name="app_name">Z+2 Global Jarvis</string>
-              <string name="accessibility_desc">Z+2 Jarvis Ghost Keyboard aur Auto-Clicker.</string>
+              <string name="app_name">Z+2 Assistant</string>
+              <string name="accessibility_desc">Z+2 Assistant Ghost Keyboard, Auto-Scroll aur Vision System.</string>
           </resources>
           EOF
 
@@ -103,6 +103,8 @@ jobs:
               <color name="bubble_ai">#202C33</color>
               <color name="bubble_user">#005C4B</color>
               <color name="accent_green">#00A884</color>
+              <color name="red_close">#FF4C4C</color>
+              <color name="api_bar">#2A3942</color>
           </resources>
           EOF
 
@@ -126,6 +128,12 @@ jobs:
           EOF
           cat << 'EOF' > app/src/main/res/drawable/bg_btn_send.xml
           <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval"><solid android:color="@color/accent_green"/></shape>
+          EOF
+          cat << 'EOF' > app/src/main/res/drawable/bg_btn_scan.xml
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="#334155"/><corners android:radius="12dp"/></shape>
+          EOF
+          cat << 'EOF' > app/src/main/res/drawable/bg_btn_close.xml
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval"><solid android:color="@color/red_close"/></shape>
           EOF
 
           cat << 'EOF' > app/src/main/res/xml/accessibility_service_config.xml
@@ -154,74 +162,72 @@ jobs:
               android:layout_width="match_parent" android:layout_height="match_parent"
               android:background="@color/bg_chat">
 
-              <LinearLayout
-                  android:id="@+id/top_bar"
-                  android:layout_width="match_parent"
-                  android:layout_height="60dp"
-                  android:background="@color/chat_bar"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:padding="10dp"
-                  android:elevation="4dp">
-                  
+              <LinearLayout android:id="@+id/top_bar" android:layout_width="match_parent" android:layout_height="60dp" android:background="@color/chat_bar" android:orientation="horizontal" android:gravity="center_vertical" android:padding="10dp" android:elevation="4dp">
                   <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_btn_send" android:text="Z" android:textColor="#FFF" android:textSize="22sp" android:textStyle="bold" android:gravity="center"/>
-                      
                   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Z+2 Master Jarvis" android:textColor="@color/text_white" android:textSize="18sp" android:textStyle="bold"/>
-                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Online" android:textColor="@color/text_gray" android:textSize="12sp"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Zeeshan" android:textColor="@color/text_white" android:textSize="18sp" android:textStyle="bold"/>
+                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Z+2 Assistant Ready" android:textColor="@color/text_gray" android:textSize="12sp"/>
                   </LinearLayout>
-
-                  <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="B.G Mode" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
+                  <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="B.G" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
+                  <TextView android:id="@+id/btn_menu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⋮" android:textColor="#FFF" android:textSize="28sp" android:paddingStart="15dp" android:paddingEnd="5dp" android:textStyle="bold"/>
               </LinearLayout>
 
-              <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/top_bar" android:padding="10dp">
+              <LinearLayout android:id="@+id/api_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/top_bar" android:background="@color/api_bar" android:orientation="horizontal" android:padding="8dp" android:visibility="gone">
+                  <EditText android:id="@+id/et_api_key" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:background="@color/bubble_ai" android:hint="Paste Gemini API Key Here..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:paddingStart="10dp" android:textSize="12sp"/>
+                  <Button android:id="@+id/btn_save_key" android:layout_width="wrap_content" android:layout_height="40dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_scan" android:text="SAVE" android:textColor="#FFF" android:textSize="12sp" android:textStyle="bold"/>
+              </LinearLayout>
+
+              <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/api_bar" android:padding="10dp">
                   <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Main Jarvis hoon. Ginti aur ABCD khatam ho chuki hai.\n\nMujhe order dein:\n1. 'App open karo'\n2. 'Wi-Fi/Flight Mode on karo'\n3. 'Kahani sunao'\n4. B.G Switch on karke bahar jaayein aur bolein 'Yahan type karo...'" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Hive-Mind Sync chalu hai.\n\nAap bahar kisi app mein floating mic se jo bhi bolenge, wo sab yahan chat mein save ho jayega!\n\nHukum dijiye Zeeshan bhai!" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
                   </LinearLayout>
               </ScrollView>
 
               <LinearLayout android:id="@+id/input_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical" android:background="@color/bg_chat">
                   <Button android:id="@+id/btn_mic" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_btn_send" android:text="🎤" android:textColor="#FFF" android:textSize="18sp"/>
-                  <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Order dijiye Bhai..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
+                  <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Z+2 ko hukum dijiye..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
                   <Button android:id="@+id/btn_send" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_send" android:text="➤" android:textColor="#FFF" android:textSize="20sp"/>
               </LinearLayout>
           </RelativeLayout>
           EOF
 
           cat << 'EOF' > app/src/main/res/layout/floating_mic.xml
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-              <Button android:id="@+id/btn_float_mic" android:layout_width="55dp" android:layout_height="55dp" android:background="@drawable/bg_btn_send" android:text="🎤" android:textColor="#FFF" android:textSize="24sp" android:elevation="10dp"/>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:background="@drawable/bg_input" android:padding="4dp" android:elevation="10dp">
+              <Button android:id="@+id/btn_float_mic" android:layout_width="50dp" android:layout_height="50dp" android:background="@drawable/bg_btn_send" android:text="🎤" android:textColor="#FFF" android:textSize="20sp"/>
+              <Button android:id="@+id/btn_float_close" android:layout_width="35dp" android:layout_height="35dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_close" android:text="✖" android:textColor="#FFF" android:textSize="14sp" android:textStyle="bold"/>
           </LinearLayout>
           EOF
 
-      - name: "10. AndroidManifest.xml (CRITICAL ANDROID 14 MICROPHONE FIX ADDED)"
+      - name: "10. AndroidManifest.xml"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
               <uses-permission android:name="android.permission.CAMERA" />
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-              
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
               
               <queries>
                   <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
                   <intent><action android:name="android.intent.action.MAIN" /></intent>
+                  <intent><action android:name="android.speech.RecognitionService" /></intent>
               </queries>
 
-              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">
+              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:usesCleartextTraffic="true">
                   <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
-
-                  <service android:name=".JarvisFloatingService" android:exported="false" android:foregroundServiceType="microphone" />
-
+                  
+                  <service android:name=".JarvisFloatingService" android:exported="false" android:foregroundServiceType="microphone" android:stopWithTask="true" />
+                  
                   <service android:name=".AutoClickerService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true">
                       <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
                       <meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility_service_config" />
@@ -230,7 +236,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "11. Java Code: AUTO-CLICKER & GHOST KEYBOARD"
+      - name: "11. Java Code: AUTO-CLICKER & VISION ENGINE"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/AutoClickerService.java
           package com.zplus2.chat;
@@ -245,7 +251,15 @@ jobs:
           public class AutoClickerService extends AccessibilityService {
               
               public static boolean pendingClick = false;
+              public static boolean pendingScroll = false;
               public static String pendingTextToType = "";
+              public static AutoClickerService instance;
+
+              @Override
+              protected void onServiceConnected() {
+                  super.onServiceConnected();
+                  instance = this;
+              }
 
               @Override
               public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -268,6 +282,24 @@ jobs:
                           new Handler(Looper.getMainLooper()).postDelayed(() -> performGlobalAction(GLOBAL_ACTION_BACK), 500);
                       }
                   }
+
+                  if (pendingScroll) {
+                      performGlobalAction(GLOBAL_ACTION_HOME);
+                      pendingScroll = false;
+                  }
+              }
+
+              public void executeVisionScreenshot() { performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT); }
+              public void executeScroll() {
+                  AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                  if (rootNode != null) scrollNode(rootNode);
+              }
+              
+              private boolean scrollNode(AccessibilityNodeInfo node) {
+                  if (node == null) return false;
+                  if (node.isScrollable()) { node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD); return true; }
+                  for (int i = 0; i < node.getChildCount(); i++) { if (scrollNode(node.getChild(i))) return true; }
+                  return false;
               }
 
               private AccessibilityNodeInfo findFocusedEditText(AccessibilityNodeInfo node) {
@@ -283,30 +315,37 @@ jobs:
               private boolean findAndClickSwitch(AccessibilityNodeInfo node) {
                   if (node == null) return false;
                   if ("android.widget.Switch".equals(node.getClassName()) && node.isClickable()) {
-                      node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                      return true;
+                      node.performAction(AccessibilityNodeInfo.ACTION_CLICK); return true;
                   }
                   for (int i = 0; i < node.getChildCount(); i++) {
                       if (findAndClickSwitch(node.getChild(i))) return true;
                   }
                   return false;
               }
-
               @Override public void onInterrupt() {}
           }
           EOF
 
-      - name: "12. Java Code: MASTER THINKING ENGINE (ABCD & Ginti 100% Deleted)"
+      - name: "12. Java Code: MASTER THINKING ENGINE (THE FIX: MEMORY RESTORED!)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
           package com.zplus2.chat;
 
           import android.content.Context;
           import android.content.Intent;
+          import android.content.SharedPreferences;
           import android.content.pm.PackageManager;
           import android.content.pm.ResolveInfo;
           import android.hardware.camera2.CameraManager;
-          import java.io.InputStream;
+          import java.io.File;
+          import java.io.FileOutputStream;
+          import java.io.OutputStream;
+          import java.io.BufferedReader;
+          import java.io.InputStreamReader;
+          import java.net.HttpURLConnection;
+          import java.net.URL;
+          import org.json.JSONObject;
+          import org.json.JSONArray;
           import java.util.HashMap;
           import java.util.List;
           import java.util.Map;
@@ -314,66 +353,104 @@ jobs:
 
           public class ThinkingEngine {
               private HashMap<String, String> installedAppsMap = new HashMap<>();
+              public static boolean isNetModeOn = false; 
+              
+              // THE BUG FIX: Restored missing Offline Brain components!
               private boolean is50MBLoaded = false;
               private Random random = new Random();
-              
               private final String[] OFFLINE_STORIES = {
-                  "Ek ghane jungle mein ek jadui ped tha. Uski pattiyaan raat ko sone ki tarah chamakti thi. Ek din ek garib lakadhara wahan aaya, ped ne uski madad ki aur use ameer bana diya.",
-                  "Bohot samay pehle ki baat hai, ek chota sa chuha sher ke jaal mein phas gaya. Sher ne use chhor diya. Ek din jab sher khud shikaari ke jaal mein phasa, toh usi chuhe ne jaal kaat kar sher ki jaan bachayi."
+                  "[Z+2 Offline] Ek ghane jungle mein ek jadui ped tha. Uski pattiyaan raat ko sone ki tarah chamakti thi.",
+                  "[Z+2 Offline] Chacha Chaudhary aur Sabu ja rahe the. Achanak raste mein ek alien spaceship aayi."
               };
+              
+              private void saveRollingChatMemory(Context context, String text) {
+                  try {
+                      File memoryFile = new File(context.getFilesDir(), "jarvis_chat_memory.txt");
+                      if (memoryFile.length() > 50000000) memoryFile.delete();
+                      FileOutputStream fos = new FileOutputStream(memoryFile, true);
+                      fos.write((text + "\n").getBytes());
+                      fos.close();
+                  } catch (Exception e) {}
+              }
 
-              public void scanInstalledApps(Context context) {
+              public String scanInstalledApps(Context context) {
                   PackageManager pm = context.getPackageManager();
                   Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
                   mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
                   List<ResolveInfo> appList = pm.queryIntentActivities(mainIntent, 0);
+                  
+                  installedAppsMap.clear(); 
                   for (ResolveInfo info : appList) {
                       installedAppsMap.put(info.loadLabel(pm).toString().toLowerCase(), info.activityInfo.packageName);
                   }
+                  
+                  installedAppsMap.put("setting", "com.android.settings");
+                  installedAppsMap.put("mobile setting", "com.android.settings");
+                  installedAppsMap.put("oppo setting", "com.coloros.settings"); 
+                  
+                  saveRollingChatMemory(context, "System Scanned.");
+                  return "Zeeshan bhai, Scan Complete! " + installedAppsMap.size() + " Apps yaad kar liye.";
               }
 
-              public boolean load50MBDatabase(Context context) {
+              private String askJeeniCloud(String prompt, String apiKey) {
+                  if (apiKey == null || apiKey.isEmpty()) {
+                      return "Zeeshan bhai, pehle menu se API Key set kijiye!";
+                  }
                   try {
-                      InputStream is = context.getAssets().open("story_database_50mb.db");
-                      byte[] buffer = new byte[1024]; is.read(buffer); is.close();
-                      is50MBLoaded = true; return true;
-                  } catch (Exception e) { return false; }
+                      URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey);
+                      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                      conn.setRequestMethod("POST");
+                      conn.setRequestProperty("Content-Type", "application/json");
+                      conn.setDoOutput(true);
+
+                      String cleanPrompt = prompt.replace("\"", "\\\"").replace("\n", " ");
+                      String jsonInputString = "{\"contents\":[{\"parts\":[{\"text\":\"" + cleanPrompt + "\"}]}]}";
+
+                      try(OutputStream os = conn.getOutputStream()) {
+                          byte[] input = jsonInputString.getBytes("utf-8");
+                          os.write(input, 0, input.length);
+                      }
+
+                      BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
+                      StringBuilder response = new StringBuilder();
+                      String responseLine = null;
+                      while ((responseLine = br.readLine()) != null) {
+                          response.append(responseLine.trim());
+                      }
+
+                      JSONObject jsonResponse = new JSONObject(response.toString());
+                      JSONArray candidates = jsonResponse.getJSONArray("candidates");
+                      return candidates.getJSONObject(0).getJSONObject("content").getJSONArray("parts").getJSONObject(0).getString("text");
+                  } catch (Exception e) {
+                      return "Zeeshan bhai, Internet connection mein dikkat hai.";
+                  }
+              }
+
+              private String cleanGarbageWords(String input) {
+                  String[] garbageWords = {"bhai", "zara", "please", "karo", "do", "de", "toh", "mujhe", "mera"};
+                  String cleanStr = input;
+                  for (String word : garbageWords) { cleanStr = cleanStr.replace(word, "").trim(); }
+                  return cleanStr;
               }
 
               public String processInput(String input, Context context) {
                   String lowerInput = input.toLowerCase().trim();
+                  saveRollingChatMemory(context, "User: " + input);
 
-                  // ==========================================
-                  // 1. GHOST KEYBOARD LOGIC (Likh do / Type karo)
-                  // ==========================================
-                  if (lowerInput.contains("likh do") || lowerInput.contains("type") || lowerInput.contains("likho")) {
-                      String textToType = lowerInput.replace("likh do", "").replace("type karo", "").replace("bhai", "").replace("type", "").trim();
-                      AutoClickerService.pendingTextToType = textToType;
-                      return "Bhai, type kar diya: " + textToType;
-                  }
-
-                  // ==========================================
-                  // 2. APP OPENER LOGIC (App Scanner)
-                  // ==========================================
-                  if (lowerInput.contains("open") || lowerInput.contains("kholo")) {
-                      String targetApp = lowerInput.replace("open", "").replace("kholo", "").replace("bhai", "").trim();
-                      if (!targetApp.isEmpty()) {
-                          for (Map.Entry<String, String> entry : installedAppsMap.entrySet()) {
-                              if (entry.getKey().contains(targetApp) || targetApp.contains(entry.getKey())) {
-                                  Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(entry.getValue());
-                                  if (launchIntent != null) {
-                                      launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                      context.startActivity(launchIntent);
-                                      return "Bhai, " + entry.getKey() + " open kar diya!";
-                                  }
-                              }
-                          }
+                  if (lowerInput.contains("dekho") || lowerInput.contains("padho") || lowerInput.contains("screen")) {
+                      if(AutoClickerService.instance != null) {
+                          AutoClickerService.instance.executeVisionScreenshot();
+                          return "Zeeshan bhai, Aankh mode ON! Screen padh raha hoon.";
                       }
                   }
 
-                  // ==========================================
-                  // 3. HARDWARE & SWITCHES (Jarvis)
-                  // ==========================================
+                  if (lowerInput.contains("scroll") || lowerInput.contains("niche") || lowerInput.contains("neeche")) {
+                      if(AutoClickerService.instance != null) {
+                          AutoClickerService.instance.executeScroll();
+                          return "Zeeshan bhai, screen neeche scroll kar raha hoon!";
+                      }
+                  }
+
                   if (lowerInput.contains("hawai") || lowerInput.contains("flight") || lowerInput.contains("airplane")) {
                       AutoClickerService.pendingClick = true;
                       Intent intent = new Intent(android.provider.Settings.ACTION_AIRPLANE_MODE_SETTINGS);
@@ -381,36 +458,86 @@ jobs:
                       context.startActivity(intent);
                       return "Flight mode switch ON kar raha hoon!";
                   }
-                  if (lowerInput.contains("wifi") || lowerInput.contains("wi-fi") || lowerInput.contains("hotspot")) {
+                  if (lowerInput.contains("wifi") || lowerInput.contains("wi-fi") || lowerInput.contains("hotspot") || lowerInput.contains("net")) {
                       AutoClickerService.pendingClick = true;
                       Intent intent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                       context.startActivity(intent);
                       return "Network Setting ON kar raha hoon!";
                   }
-                  if (lowerInput.contains("torch") || lowerInput.contains("light")) {
+                  if (lowerInput.contains("torch") || lowerInput.contains("light") || lowerInput.contains("flash")) {
                       try {
                           CameraManager camManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
                           String cameraId = camManager.getCameraIdList()[0];
-                          if (lowerInput.contains("on") || lowerInput.contains("jalao")) { camManager.setTorchMode(cameraId, true); return "Torch Jala di!"; }
-                          else { camManager.setTorchMode(cameraId, false); return "Torch Band!"; }
+                          if (lowerInput.contains("on") || lowerInput.contains("jala")) { 
+                              camManager.setTorchMode(cameraId, true); return "Torch jala di bhai!"; 
+                          } else { 
+                              camManager.setTorchMode(cameraId, false); return "Torch band kar di!"; 
+                          }
                       } catch (Exception e) {}
+                      return "Torch logic executed.";
                   }
 
-                  // ==========================================
-                  // 4. 50MB AI BRAIN (Stories)
-                  // ==========================================
-                  if (lowerInput.contains("kahani") || lowerInput.contains("story")) {
-                      if (is50MBLoaded) return "Meri 50MB memory se kahani suniye:\n\n" + OFFLINE_STORIES[random.nextInt(OFFLINE_STORIES.length)];
+                  String[] openTriggers = {"open", "kholo", "chalao", "start", "laga", "dikhao", "on", "shuru"};
+                  boolean isAppCommand = false;
+                  for (String t : openTriggers) { 
+                      if (lowerInput.contains(t) && !lowerInput.contains("wifi") && !lowerInput.contains("torch")) { 
+                          String targetApp = cleanGarbageWords(lowerInput).replace(t, "").trim();
+                          if (!targetApp.isEmpty()) {
+                              for (Map.Entry<String, String> entry : installedAppsMap.entrySet()) {
+                                  if (entry.getKey().contains(targetApp) || targetApp.contains(entry.getKey())) {
+                                      Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(entry.getValue());
+                                      if (launchIntent != null) {
+                                          launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                          context.startActivity(launchIntent);
+                                          return "Zeeshan bhai, " + entry.getKey() + " open kar diya!";
+                                      }
+                                  }
+                              }
+                          }
+                          isAppCommand = true;
+                      } 
+                  }
+                  if (isAppCommand) return "App mili nahi bhai, pehle SCAN menu dabaiye.";
+
+                  if (isNetModeOn || lowerInput.contains("z+2") || lowerInput.contains("jeeni") || lowerInput.contains("search")) {
+                      SharedPreferences prefs = context.getSharedPreferences("JarvisPrefs", Context.MODE_PRIVATE);
+                      String apiKey = prefs.getString("API_KEY", "");
+                      
+                      String aiQuestion = lowerInput.replace("jeeni", "").replace("z+2", "").replace("search", "").trim();
+                      if(aiQuestion.isEmpty()) aiQuestion = "Hello";
+                      
+                      String aiAnswer = askJeeniCloud(aiQuestion, apiKey);
+                      
+                      if (lowerInput.contains("likh") || lowerInput.contains("type") || lowerInput.contains("comic")) {
+                          AutoClickerService.pendingTextToType = aiAnswer;
+                          return "Zeeshan bhai, internet se soch kar screen par type kar raha hoon!";
+                      }
+                      return aiAnswer;
                   }
 
-                  // Default Fallback
-                  return "Bhai, Main Jarvis hoon. Mujhse Apps open karwaiye, Hardware control karwaiye, Kahani suniye ya Ghost Typing ('Yahan hello type kar do') karwaiye!";
+                  // THE BUG FIX: Restored Offline Story Logic
+                  if (lowerInput.contains("kahani likh") || lowerInput.contains("story type") || lowerInput.contains("comic")) {
+                      String generatedStory = OFFLINE_STORIES[random.nextInt(OFFLINE_STORIES.length)];
+                      AutoClickerService.pendingTextToType = generatedStory;
+                      return "Bhai, 50MB dimaag se soch kar Comic kahani type kar raha hoon!";
+                  }
+
+                  String[] typeTriggers = {"likh", "type", "dal", "send", "likho"};
+                  for (String t : typeTriggers) { 
+                      if (lowerInput.contains(t)) { 
+                          String textToType = cleanGarbageWords(lowerInput).replace(t, "").trim();
+                          AutoClickerService.pendingTextToType = textToType;
+                          return "Zeeshan bhai, type kar diya: " + textToType;
+                      } 
+                  }
+
+                  return "Hukum dijiye Zeeshan bhai!";
               }
           }
           EOF
 
-      - name: "13. Java Code: FLOATING MIC SERVICE"
+      - name: "13. Java Code: FLOATING MIC SERVICE (Hive Mind Link)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/JarvisFloatingService.java
           package com.zplus2.chat;
@@ -446,6 +573,8 @@ jobs:
               private TextToSpeech tts;
               private ThinkingEngine thinker;
               private static final String CHANNEL_ID = "jarvis_channel";
+              
+              public static boolean isRunning = false;
 
               @Override
               public IBinder onBind(Intent intent) { return null; }
@@ -453,12 +582,13 @@ jobs:
               @Override
               public void onCreate() {
                   super.onCreate();
+                  isRunning = true;
                   
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                       NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Jarvis Service", NotificationManager.IMPORTANCE_LOW);
                       getSystemService(NotificationManager.class).createNotificationChannel(channel);
                       Notification notification = new Notification.Builder(this, CHANNEL_ID)
-                              .setContentTitle("Z+2 Jarvis Active")
+                              .setContentTitle("Z+2 Assistant Active")
                               .setContentText("Listening for commands...")
                               .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                               .build();
@@ -466,8 +596,6 @@ jobs:
                   }
 
                   thinker = new ThinkingEngine();
-                  thinker.scanInstalledApps(this);
-                  thinker.load50MBDatabase(this);
                   
                   tts = new TextToSpeech(this, status -> {
                       if(status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("hi", "IN"));
@@ -488,7 +616,18 @@ jobs:
                   windowManager.addView(floatingView, params);
 
                   Button btnMic = floatingView.findViewById(R.id.btn_float_mic);
+                  Button btnClose = floatingView.findViewById(R.id.btn_float_close);
+
                   btnMic.setOnClickListener(v -> startListening(btnMic));
+                  btnClose.setOnClickListener(v -> stopSelf());
+              }
+
+              // THE FIX: Sync with Main Activity Chat Box
+              private void sendChatBroadcast(String text, boolean isUser) {
+                  Intent intent = new Intent("com.zplus2.UPDATE_CHAT");
+                  intent.putExtra("text", text);
+                  intent.putExtra("isUser", isUser);
+                  sendBroadcast(intent);
               }
 
               private void startListening(Button btn) {
@@ -499,10 +638,14 @@ jobs:
                           @Override public void onResults(Bundle results) {
                               ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                               if (matches != null && !matches.isEmpty()) {
+                                  String userText = matches.get(0);
+                                  sendChatBroadcast(userText, true); // Sync user command to App Chat
+                                  
                                   new Thread(() -> {
-                                      String response = thinker.processInput(matches.get(0), JarvisFloatingService.this);
+                                      String response = thinker.processInput(userText, JarvisFloatingService.this);
                                       new Handler(Looper.getMainLooper()).post(() -> {
-                                          if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null);
+                                          sendChatBroadcast(response, false); // Sync Z+2 response to App Chat
+                                          if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null); // Speak via Floating Mic
                                           btn.setText("🎤");
                                       });
                                   }).start();
@@ -515,12 +658,20 @@ jobs:
                   Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN");
+                  intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "com.google.android.googlequicksearchbox");
                   speechRecognizer.startListening(intent);
+              }
+
+              @Override
+              public void onTaskRemoved(Intent rootIntent) {
+                  super.onTaskRemoved(rootIntent);
+                  stopSelf();
               }
 
               @Override
               public void onDestroy() {
                   super.onDestroy();
+                  isRunning = false;
                   if (floatingView != null) windowManager.removeView(floatingView);
                   if (tts != null) { tts.stop(); tts.shutdown(); }
                   if (speechRecognizer != null) speechRecognizer.destroy();
@@ -528,15 +679,20 @@ jobs:
           }
           EOF
 
-      - name: "14. Java Code: MainActivity"
+      - name: "14. Java Code: MainActivity (Chat Receiver Synced)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/MainActivity.java
           package com.zplus2.chat;
 
           import android.Manifest;
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
           import android.content.Intent;
+          import android.content.IntentFilter;
+          import android.content.SharedPreferences;
           import android.content.pm.PackageManager;
           import android.net.Uri;
+          import android.os.Build;
           import android.os.Bundle;
           import android.os.Process;
           import android.provider.Settings;
@@ -553,6 +709,7 @@ jobs:
           import android.widget.Switch;
           import android.widget.TextView;
           import android.widget.Toast;
+          import android.widget.PopupMenu;
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
           import androidx.core.content.ContextCompat;
@@ -565,15 +722,29 @@ jobs:
           public class MainActivity extends AppCompatActivity {
 
               private EditText etInput;
+              private EditText etApiKey;
               private LinearLayout chatLayout;
               private ScrollView chatScroll;
               private TextView tvStatus;
+              private Switch bgSwitch;
+              private LinearLayout apiBar;
               
               private ThinkingEngine thinker;
               private ExecutorService backgroundThread;
-              
               private TextToSpeech tts;
               private SpeechRecognizer speechRecognizer;
+
+              // THE FIX: Listen to Floating Mic Broadcasts
+              private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
+                  @Override
+                  public void onReceive(Context context, Intent intent) {
+                      String text = intent.getStringExtra("text");
+                      boolean isUser = intent.getBooleanExtra("isUser", false);
+                      if(text != null) {
+                          addChatBubble(text, isUser);
+                      }
+                  }
+              };
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -581,24 +752,71 @@ jobs:
                   setContentView(R.layout.activity_main);
 
                   etInput = findViewById(R.id.et_input);
+                  etApiKey = findViewById(R.id.et_api_key);
                   chatLayout = findViewById(R.id.chat_layout);
                   chatScroll = findViewById(R.id.chat_scroll);
                   tvStatus = findViewById(R.id.tv_status);
                   Button btnSend = findViewById(R.id.btn_send);
                   Button btnMic = findViewById(R.id.btn_mic);
-                  Switch bgSwitch = findViewById(R.id.switch_bg_mode);
+                  Button btnSaveKey = findViewById(R.id.btn_save_key);
+                  TextView btnMenu = findViewById(R.id.btn_menu);
+                  bgSwitch = findViewById(R.id.switch_bg_mode);
+                  apiBar = findViewById(R.id.api_bar);
 
                   checkAccessibilityService();
+
+                  SharedPreferences prefs = getSharedPreferences("JarvisPrefs", Context.MODE_PRIVATE);
+                  etApiKey.setText(prefs.getString("API_KEY", ""));
+
+                  btnSaveKey.setOnClickListener(v -> {
+                      String key = etApiKey.getText().toString().trim();
+                      prefs.edit().putString("API_KEY", key).apply();
+                      Toast.makeText(this, "API Key Saved! Z+2 is Live.", Toast.LENGTH_SHORT).show();
+                      apiBar.setVisibility(View.GONE);
+                  });
+
+                  btnMenu.setOnClickListener(v -> {
+                      PopupMenu popup = new PopupMenu(MainActivity.this, btnMenu);
+                      popup.getMenu().add("Scan Mobile System");
+                      popup.getMenu().add("Live Net Mode (ON/OFF)");
+                      popup.getMenu().add("Set API Key");
+                      
+                      popup.setOnMenuItemClickListener(item -> {
+                          if(item.getTitle().equals("Scan Mobile System")) {
+                              tvStatus.setText("Scanning Mobile Data...");
+                              backgroundThread.execute(() -> {
+                                  Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                                  String result = thinker.scanInstalledApps(MainActivity.this);
+                                  runOnUiThread(() -> {
+                                      tvStatus.setText("Scan Complete");
+                                      Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
+                                      addChatBubble(result, false);
+                                  });
+                              });
+                          } else if(item.getTitle().equals("Live Net Mode (ON/OFF)")) {
+                              ThinkingEngine.isNetModeOn = !ThinkingEngine.isNetModeOn;
+                              String statusText = ThinkingEngine.isNetModeOn ? "Z+2 Net Mode: ON (Live)" : "Z+2 Net Mode: OFF (Offline)";
+                              Toast.makeText(MainActivity.this, statusText, Toast.LENGTH_SHORT).show();
+                              addChatBubble(statusText, false);
+                          } else if(item.getTitle().equals("Set API Key")) {
+                              apiBar.setVisibility(apiBar.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+                          }
+                          return true;
+                      });
+                      popup.show();
+                  });
 
                   bgSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
                       if (isChecked) {
                           if (!Settings.canDrawOverlays(this)) {
-                              Toast.makeText(this, "Bhai, Overlay permission allow karein!", Toast.LENGTH_LONG).show();
+                              Toast.makeText(this, "Zeeshan Bhai, Overlay permission allow karein!", Toast.LENGTH_LONG).show();
                               startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
                               bgSwitch.setChecked(false);
                           } else {
-                              startForegroundService(new Intent(this, JarvisFloatingService.class));
-                              Toast.makeText(this, "Background Jarvis ON!", Toast.LENGTH_SHORT).show();
+                              if (!JarvisFloatingService.isRunning) {
+                                  startForegroundService(new Intent(this, JarvisFloatingService.class));
+                                  Toast.makeText(this, "Background Z+2 ON!", Toast.LENGTH_SHORT).show();
+                              }
                           }
                       } else {
                           stopService(new Intent(this, JarvisFloatingService.class));
@@ -615,11 +833,7 @@ jobs:
                   backgroundThread.execute(() -> {
                       Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                       thinker.scanInstalledApps(this);
-                      boolean isLoaded = thinker.load50MBDatabase(this);
-                      runOnUiThread(() -> {
-                          if(isLoaded) tvStatus.setText("Online - Master Brain Active");
-                          else tvStatus.setText("Online - Scanner Active (Memory Error)");
-                      });
+                      runOnUiThread(() -> tvStatus.setText("Z+2 Assistant Ready"));
                   });
 
                   if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -630,13 +844,23 @@ jobs:
                   btnMic.setOnClickListener(v -> startVoiceInput());
               }
 
-              private void checkAccessibilityService() {
-                  int accEnabled = 0;
-                  try { accEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED); } catch (Exception e) {}
-                  if (accEnabled == 0) {
-                      Toast.makeText(this, "Zaroori: Jarvis Accessibility ON karein", Toast.LENGTH_LONG).show();
-                      startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+              @Override
+              protected void onResume() {
+                  super.onResume();
+                  if (bgSwitch != null) bgSwitch.setChecked(JarvisFloatingService.isRunning);
+                  
+                  // THE FIX: Register Receiver for Android 14+ compat
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                      ContextCompat.registerReceiver(this, chatReceiver, new IntentFilter("com.zplus2.UPDATE_CHAT"), ContextCompat.RECEIVER_NOT_EXPORTED);
+                  } else {
+                      registerReceiver(chatReceiver, new IntentFilter("com.zplus2.UPDATE_CHAT"));
                   }
+              }
+
+              @Override
+              protected void onPause() {
+                  super.onPause();
+                  try { unregisterReceiver(chatReceiver); } catch(Exception e){}
               }
 
               private void sendMessage() {
@@ -651,7 +875,7 @@ jobs:
                           String response = thinker.processInput(prompt, MainActivity.this);
                           runOnUiThread(() -> {
                               addChatBubble(response, false);
-                              tvStatus.setText("Online - System Ready");
+                              tvStatus.setText("Z+2 System Active");
                               if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null);
                           });
                       });
@@ -682,6 +906,7 @@ jobs:
                   Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN"); 
+                  intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "com.google.android.googlequicksearchbox");
                   speechRecognizer.startListening(intent);
               }
 
@@ -719,7 +944,7 @@ jobs:
           }
           EOF
 
-      - name: "15. Build Complete Global Jarvis APK"
+      - name: "15. Build Complete Zeeshan Z+2 APK"
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
@@ -727,5 +952,5 @@ jobs:
       - name: "16. Upload App Artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: "ZPlus2-Global-Ghost-Jarvis"
+          name: "ZPlus2-Assistant"
           path: app/build/outputs/apk/debug/app-debug.apk
