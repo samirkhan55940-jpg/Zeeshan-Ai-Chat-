@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (Ghost RPA & Smart Operator Edition)"
+name: "Build Z+2 Chat (The Ultimate Final Edition)"
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: "3. Create App Directories"
+      - name: "3. Create App Directories & XML Config"
         run: |
           mkdir -p app/src/main/java/com/zplus2/chat
           mkdir -p app/src/main/res/layout
@@ -27,6 +27,16 @@ jobs:
           mkdir -p app/src/main/res/mipmap-anydpi-v26
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/assets
+          
+          # Fix: Explicitly creating the missing config file
+          cat << 'EOF' > app/src/main/res/xml/accessibility_service_config.xml
+          <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+              android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+              android:accessibilityFeedbackType="feedbackGeneric"
+              android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+              android:canRetrieveWindowContent="true"
+              android:description="@string/accessibility_desc" />
+          EOF
 
       - name: "4. Initialize Gradle System"
         run: |
@@ -60,8 +70,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 41
-                  versionName "41.0-Fixed-RPA-Edition"
+                  versionCode 43
+                  versionName "43.0-Ultimate-Edition"
               }
               buildTypes {
                   release {
@@ -70,7 +80,6 @@ jobs:
                   }
               }
               compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
-              androidResources { noCompress "db" }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -81,20 +90,17 @@ jobs:
           -keep class com.zplus2.chat.** { *; }
           EOF
 
-      - name: "6. Create Dual Storage Files (50MB + 50MB)"
+      - name: "6. Create Dual Storage Files"
         run: |
           dd if=/dev/urandom of=app/src/main/assets/chat_memory_50mb.db bs=1M count=50
           dd if=/dev/urandom of=app/src/main/assets/system_data_50mb.db bs=1M count=50
 
-      - name: "7. App Resources & UI Drawables"
+      - name: "7. App UI XMLs & Themes"
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
-          <resources>
-              <string name="app_name">Z+2 Assistant</string>
-              <string name="accessibility_desc">Z+2 Assistant Ghost RPA (Human Operator) Engine.</string>
-          </resources>
+          <resources><string name="app_name">Z+2 Assistant</string><string name="accessibility_desc">Ghost RPA Engine.</string></resources>
           EOF
-
+          
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
               <color name="bg_chat">#0B141A</color>
@@ -136,17 +142,7 @@ jobs:
           <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/btn_red"/><corners android:radius="12dp"/></shape>
           EOF
 
-      - name: "8. App Icon"
-        run: |
-          cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#0B141A" android:pathData="M0,0h108v108h-108z"/>
-              <path android:fillColor="#00A884" android:pathData="M24,24 h60 a12,12 0 0,1 12,12 v40 a12,12 0 0,1 -12,12 h-10 l-14,14 l-6,-14 h-30 a12,12 0 0,1 -12,-12 v-40 a12,12 0 0,1 12,-12 z"/>
-          </vector>
-          EOF
-          cp app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
-
-      - name: "9. UI Layout XML"
+      - name: "8. App Layouts"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -157,7 +153,7 @@ jobs:
                   <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_btn_send" android:text="Z" android:textColor="#FFF" android:textSize="22sp" android:textStyle="bold" android:gravity="center"/>
                   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Zeeshan" android:textColor="@color/text_white" android:textSize="18sp" android:textStyle="bold"/>
-                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ghost RPA (Human Operator) Active" android:textColor="@color/text_gray" android:textSize="12sp"/>
+                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ultimate Edition Active" android:textColor="@color/text_gray" android:textSize="12sp"/>
                   </LinearLayout>
                   <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Parda ON" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
                   <TextView android:id="@+id/btn_menu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⋮" android:textColor="#FFF" android:textSize="28sp" android:paddingStart="15dp" android:paddingEnd="5dp" android:textStyle="bold"/>
@@ -165,7 +161,7 @@ jobs:
 
               <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/top_bar" android:padding="10dp">
                   <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Z+2 Human Operator Mode chalu hai.\n\nAb main screen ko padh sakta hoon aur automatic clicks bhi kar sakta hoon. Aap apps ke andar ki settings kholne ka hukum bhi de sakte hain!\n\nHukum dijiye Zeeshan bhai!" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Z+2 Ultimate Mode chalu hai.\n\nTower Sync, RPA Ghost, Call Dialer aur Dual Brain (Time Stamp) sab ek sath activate ho gaya hai!\n\nHukum dijiye Zeeshan bhai!" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
                   </LinearLayout>
               </ScrollView>
 
@@ -182,7 +178,7 @@ jobs:
               android:layout_width="match_parent" android:layout_height="wrap_content"
               android:background="@color/chat_bar" android:orientation="horizontal"
               android:gravity="center_vertical" android:padding="12dp">
-              <ImageView android:layout_width="45dp" android:layout_height="45dp" android:src="@mipmap/ic_launcher_round"/>
+              <ImageView android:layout_width="45dp" android:layout_height="45dp" android:src="@mipmap/ic_launcher"/>
               <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
                   <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Z+2 Assistant" android:textColor="#FFF" android:textSize="16sp" android:textStyle="bold"/>
                   <TextView android:id="@+id/tv_notif_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sun raha hoon..." android:textColor="@color/accent_green" android:textSize="14sp"/>
@@ -191,8 +187,15 @@ jobs:
           </LinearLayout>
           EOF
 
-      - name: "10. AndroidManifest.xml"
+      - name: "9. App Icon & Manifest"
         run: |
+          cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#0B141A" android:pathData="M0,0h108v108h-108z"/>
+              <path android:fillColor="#00A884" android:pathData="M24,24 h60 a12,12 0 0,1 12,12 v40 a12,12 0 0,1 -12,12 h-10 l-14,14 l-6,-14 h-30 a12,12 0 0,1 -12,-12 v-40 a12,12 0 0,1 12,-12 z"/>
+          </vector>
+          EOF
+          
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -214,7 +217,7 @@ jobs:
                   <intent><action android:name="android.speech.RecognitionService" /></intent>
               </queries>
 
-              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">
+              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher">
                   <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -232,7 +235,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "11. Java Code: AUTO-CLICKER SERVICE (Ghost RPA 2.0 Engine)"
+      - name: "10. Java Code: AutoClickerService (RPA Ghost)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/AutoClickerService.java
           package com.zplus2.chat;
@@ -364,7 +367,7 @@ jobs:
           }
           EOF
 
-      - name: "12. Java Code: THINKING ENGINE (Fix: Added Random & Uri Imports)"
+      - name: "11. Java Code: ThinkingEngine"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
           package com.zplus2.chat;
@@ -387,7 +390,7 @@ jobs:
           import java.util.List;
           import java.util.Locale;
           import java.util.Map;
-          import java.util.Random; // <-- THE FIX: Added Random Import
+          import java.util.Random;
 
           public class ThinkingEngine {
               private HashMap<String, String> installedAppsMap = new HashMap<>();
@@ -591,7 +594,7 @@ jobs:
           }
           EOF
 
-      - name: "13. Java Code: NOTIFICATION BAR SERVICE"
+      - name: "12. Java Code: JarvisFloatingService (Tower Sync & Shutter)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/JarvisFloatingService.java
           package com.zplus2.chat;
@@ -789,7 +792,7 @@ jobs:
           }
           EOF
 
-      - name: "14. Java Code: MainActivity (Fix: Added Uri Import)"
+      - name: "13. Java Code: MainActivity"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/MainActivity.java
           package com.zplus2.chat;
@@ -800,7 +803,7 @@ jobs:
           import android.content.Intent;
           import android.content.IntentFilter;
           import android.content.pm.PackageManager;
-          import android.net.Uri; // <-- THE FIX: Added Uri Import
+          import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
           import android.os.Process;
