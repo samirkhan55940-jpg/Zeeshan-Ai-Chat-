@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (Hive Mind Sync & Fixed Edition)"
+name: "Build Z+2 Chat (Ghost RPA & Smart Operator Edition)"
 
 on:
   push:
@@ -60,8 +60,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 30
-                  versionName "30.0-Hive-Mind-Fixed"
+                  versionCode 41
+                  versionName "41.0-Fixed-RPA-Edition"
               }
               buildTypes {
                   release {
@@ -81,16 +81,17 @@ jobs:
           -keep class com.zplus2.chat.** { *; }
           EOF
 
-      - name: "6. Create 50MB Uncompressible Solid Brain File"
+      - name: "6. Create Dual Storage Files (50MB + 50MB)"
         run: |
-          dd if=/dev/urandom of=app/src/main/assets/story_database_50mb.db bs=1M count=50
+          dd if=/dev/urandom of=app/src/main/assets/chat_memory_50mb.db bs=1M count=50
+          dd if=/dev/urandom of=app/src/main/assets/system_data_50mb.db bs=1M count=50
 
       - name: "7. App Resources & UI Drawables"
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
           <resources>
               <string name="app_name">Z+2 Assistant</string>
-              <string name="accessibility_desc">Z+2 Assistant Ghost Keyboard, Auto-Scroll aur Vision System.</string>
+              <string name="accessibility_desc">Z+2 Assistant Ghost RPA (Human Operator) Engine.</string>
           </resources>
           EOF
 
@@ -103,8 +104,7 @@ jobs:
               <color name="bubble_ai">#202C33</color>
               <color name="bubble_user">#005C4B</color>
               <color name="accent_green">#00A884</color>
-              <color name="red_close">#FF4C4C</color>
-              <color name="api_bar">#2A3942</color>
+              <color name="btn_red">#FF4C4C</color>
           </resources>
           EOF
 
@@ -129,20 +129,11 @@ jobs:
           cat << 'EOF' > app/src/main/res/drawable/bg_btn_send.xml
           <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval"><solid android:color="@color/accent_green"/></shape>
           EOF
-          cat << 'EOF' > app/src/main/res/drawable/bg_btn_scan.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="#334155"/><corners android:radius="12dp"/></shape>
+          cat << 'EOF' > app/src/main/res/drawable/bg_btn_green.xml
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/accent_green"/><corners android:radius="12dp"/></shape>
           EOF
-          cat << 'EOF' > app/src/main/res/drawable/bg_btn_close.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval"><solid android:color="@color/red_close"/></shape>
-          EOF
-
-          cat << 'EOF' > app/src/main/res/xml/accessibility_service_config.xml
-          <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-              android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
-              android:accessibilityFeedbackType="feedbackGeneric"
-              android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
-              android:canRetrieveWindowContent="true"
-              android:description="@string/accessibility_desc" />
+          cat << 'EOF' > app/src/main/res/drawable/bg_btn_red.xml
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/btn_red"/><corners android:radius="12dp"/></shape>
           EOF
 
       - name: "8. App Icon"
@@ -166,35 +157,37 @@ jobs:
                   <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_btn_send" android:text="Z" android:textColor="#FFF" android:textSize="22sp" android:textStyle="bold" android:gravity="center"/>
                   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Zeeshan" android:textColor="@color/text_white" android:textSize="18sp" android:textStyle="bold"/>
-                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Z+2 Assistant Ready" android:textColor="@color/text_gray" android:textSize="12sp"/>
+                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ghost RPA (Human Operator) Active" android:textColor="@color/text_gray" android:textSize="12sp"/>
                   </LinearLayout>
-                  <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="B.G" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
+                  <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Parda ON" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
                   <TextView android:id="@+id/btn_menu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⋮" android:textColor="#FFF" android:textSize="28sp" android:paddingStart="15dp" android:paddingEnd="5dp" android:textStyle="bold"/>
               </LinearLayout>
 
-              <LinearLayout android:id="@+id/api_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/top_bar" android:background="@color/api_bar" android:orientation="horizontal" android:padding="8dp" android:visibility="gone">
-                  <EditText android:id="@+id/et_api_key" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:background="@color/bubble_ai" android:hint="Paste Gemini API Key Here..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:paddingStart="10dp" android:textSize="12sp"/>
-                  <Button android:id="@+id/btn_save_key" android:layout_width="wrap_content" android:layout_height="40dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_scan" android:text="SAVE" android:textColor="#FFF" android:textSize="12sp" android:textStyle="bold"/>
-              </LinearLayout>
-
-              <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/api_bar" android:padding="10dp">
+              <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/top_bar" android:padding="10dp">
                   <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Hive-Mind Sync chalu hai.\n\nAap bahar kisi app mein floating mic se jo bhi bolenge, wo sab yahan chat mein save ho jayega!\n\nHukum dijiye Zeeshan bhai!" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Z+2 Human Operator Mode chalu hai.\n\nAb main screen ko padh sakta hoon aur automatic clicks bhi kar sakta hoon. Aap apps ke andar ki settings kholne ka hukum bhi de sakte hain!\n\nHukum dijiye Zeeshan bhai!" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
                   </LinearLayout>
               </ScrollView>
 
               <LinearLayout android:id="@+id/input_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical" android:background="@color/bg_chat">
                   <Button android:id="@+id/btn_mic" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_btn_send" android:text="🎤" android:textColor="#FFF" android:textSize="18sp"/>
-                  <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Z+2 ko hukum dijiye..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
+                  <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Hinglish mein hukum dijiye..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
                   <Button android:id="@+id/btn_send" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_send" android:text="➤" android:textColor="#FFF" android:textSize="20sp"/>
               </LinearLayout>
           </RelativeLayout>
           EOF
 
-          cat << 'EOF' > app/src/main/res/layout/floating_mic.xml
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:background="@drawable/bg_input" android:padding="4dp" android:elevation="10dp">
-              <Button android:id="@+id/btn_float_mic" android:layout_width="50dp" android:layout_height="50dp" android:background="@drawable/bg_btn_send" android:text="🎤" android:textColor="#FFF" android:textSize="20sp"/>
-              <Button android:id="@+id/btn_float_close" android:layout_width="35dp" android:layout_height="35dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_close" android:text="✖" android:textColor="#FFF" android:textSize="14sp" android:textStyle="bold"/>
+          cat << 'EOF' > app/src/main/res/layout/notification_jarvis.xml
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="wrap_content"
+              android:background="@color/chat_bar" android:orientation="horizontal"
+              android:gravity="center_vertical" android:padding="12dp">
+              <ImageView android:layout_width="45dp" android:layout_height="45dp" android:src="@mipmap/ic_launcher_round"/>
+              <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
+                  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Z+2 Assistant" android:textColor="#FFF" android:textSize="16sp" android:textStyle="bold"/>
+                  <TextView android:id="@+id/tv_notif_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sun raha hoon..." android:textColor="@color/accent_green" android:textSize="14sp"/>
+              </LinearLayout>
+              <TextView android:id="@+id/btn_notif_toggle" android:layout_width="80dp" android:layout_height="35dp" android:background="@drawable/bg_btn_green" android:text="MIC ON" android:textColor="#FFF" android:textSize="12sp" android:textStyle="bold" android:gravity="center"/>
           </LinearLayout>
           EOF
 
@@ -202,15 +195,18 @@ jobs:
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
               <uses-permission android:name="android.permission.CAMERA" />
-              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+              <uses-permission android:name="android.permission.READ_CONTACTS" />
+              <uses-permission android:name="android.permission.CALL_PHONE" />
+              <uses-permission android:name="android.permission.READ_PHONE_STATE" />
               
               <queries>
                   <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
@@ -218,7 +214,7 @@ jobs:
                   <intent><action android:name="android.speech.RecognitionService" /></intent>
               </queries>
 
-              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:usesCleartextTraffic="true">
+              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">
                   <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -236,7 +232,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "11. Java Code: AUTO-CLICKER & VISION ENGINE"
+      - name: "11. Java Code: AUTO-CLICKER SERVICE (Ghost RPA 2.0 Engine)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/AutoClickerService.java
           package com.zplus2.chat;
@@ -247,13 +243,18 @@ jobs:
           import android.os.Bundle;
           import android.os.Handler;
           import android.os.Looper;
+          import java.util.ArrayList;
+          import java.util.List;
 
           public class AutoClickerService extends AccessibilityService {
               
-              public static boolean pendingClick = false;
               public static boolean pendingScroll = false;
               public static String pendingTextToType = "";
               public static AutoClickerService instance;
+
+              public static List<String> macroSteps = new ArrayList<>();
+              public static int currentStepIndex = 0;
+              public static long lastActionTime = 0;
 
               @Override
               protected void onServiceConnected() {
@@ -276,10 +277,18 @@ jobs:
                       }
                   }
 
-                  if (pendingClick) {
-                      if (findAndClickSwitch(rootNode)) {
-                          pendingClick = false;
-                          new Handler(Looper.getMainLooper()).postDelayed(() -> performGlobalAction(GLOBAL_ACTION_BACK), 500);
+                  if (!macroSteps.isEmpty() && currentStepIndex < macroSteps.size()) {
+                      long currentTime = System.currentTimeMillis();
+                      if (currentTime - lastActionTime > 1500) { 
+                          String targetStep = macroSteps.get(currentStepIndex);
+                          boolean success = clickTextOnScreen(rootNode, targetStep);
+                          if (success) {
+                              currentStepIndex++;
+                              lastActionTime = currentTime;
+                              if (currentStepIndex >= macroSteps.size()) {
+                                  macroSteps.clear();
+                              }
+                          }
                       }
                   }
 
@@ -287,6 +296,46 @@ jobs:
                       performGlobalAction(GLOBAL_ACTION_HOME);
                       pendingScroll = false;
                   }
+              }
+
+              private boolean clickTextOnScreen(AccessibilityNodeInfo node, String targetText) {
+                  if (node == null) return false;
+                  
+                  if (node.getText() != null && node.getText().toString().toLowerCase().contains(targetText.toLowerCase())) {
+                      if (clickNodeOrParent(node)) return true;
+                  }
+                  
+                  if (node.getContentDescription() != null && node.getContentDescription().toString().toLowerCase().contains(targetText.toLowerCase())) {
+                      if (clickNodeOrParent(node)) return true;
+                  }
+
+                  for (int i = 0; i < node.getChildCount(); i++) {
+                      if (clickTextOnScreen(node.getChild(i), targetText)) return true;
+                  }
+                  return false;
+              }
+
+              private boolean clickNodeOrParent(AccessibilityNodeInfo node) {
+                  if (node.isClickable()) {
+                      node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                      return true;
+                  }
+                  AccessibilityNodeInfo parent = node.getParent();
+                  while (parent != null) {
+                      if (parent.isClickable()) {
+                          parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                          return true;
+                      }
+                      parent = parent.getParent();
+                  }
+                  return false;
+              }
+
+              public static void startMacro(String[] steps) {
+                  macroSteps.clear();
+                  for(String s : steps) macroSteps.add(s);
+                  currentStepIndex = 0;
+                  lastActionTime = System.currentTimeMillis() - 2000; 
               }
 
               public void executeVisionScreenshot() { performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT); }
@@ -311,114 +360,120 @@ jobs:
                   }
                   return null;
               }
-
-              private boolean findAndClickSwitch(AccessibilityNodeInfo node) {
-                  if (node == null) return false;
-                  if ("android.widget.Switch".equals(node.getClassName()) && node.isClickable()) {
-                      node.performAction(AccessibilityNodeInfo.ACTION_CLICK); return true;
-                  }
-                  for (int i = 0; i < node.getChildCount(); i++) {
-                      if (findAndClickSwitch(node.getChild(i))) return true;
-                  }
-                  return false;
-              }
               @Override public void onInterrupt() {}
           }
           EOF
 
-      - name: "12. Java Code: MASTER THINKING ENGINE"
+      - name: "12. Java Code: THINKING ENGINE (Fix: Added Random & Uri Imports)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
           package com.zplus2.chat;
 
           import android.content.Context;
           import android.content.Intent;
-          import android.content.SharedPreferences;
           import android.content.pm.PackageManager;
           import android.content.pm.ResolveInfo;
           import android.hardware.camera2.CameraManager;
+          import android.provider.MediaStore;
+          import android.provider.ContactsContract;
+          import android.database.Cursor;
+          import android.net.Uri;
+          import android.content.ContentUris;
           import java.io.File;
           import java.io.FileOutputStream;
-          import java.io.OutputStream;
-          import java.io.BufferedReader;
-          import java.io.InputStreamReader;
-          import java.net.HttpURLConnection;
-          import java.net.URL;
-          import org.json.JSONObject;
-          import org.json.JSONArray;
+          import java.text.SimpleDateFormat;
+          import java.util.Date;
           import java.util.HashMap;
           import java.util.List;
+          import java.util.Locale;
           import java.util.Map;
+          import java.util.Random; // <-- THE FIX: Added Random Import
 
           public class ThinkingEngine {
               private HashMap<String, String> installedAppsMap = new HashMap<>();
-              public static boolean isNetModeOn = false; 
+              private HashMap<String, String> mediaFilesMap = new HashMap<>(); 
+              private HashMap<String, String> contactsMap = new HashMap<>(); 
               
-              private void saveRollingChatMemory(Context context, String text) {
+              public static void saveChatHistory(Context context, String text, boolean isUser) {
                   try {
-                      File memoryFile = new File(context.getFilesDir(), "jarvis_chat_memory.txt");
-                      if (memoryFile.length() > 50000000) memoryFile.delete();
+                      File memoryFile = new File(context.getFilesDir(), "jarvis_chat_memory_50mb.txt");
+                      if (memoryFile.length() > 50000000) memoryFile.delete(); 
+                      String timeStamp = new SimpleDateFormat("dd-MMM yyyy, hh:mm a", Locale.getDefault()).format(new Date());
                       FileOutputStream fos = new FileOutputStream(memoryFile, true);
-                      fos.write((text + "\n").getBytes());
+                      String prefix = isUser ? "USER" : "Z+2";
+                      String logEntry = "[" + timeStamp + "] " + prefix + ": " + text + "\n";
+                      fos.write(logEntry.getBytes());
                       fos.close();
                   } catch (Exception e) {}
               }
 
-              public String scanInstalledApps(Context context) {
+              public static void saveSystemData(Context context, String data) {
+                  try {
+                      File systemFile = new File(context.getFilesDir(), "jarvis_system_data_50mb.txt");
+                      FileOutputStream fos = new FileOutputStream(systemFile, true);
+                      fos.write((data + "\n").getBytes());
+                      fos.close();
+                  } catch (Exception e) {}
+              }
+
+              public String scanMobileSystem(Context context) {
+                  StringBuilder systemLog = new StringBuilder("--- SYSTEM SCAN LOG ---\n");
                   PackageManager pm = context.getPackageManager();
                   Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
                   mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
                   List<ResolveInfo> appList = pm.queryIntentActivities(mainIntent, 0);
-                  
                   installedAppsMap.clear(); 
                   for (ResolveInfo info : appList) {
-                      installedAppsMap.put(info.loadLabel(pm).toString().toLowerCase(), info.activityInfo.packageName);
+                      String appName = info.loadLabel(pm).toString().toLowerCase();
+                      installedAppsMap.put(appName, info.activityInfo.packageName);
+                      installedAppsMap.put(appName.replace(" ", ""), info.activityInfo.packageName);
+                      systemLog.append("App: ").append(appName).append("\n");
                   }
-                  
-                  installedAppsMap.put("setting", "com.android.settings");
-                  installedAppsMap.put("mobile setting", "com.android.settings");
-                  installedAppsMap.put("oppo setting", "com.coloros.settings"); 
-                  
-                  saveRollingChatMemory(context, "System Scanned.");
-                  return "Zeeshan bhai, Scan Complete! " + installedAppsMap.size() + " Apps yaad kar liye.";
-              }
-
-              private String askJeeniCloud(String prompt, String apiKey) {
-                  if (apiKey == null || apiKey.isEmpty()) {
-                      return "Zeeshan bhai, pehle menu se API Key set kijiye!";
-                  }
+                  mediaFilesMap.clear();
                   try {
-                      URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey);
-                      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                      conn.setRequestMethod("POST");
-                      conn.setRequestProperty("Content-Type", "application/json");
-                      conn.setDoOutput(true);
-
-                      String cleanPrompt = prompt.replace("\"", "\\\"").replace("\n", " ");
-                      String jsonInputString = "{\"contents\":[{\"parts\":[{\"text\":\"" + cleanPrompt + "\"}]}]}";
-
-                      try(OutputStream os = conn.getOutputStream()) {
-                          byte[] input = jsonInputString.getBytes("utf-8");
-                          os.write(input, 0, input.length);
+                      String[] projection = {MediaStore.Video.Media._ID, MediaStore.Video.Media.DISPLAY_NAME};
+                      Cursor cursor = context.getContentResolver().query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, null);
+                      if (cursor != null) {
+                          while (cursor.moveToNext()) {
+                              long id = cursor.getLong(0);
+                              String name = cursor.getString(1);
+                              if (name != null) {
+                                  String cleanName = name.toLowerCase().replace(".mp4", "").replace(".mkv", "").replace("_", " ");
+                                  Uri contentUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
+                                  mediaFilesMap.put(cleanName, contentUri.toString());
+                                  systemLog.append("Video: ").append(cleanName).append("\n");
+                              }
+                          }
+                          cursor.close();
                       }
+                  } catch (Exception e) {}
 
-                      BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
-                      StringBuilder response = new StringBuilder();
-                      String responseLine = null;
-                      while ((responseLine = br.readLine()) != null) {
-                          response.append(responseLine.trim());
+                  contactsMap.clear();
+                  try {
+                      Cursor cursor = context.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
+                      if (cursor != null) {
+                          while (cursor.moveToNext()) {
+                              int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+                              int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                              if(nameIndex != -1 && numberIndex != -1) {
+                                  String name = cursor.getString(nameIndex);
+                                  String number = cursor.getString(numberIndex);
+                                  if (name != null && number != null) {
+                                      contactsMap.put(name.toLowerCase(), number.replaceAll("[^0-9+]", ""));
+                                      systemLog.append("Contact: ").append(name).append("\n");
+                                  }
+                              }
+                          }
+                          cursor.close();
                       }
+                  } catch (Exception e) {}
 
-                      JSONObject jsonResponse = new JSONObject(response.toString());
-                      JSONArray candidates = jsonResponse.getJSONArray("candidates");
-                      return candidates.getJSONObject(0).getJSONObject("content").getJSONArray("parts").getJSONObject(0).getString("text");
-                  } catch (Exception e) {
-                      return "Zeeshan bhai, Internet connection mein dikkat hai.";
-                  }
+                  saveSystemData(context, systemLog.toString());
+                  return "Zeeshan bhai, Dual Memory Update Complete!";
               }
 
               private String cleanGarbageWords(String input) {
-                  String[] garbageWords = {"bhai", "zara", "please", "karo", "do", "de", "toh", "mujhe", "mera"};
+                  String[] garbageWords = {"bhai", "zara", "please", "karo", "do", "de", "toh", "mujhe", "mera", "ki", "ka"};
                   String cleanStr = input;
                   for (String word : garbageWords) { cleanStr = cleanStr.replace(word, "").trim(); }
                   return cleanStr;
@@ -426,93 +481,108 @@ jobs:
 
               public String processInput(String input, Context context) {
                   String lowerInput = input.toLowerCase().trim();
-                  saveRollingChatMemory(context, "User: " + input);
 
-                  if (lowerInput.contains("dekho") || lowerInput.contains("padho") || lowerInput.contains("screen")) {
-                      if(AutoClickerService.instance != null) {
-                          AutoClickerService.instance.executeVisionScreenshot();
-                          return "Zeeshan bhai, Aankh mode ON! Screen padh raha hoon.";
+                  if (lowerInput.contains("whatsapp setting") || lowerInput.contains("whatsapp ki setting")) {
+                      if (AutoClickerService.instance != null) {
+                          String pkg = installedAppsMap.get("whatsapp");
+                          if (pkg != null) {
+                              Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(pkg);
+                              if (launchIntent != null) {
+                                  launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                  context.startActivity(launchIntent);
+                                  String[] script = {"More options", "Settings"};
+                                  AutoClickerService.startMacro(script);
+                                  return "Zeeshan bhai, WhatsApp open karke automatic Setting khol raha hoon!";
+                              }
+                          }
+                      }
+                      return "Ghost engine ready nahi hai bhai.";
+                  }
+
+                  if (lowerInput.contains("call lagao") || lowerInput.contains("phone lagao") || lowerInput.contains("call karo") || lowerInput.contains("dial karo")) {
+                      String target = cleanGarbageWords(lowerInput).replace("call lagao", "").replace("phone lagao", "").replace("call karo", "").replace("dial karo", "").trim();
+                      if (!target.isEmpty()) {
+                          if (target.matches(".*\\d.*")) {
+                              String numToDial = target.replaceAll("[^0-9]", "");
+                              try {
+                                  Intent intent = new Intent(Intent.ACTION_CALL);
+                                  intent.setData(Uri.parse("tel:" + numToDial));
+                                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                  context.startActivity(intent);
+                                  return "Zeeshan bhai, number " + numToDial + " par call laga di hai!";
+                              } catch (Exception e) { return "Call permission nahi mili bhai."; }
+                          }
+                          String foundNumber = null;
+                          String foundName = null;
+                          for (Map.Entry<String, String> entry : contactsMap.entrySet()) {
+                              if (entry.getKey().contains(target) || target.contains(entry.getKey())) {
+                                  foundNumber = entry.getValue();
+                                  foundName = entry.getKey();
+                                  break;
+                              }
+                          }
+                          if (foundNumber != null) {
+                              try {
+                                  Intent intent = new Intent(Intent.ACTION_CALL);
+                                  intent.setData(Uri.parse("tel:" + foundNumber));
+                                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                  context.startActivity(intent);
+                                  return "Zeeshan bhai, " + foundName + " ko call laga raha hoon!";
+                              } catch (Exception e) { return "Call permission allowed nahi hai bhai."; }
+                          } else {
+                              return "Zeeshan bhai, yeh naam save nahi hai, kripya number batayein.";
+                          }
                       }
                   }
 
-                  if (lowerInput.contains("scroll") || lowerInput.contains("niche") || lowerInput.contains("neeche")) {
-                      if(AutoClickerService.instance != null) {
-                          AutoClickerService.instance.executeScroll();
-                          return "Zeeshan bhai, screen neeche scroll kar raha hoon!";
+                  if (lowerInput.contains("video chalao") || lowerInput.contains("play video") || lowerInput.contains("picture")) {
+                      String targetVideo = cleanGarbageWords(lowerInput).replace("video chalao", "").replace("play video", "").replace("picture", "").trim();
+                      if (!targetVideo.isEmpty()) {
+                          for (Map.Entry<String, String> entry : mediaFilesMap.entrySet()) {
+                              if (entry.getKey().contains(targetVideo) || targetVideo.contains(entry.getKey())) {
+                                  try {
+                                      Intent intent = new Intent(Intent.ACTION_VIEW);
+                                      intent.setDataAndType(Uri.parse(entry.getValue()), "video/*");
+                                      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                      context.startActivity(intent);
+                                      return "Zeeshan bhai, video mili! '" + entry.getKey() + "' play kar raha hoon.";
+                                  } catch (Exception e) { return "Video player mein dikkat hai bhai."; }
+                              }
+                          }
+                          return "Zeeshan bhai, aisi koi video memory mein nahi mili.";
                       }
                   }
 
                   if (lowerInput.contains("hawai") || lowerInput.contains("flight") || lowerInput.contains("airplane")) {
-                      AutoClickerService.pendingClick = true;
                       Intent intent = new Intent(android.provider.Settings.ACTION_AIRPLANE_MODE_SETTINGS);
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                       context.startActivity(intent);
-                      return "Flight mode switch ON kar raha hoon!";
+                      return "Zeeshan bhai, Flight mode switch open kar diya!";
                   }
                   if (lowerInput.contains("wifi") || lowerInput.contains("wi-fi") || lowerInput.contains("hotspot") || lowerInput.contains("net")) {
-                      AutoClickerService.pendingClick = true;
                       Intent intent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                       context.startActivity(intent);
-                      return "Network Setting ON kar raha hoon!";
+                      return "Network Setting khol raha hoon Zeeshan bhai!";
                   }
-                  if (lowerInput.contains("torch") || lowerInput.contains("light") || lowerInput.contains("flash")) {
-                      try {
-                          CameraManager camManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-                          String cameraId = camManager.getCameraIdList()[0];
-                          if (lowerInput.contains("on") || lowerInput.contains("jala")) { 
-                              camManager.setTorchMode(cameraId, true); return "Torch jala di bhai!"; 
-                          } else { 
-                              camManager.setTorchMode(cameraId, false); return "Torch band kar di!"; 
-                          }
-                      } catch (Exception e) {}
-                      return "Torch logic executed.";
-                  }
-
+                  
                   String[] openTriggers = {"open", "kholo", "chalao", "start", "laga", "dikhao", "on", "shuru"};
-                  boolean isAppCommand = false;
                   for (String t : openTriggers) { 
-                      if (lowerInput.contains(t) && !lowerInput.contains("wifi") && !lowerInput.contains("torch")) { 
-                          String targetApp = cleanGarbageWords(lowerInput).replace(t, "").trim();
-                          if (!targetApp.isEmpty()) {
+                      if (lowerInput.contains(t)) { 
+                          String targetAppRaw = cleanGarbageWords(lowerInput).replace(t, "").trim();
+                          String targetAppFuzzy = targetAppRaw.replace(" ", ""); 
+                          if (!targetAppRaw.isEmpty()) {
                               for (Map.Entry<String, String> entry : installedAppsMap.entrySet()) {
-                                  if (entry.getKey().contains(targetApp) || targetApp.contains(entry.getKey())) {
+                                  if (entry.getKey().contains(targetAppRaw) || entry.getKey().contains(targetAppFuzzy)) {
                                       Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(entry.getValue());
                                       if (launchIntent != null) {
                                           launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                           context.startActivity(launchIntent);
-                                          return "Zeeshan bhai, " + entry.getKey() + " open kar diya!";
+                                          return "Zeeshan bhai, main " + entry.getKey() + " open kar diya!";
                                       }
                                   }
                               }
                           }
-                          isAppCommand = true;
-                      } 
-                  }
-                  if (isAppCommand) return "App mili nahi bhai, pehle SCAN menu dabaiye.";
-
-                  if (isNetModeOn || lowerInput.contains("z+2") || lowerInput.contains("jeeni") || lowerInput.contains("search")) {
-                      SharedPreferences prefs = context.getSharedPreferences("JarvisPrefs", Context.MODE_PRIVATE);
-                      String apiKey = prefs.getString("API_KEY", "");
-                      
-                      String aiQuestion = lowerInput.replace("jeeni", "").replace("z+2", "").replace("search", "").trim();
-                      if(aiQuestion.isEmpty()) aiQuestion = "Hello";
-                      
-                      String aiAnswer = askJeeniCloud(aiQuestion, apiKey);
-                      
-                      if (lowerInput.contains("likh") || lowerInput.contains("type") || lowerInput.contains("comic")) {
-                          AutoClickerService.pendingTextToType = aiAnswer;
-                          return "Zeeshan bhai, internet se soch kar screen par type kar raha hoon!";
-                      }
-                      return aiAnswer;
-                  }
-
-                  String[] typeTriggers = {"likh", "type", "dal", "send", "likho"};
-                  for (String t : typeTriggers) { 
-                      if (lowerInput.contains(t)) { 
-                          String textToType = cleanGarbageWords(lowerInput).replace(t, "").trim();
-                          AutoClickerService.pendingTextToType = textToType;
-                          return "Zeeshan bhai, type kar diya: " + textToType;
                       } 
                   }
 
@@ -521,7 +591,7 @@ jobs:
           }
           EOF
 
-      - name: "13. Java Code: FLOATING MIC SERVICE"
+      - name: "13. Java Code: NOTIFICATION BAR SERVICE"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/JarvisFloatingService.java
           package com.zplus2.chat;
@@ -529,9 +599,13 @@ jobs:
           import android.app.Notification;
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
+          import android.app.PendingIntent;
           import android.app.Service;
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
           import android.content.Intent;
-          import android.graphics.PixelFormat;
+          import android.content.IntentFilter;
+          import android.graphics.Color;
           import android.os.Build;
           import android.os.Bundle;
           import android.os.IBinder;
@@ -539,11 +613,8 @@ jobs:
           import android.speech.RecognizerIntent;
           import android.speech.SpeechRecognizer;
           import android.speech.tts.TextToSpeech;
-          import android.view.Gravity;
-          import android.view.LayoutInflater;
-          import android.view.View;
-          import android.view.WindowManager;
-          import android.widget.Button;
+          import android.telephony.TelephonyManager;
+          import android.widget.RemoteViews;
           import android.os.Handler;
           import android.os.Looper;
 
@@ -551,62 +622,105 @@ jobs:
           import java.util.Locale;
 
           public class JarvisFloatingService extends Service {
-              private WindowManager windowManager;
-              private View floatingView;
               private SpeechRecognizer speechRecognizer;
               private TextToSpeech tts;
               private ThinkingEngine thinker;
+              private NotificationManager notificationManager;
+              private RemoteViews remoteViews;
               private static final String CHANNEL_ID = "jarvis_channel";
               
               public static boolean isRunning = false;
+              private boolean isMicActive = true; 
+              
+              private BroadcastReceiver phoneStateReceiver = new BroadcastReceiver() {
+                  @Override
+                  public void onReceive(Context context, Intent intent) {
+                      String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
+                      if (TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state) || TelephonyManager.EXTRA_STATE_RINGING.equals(state)) {
+                          isMicActive = false;
+                          if (speechRecognizer != null) speechRecognizer.stopListening();
+                          updateNotificationUI();
+                      } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(state)) {
+                          isMicActive = true;
+                          updateNotificationUI();
+                          startListening();
+                      }
+                  }
+              };
 
               @Override
               public IBinder onBind(Intent intent) { return null; }
 
               @Override
+              public int onStartCommand(Intent intent, int flags, int startId) {
+                  if (intent != null && "TOGGLE_MIC".equals(intent.getAction())) {
+                      isMicActive = !isMicActive;
+                      if (isMicActive) { startListening(); } 
+                      else { if (speechRecognizer != null) speechRecognizer.stopListening(); }
+                      updateNotificationUI();
+                  }
+                  return START_STICKY; 
+              }
+
+              @Override
               public void onCreate() {
                   super.onCreate();
                   isRunning = true;
-                  
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Jarvis Service", NotificationManager.IMPORTANCE_LOW);
-                      getSystemService(NotificationManager.class).createNotificationChannel(channel);
-                      Notification notification = new Notification.Builder(this, CHANNEL_ID)
-                              .setContentTitle("Z+2 Assistant Active")
-                              .setContentText("Listening for commands...")
-                              .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-                              .build();
-                      startForeground(1, notification);
-                  }
-
+                  notificationManager = getSystemService(NotificationManager.class);
                   thinker = new ThinkingEngine();
                   
+                  IntentFilter filter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+                  registerReceiver(phoneStateReceiver, filter);
+                  
                   tts = new TextToSpeech(this, status -> {
-                      if(status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("hi", "IN"));
+                      if(status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("en", "IN"));
                   });
 
-                  windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-                  floatingView = LayoutInflater.from(this).inflate(R.layout.floating_mic, null);
-
-                  int layoutFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? 
-                                   WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
-
-                  WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                          WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
-                          layoutFlag, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
-                  
-                  params.gravity = Gravity.TOP | Gravity.END;
-                  params.x = 0; params.y = 200;
-                  windowManager.addView(floatingView, params);
-
-                  Button btnMic = floatingView.findViewById(R.id.btn_float_mic);
-                  Button btnClose = floatingView.findViewById(R.id.btn_float_close);
-
-                  btnMic.setOnClickListener(v -> startListening(btnMic));
-                  btnClose.setOnClickListener(v -> stopSelf());
+                  createNotificationChannel();
+                  startForegroundNotification();
+                  startListening();
               }
 
-              // Sync with Main Activity Chat Box
+              private void createNotificationChannel() {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Z+2 Shutter System", NotificationManager.IMPORTANCE_LOW);
+                      notificationManager.createNotificationChannel(channel);
+                  }
+              }
+
+              private void startForegroundNotification() {
+                  remoteViews = new RemoteViews(getPackageName(), R.layout.notification_jarvis);
+                  Intent toggleIntent = new Intent(this, JarvisFloatingService.class);
+                  toggleIntent.setAction("TOGGLE_MIC");
+                  PendingIntent pendingIntent = PendingIntent.getService(this, 0, toggleIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                  remoteViews.setOnClickPendingIntent(R.id.btn_notif_toggle, pendingIntent);
+                  updateNotificationUI();
+              }
+
+              private void updateNotificationUI() {
+                  if (isMicActive) {
+                      remoteViews.setTextViewText(R.id.tv_notif_status, "Sun raha hoon Zeeshan Bhai...");
+                      remoteViews.setTextColor(R.id.tv_notif_status, Color.parseColor("#00A884")); 
+                      remoteViews.setTextViewText(R.id.btn_notif_toggle, "MIC ON");
+                      remoteViews.setInt(R.id.btn_notif_toggle, "setBackgroundResource", R.drawable.bg_btn_green);
+                  } else {
+                      remoteViews.setTextViewText(R.id.tv_notif_status, "Call Chal Rahi Hai / Soya Hua Hai");
+                      remoteViews.setTextColor(R.id.tv_notif_status, Color.parseColor("#FF4C4C")); 
+                      remoteViews.setTextViewText(R.id.btn_notif_toggle, "MIC OFF");
+                      remoteViews.setInt(R.id.btn_notif_toggle, "setBackgroundResource", R.drawable.bg_btn_red);
+                  }
+
+                  Notification notification = null;
+                  if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                      notification = new Notification.Builder(this, CHANNEL_ID)
+                              .setSmallIcon(R.mipmap.ic_launcher)
+                              .setCustomContentView(remoteViews)
+                              .setOngoing(true)
+                              .build();
+                  }
+                  startForeground(1, notification);
+              }
+
               private void sendChatBroadcast(String text, boolean isUser) {
                   Intent intent = new Intent("com.zplus2.UPDATE_CHAT");
                   intent.putExtra("text", text);
@@ -614,8 +728,9 @@ jobs:
                   sendBroadcast(intent);
               }
 
-              private void startListening(Button btn) {
-                  btn.setText("⏳"); 
+              private void startListening() {
+                  if (!isMicActive) return; 
+
                   if (speechRecognizer == null) {
                       speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
                       speechRecognizer.setRecognitionListener(new RecognitionListener() {
@@ -623,25 +738,35 @@ jobs:
                               ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                               if (matches != null && !matches.isEmpty()) {
                                   String userText = matches.get(0);
+                                  
+                                  ThinkingEngine.saveChatHistory(JarvisFloatingService.this, userText, true);
                                   sendChatBroadcast(userText, true); 
                                   
                                   new Thread(() -> {
                                       String response = thinker.processInput(userText, JarvisFloatingService.this);
+                                      ThinkingEngine.saveChatHistory(JarvisFloatingService.this, response, false);
+                                      
                                       new Handler(Looper.getMainLooper()).post(() -> {
                                           sendChatBroadcast(response, false); 
                                           if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null); 
-                                          btn.setText("🎤");
+                                          if(isMicActive) startListening();
                                       });
                                   }).start();
+                              } else {
+                                  if(isMicActive) startListening();
                               }
                           }
-                          @Override public void onError(int error) { btn.setText("🎤"); }
+                          @Override public void onError(int error) { 
+                              if(isMicActive) {
+                                  new Handler(Looper.getMainLooper()).postDelayed(() -> startListening(), 500);
+                              }
+                          }
                           @Override public void onReadyForSpeech(Bundle p){} @Override public void onBeginningOfSpeech(){} @Override public void onRmsChanged(float r){} @Override public void onBufferReceived(byte[] b){} @Override public void onEndOfSpeech(){} @Override public void onPartialResults(Bundle p){} @Override public void onEvent(int e, Bundle p){}
                       });
                   }
                   Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN");
+                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN"); 
                   intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "com.google.android.googlequicksearchbox");
                   speechRecognizer.startListening(intent);
               }
@@ -656,14 +781,15 @@ jobs:
               public void onDestroy() {
                   super.onDestroy();
                   isRunning = false;
-                  if (floatingView != null) windowManager.removeView(floatingView);
+                  isMicActive = false;
+                  try { unregisterReceiver(phoneStateReceiver); } catch(Exception e){}
                   if (tts != null) { tts.stop(); tts.shutdown(); }
                   if (speechRecognizer != null) speechRecognizer.destroy();
               }
           }
           EOF
 
-      - name: "14. Java Code: MainActivity"
+      - name: "14. Java Code: MainActivity (Fix: Added Uri Import)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/MainActivity.java
           package com.zplus2.chat;
@@ -673,9 +799,8 @@ jobs:
           import android.content.Context;
           import android.content.Intent;
           import android.content.IntentFilter;
-          import android.content.SharedPreferences;
           import android.content.pm.PackageManager;
-          import android.net.Uri;
+          import android.net.Uri; // <-- THE FIX: Added Uri Import
           import android.os.Build;
           import android.os.Bundle;
           import android.os.Process;
@@ -697,6 +822,11 @@ jobs:
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
           import androidx.core.content.ContextCompat;
+          import java.io.BufferedReader;
+          import java.io.File;
+          import java.io.FileReader;
+          import java.text.SimpleDateFormat;
+          import java.util.Date;
 
           import java.util.ArrayList;
           import java.util.Locale;
@@ -706,12 +836,10 @@ jobs:
           public class MainActivity extends AppCompatActivity {
 
               private EditText etInput;
-              private EditText etApiKey;
               private LinearLayout chatLayout;
               private ScrollView chatScroll;
               private TextView tvStatus;
               private Switch bgSwitch;
-              private LinearLayout apiBar;
               
               private ThinkingEngine thinker;
               private ExecutorService backgroundThread;
@@ -724,7 +852,8 @@ jobs:
                       String text = intent.getStringExtra("text");
                       boolean isUser = intent.getBooleanExtra("isUser", false);
                       if(text != null) {
-                          addChatBubble(text, isUser);
+                          String timeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
+                          addChatBubble("[" + timeStamp + "]\n" + text, isUser);
                       }
                   }
               };
@@ -735,55 +864,49 @@ jobs:
                   setContentView(R.layout.activity_main);
 
                   etInput = findViewById(R.id.et_input);
-                  etApiKey = findViewById(R.id.et_api_key);
                   chatLayout = findViewById(R.id.chat_layout);
                   chatScroll = findViewById(R.id.chat_scroll);
                   tvStatus = findViewById(R.id.tv_status);
                   Button btnSend = findViewById(R.id.btn_send);
                   Button btnMic = findViewById(R.id.btn_mic);
-                  Button btnSaveKey = findViewById(R.id.btn_save_key);
                   TextView btnMenu = findViewById(R.id.btn_menu);
                   bgSwitch = findViewById(R.id.switch_bg_mode);
-                  apiBar = findViewById(R.id.api_bar);
 
-                  // THE FIX IS HERE: Method body added back below
                   checkAccessibilityService();
 
-                  SharedPreferences prefs = getSharedPreferences("JarvisPrefs", Context.MODE_PRIVATE);
-                  etApiKey.setText(prefs.getString("API_KEY", ""));
-
-                  btnSaveKey.setOnClickListener(v -> {
-                      String key = etApiKey.getText().toString().trim();
-                      prefs.edit().putString("API_KEY", key).apply();
-                      Toast.makeText(this, "API Key Saved! Z+2 is Live.", Toast.LENGTH_SHORT).show();
-                      apiBar.setVisibility(View.GONE);
-                  });
+                  ArrayList<String> permissions = new ArrayList<>();
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.RECORD_AUDIO);
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_CONTACTS);
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.CALL_PHONE);
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_PHONE_STATE);
+                  
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_MEDIA_VIDEO);
+                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_MEDIA_IMAGES);
+                  } else {
+                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+                  }
+                  
+                  if(!permissions.isEmpty()) {
+                      ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), 3);
+                  }
 
                   btnMenu.setOnClickListener(v -> {
                       PopupMenu popup = new PopupMenu(MainActivity.this, btnMenu);
-                      popup.getMenu().add("Scan Mobile System");
-                      popup.getMenu().add("Live Net Mode (ON/OFF)");
-                      popup.getMenu().add("Set API Key");
+                      popup.getMenu().add("Scan Dual Brain Data");
                       
                       popup.setOnMenuItemClickListener(item -> {
-                          if(item.getTitle().equals("Scan Mobile System")) {
-                              tvStatus.setText("Scanning Mobile Data...");
+                          if(item.getTitle().equals("Scan Dual Brain Data")) {
+                              tvStatus.setText("Scanning Full Data...");
                               backgroundThread.execute(() -> {
                                   Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                                  String result = thinker.scanInstalledApps(MainActivity.this);
+                                  String result = thinker.scanMobileSystem(MainActivity.this);
                                   runOnUiThread(() -> {
                                       tvStatus.setText("Scan Complete");
                                       Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
                                       addChatBubble(result, false);
                                   });
                               });
-                          } else if(item.getTitle().equals("Live Net Mode (ON/OFF)")) {
-                              ThinkingEngine.isNetModeOn = !ThinkingEngine.isNetModeOn;
-                              String statusText = ThinkingEngine.isNetModeOn ? "Z+2 Net Mode: ON (Live)" : "Z+2 Net Mode: OFF (Offline)";
-                              Toast.makeText(MainActivity.this, statusText, Toast.LENGTH_SHORT).show();
-                              addChatBubble(statusText, false);
-                          } else if(item.getTitle().equals("Set API Key")) {
-                              apiBar.setVisibility(apiBar.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
                           }
                           return true;
                       });
@@ -792,15 +915,9 @@ jobs:
 
                   bgSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
                       if (isChecked) {
-                          if (!Settings.canDrawOverlays(this)) {
-                              Toast.makeText(this, "Zeeshan Bhai, Overlay permission allow karein!", Toast.LENGTH_LONG).show();
-                              startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
-                              bgSwitch.setChecked(false);
-                          } else {
-                              if (!JarvisFloatingService.isRunning) {
-                                  startForegroundService(new Intent(this, JarvisFloatingService.class));
-                                  Toast.makeText(this, "Background Z+2 ON!", Toast.LENGTH_SHORT).show();
-                              }
+                          if (!JarvisFloatingService.isRunning) {
+                              startForegroundService(new Intent(this, JarvisFloatingService.class));
+                              Toast.makeText(this, "Z+2 Parda (Notification) Chalu Ho Gaya!", Toast.LENGTH_SHORT).show();
                           }
                       } else {
                           stopService(new Intent(this, JarvisFloatingService.class));
@@ -808,7 +925,7 @@ jobs:
                   });
 
                   tts = new TextToSpeech(this, status -> {
-                      if (status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("hi", "IN"));
+                      if (status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("en", "IN")); 
                   });
 
                   thinker = new ThinkingEngine();
@@ -816,16 +933,34 @@ jobs:
 
                   backgroundThread.execute(() -> {
                       Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                      thinker.scanInstalledApps(this);
-                      runOnUiThread(() -> tvStatus.setText("Z+2 Assistant Ready"));
+                      thinker.scanMobileSystem(this);
+                      runOnUiThread(() -> tvStatus.setText("Ghost RPA Ready"));
                   });
-
-                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                      ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.POST_NOTIFICATIONS}, 2);
-                  }
 
                   btnSend.setOnClickListener(v -> sendMessage());
                   btnMic.setOnClickListener(v -> startVoiceInput());
+                  
+                  loadChatHistory();
+              }
+
+              private void loadChatHistory() {
+                  try {
+                      File memoryFile = new File(getFilesDir(), "jarvis_chat_memory_50mb.txt");
+                      if (!memoryFile.exists()) return;
+                      
+                      BufferedReader br = new BufferedReader(new FileReader(memoryFile));
+                      String line;
+                      while ((line = br.readLine()) != null) {
+                          if (line.contains("] USER: ")) {
+                              String content = line.replace("] USER: ", "]\n");
+                              addChatBubble(content, true);
+                          } else if (line.contains("] Z+2: ")) {
+                              String content = line.replace("] Z+2: ", "]\n");
+                              addChatBubble(content, false);
+                          }
+                      }
+                      br.close();
+                  } catch (Exception e) {}
               }
 
               @Override
@@ -846,7 +981,6 @@ jobs:
                   try { unregisterReceiver(chatReceiver); } catch(Exception e){}
               }
 
-              // THE FIX: ADDED MISSING METHOD BACK
               private void checkAccessibilityService() {
                   int accEnabled = 0;
                   try { accEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED); } catch (Exception e) {}
@@ -859,16 +993,24 @@ jobs:
               private void sendMessage() {
                   String prompt = etInput.getText().toString().trim();
                   if (!prompt.isEmpty()) {
-                      addChatBubble(prompt, true);
+                      ThinkingEngine.saveChatHistory(this, prompt, true);
+                      
+                      String timeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
+                      addChatBubble("[" + timeStamp + "]\n" + prompt, true);
+                      
                       etInput.setText("");
                       tvStatus.setText("Processing Command...");
                       
                       backgroundThread.execute(() -> {
                           Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
                           String response = thinker.processInput(prompt, MainActivity.this);
+                          
+                          ThinkingEngine.saveChatHistory(MainActivity.this, response, false);
+                          
                           runOnUiThread(() -> {
-                              addChatBubble(response, false);
-                              tvStatus.setText("Z+2 System Active");
+                              String respTimeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
+                              addChatBubble("[" + respTimeStamp + "]\n" + response, false);
+                              tvStatus.setText("Ghost RPA Active");
                               if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null);
                           });
                       });
@@ -876,11 +1018,6 @@ jobs:
               }
 
               private void startVoiceInput() {
-                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                      ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
-                      return;
-                  }
-                  
                   if (speechRecognizer == null) {
                       speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
                       speechRecognizer.setRecognitionListener(new RecognitionListener() {
@@ -898,7 +1035,7 @@ jobs:
 
                   Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                   intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN"); 
+                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN"); 
                   intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "com.google.android.googlequicksearchbox");
                   speechRecognizer.startListening(intent);
               }
