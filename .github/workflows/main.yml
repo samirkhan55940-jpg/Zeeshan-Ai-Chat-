@@ -28,7 +28,6 @@ jobs:
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/assets
           
-          # Fix: Explicitly creating the missing config file
           cat << 'EOF' > app/src/main/res/xml/accessibility_service_config.xml
           <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
               android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
@@ -70,8 +69,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 43
-                  versionName "43.0-Ultimate-Edition"
+                  versionCode 45
+                  versionName "45.0-Ultimate-Fixed"
               }
               buildTypes {
                   release {
@@ -90,17 +89,20 @@ jobs:
           -keep class com.zplus2.chat.** { *; }
           EOF
 
-      - name: "6. Create Dual Storage Files"
+      - name: "6. Create Dual Storage Files (50MB + 50MB)"
         run: |
           dd if=/dev/urandom of=app/src/main/assets/chat_memory_50mb.db bs=1M count=50
           dd if=/dev/urandom of=app/src/main/assets/system_data_50mb.db bs=1M count=50
 
-      - name: "7. App UI XMLs & Themes"
+      - name: "7. App Resources & UI Drawables"
         run: |
           cat << 'EOF' > app/src/main/res/values/strings.xml
-          <resources><string name="app_name">Z+2 Assistant</string><string name="accessibility_desc">Ghost RPA Engine.</string></resources>
+          <resources>
+              <string name="app_name">Z+2 Assistant</string>
+              <string name="accessibility_desc">Z+2 Assistant Ghost RPA Engine.</string>
+          </resources>
           EOF
-          
+
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
               <color name="bg_chat">#0B141A</color>
@@ -142,7 +144,17 @@ jobs:
           <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/btn_red"/><corners android:radius="12dp"/></shape>
           EOF
 
-      - name: "8. App Layouts"
+      - name: "8. App Icon"
+        run: |
+          cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#0B141A" android:pathData="M0,0h108v108h-108z"/>
+              <path android:fillColor="#00A884" android:pathData="M24,24 h60 a12,12 0 0,1 12,12 v40 a12,12 0 0,1 -12,12 h-10 l-14,14 l-6,-14 h-30 a12,12 0 0,1 -12,-12 v-40 a12,12 0 0,1 12,-12 z"/>
+          </vector>
+          EOF
+          cp app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+
+      - name: "9. UI Layout XML (Clean 1-Mic UI)"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -153,7 +165,7 @@ jobs:
                   <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_btn_send" android:text="Z" android:textColor="#FFF" android:textSize="22sp" android:textStyle="bold" android:gravity="center"/>
                   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Zeeshan" android:textColor="@color/text_white" android:textSize="18sp" android:textStyle="bold"/>
-                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ultimate Edition Active" android:textColor="@color/text_gray" android:textSize="12sp"/>
+                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Master Mic & VIP Pass Active" android:textColor="@color/text_gray" android:textSize="12sp"/>
                   </LinearLayout>
                   <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Parda ON" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
                   <TextView android:id="@+id/btn_menu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⋮" android:textColor="#FFF" android:textSize="28sp" android:paddingStart="15dp" android:paddingEnd="5dp" android:textStyle="bold"/>
@@ -161,13 +173,12 @@ jobs:
 
               <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/top_bar" android:padding="10dp">
                   <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Z+2 Ultimate Mode chalu hai.\n\nTower Sync, RPA Ghost, Call Dialer aur Dual Brain (Time Stamp) sab ek sath activate ho gaya hai!\n\nHukum dijiye Zeeshan bhai!" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Z+2 VIP Pass Mode chalu hai.\n\nMain app ka Mic hata diya gaya hai. Ab aap jo bhi Parde (Notification) wale Master Mic se bolenge, background se turant app khulegi bina kisi rukawat ke!\n\nHukum dijiye Zeeshan bhai!" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
                   </LinearLayout>
               </ScrollView>
 
               <LinearLayout android:id="@+id/input_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical" android:background="@color/bg_chat">
-                  <Button android:id="@+id/btn_mic" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginEnd="8dp" android:background="@drawable/bg_btn_send" android:text="🎤" android:textColor="#FFF" android:textSize="18sp"/>
-                  <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Hinglish mein hukum dijiye..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
+                  <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Type karke hukum dijiye..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
                   <Button android:id="@+id/btn_send" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_send" android:text="➤" android:textColor="#FFF" android:textSize="20sp"/>
               </LinearLayout>
           </RelativeLayout>
@@ -178,24 +189,17 @@ jobs:
               android:layout_width="match_parent" android:layout_height="wrap_content"
               android:background="@color/chat_bar" android:orientation="horizontal"
               android:gravity="center_vertical" android:padding="12dp">
-              <ImageView android:layout_width="45dp" android:layout_height="45dp" android:src="@mipmap/ic_launcher"/>
+              <ImageView android:layout_width="45dp" android:layout_height="45dp" android:src="@mipmap/ic_launcher_round"/>
               <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
                   <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Z+2 Assistant" android:textColor="#FFF" android:textSize="16sp" android:textStyle="bold"/>
-                  <TextView android:id="@+id/tv_notif_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sun raha hoon..." android:textColor="@color/accent_green" android:textSize="14sp"/>
+                  <TextView android:id="@+id/tv_notif_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Master Mic Sun raha hai..." android:textColor="@color/accent_green" android:textSize="14sp"/>
               </LinearLayout>
               <TextView android:id="@+id/btn_notif_toggle" android:layout_width="80dp" android:layout_height="35dp" android:background="@drawable/bg_btn_green" android:text="MIC ON" android:textColor="#FFF" android:textSize="12sp" android:textStyle="bold" android:gravity="center"/>
           </LinearLayout>
           EOF
 
-      - name: "9. App Icon & Manifest"
+      - name: "10. AndroidManifest.xml"
         run: |
-          cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#0B141A" android:pathData="M0,0h108v108h-108z"/>
-              <path android:fillColor="#00A884" android:pathData="M24,24 h60 a12,12 0 0,1 12,12 v40 a12,12 0 0,1 -12,12 h-10 l-14,14 l-6,-14 h-30 a12,12 0 0,1 -12,-12 v-40 a12,12 0 0,1 12,-12 z"/>
-          </vector>
-          EOF
-          
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -210,6 +214,7 @@ jobs:
               <uses-permission android:name="android.permission.READ_CONTACTS" />
               <uses-permission android:name="android.permission.CALL_PHONE" />
               <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
               
               <queries>
                   <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
@@ -217,7 +222,7 @@ jobs:
                   <intent><action android:name="android.speech.RecognitionService" /></intent>
               </queries>
 
-              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher">
+              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">
                   <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -235,7 +240,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "10. Java Code: AutoClickerService (RPA Ghost)"
+      - name: "11. Java Code: AutoClickerService (Fix: Restored PendingClick)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/AutoClickerService.java
           package com.zplus2.chat;
@@ -252,6 +257,7 @@ jobs:
           public class AutoClickerService extends AccessibilityService {
               
               public static boolean pendingScroll = false;
+              public static boolean pendingClick = false; // THE FIX: Restored for Switches
               public static String pendingTextToType = "";
               public static AutoClickerService instance;
 
@@ -292,6 +298,14 @@ jobs:
                                   macroSteps.clear();
                               }
                           }
+                      }
+                  }
+
+                  // THE FIX: Added logic back for pendingClick (Airplane/Wifi)
+                  if (pendingClick) {
+                      if (findAndClickSwitch(rootNode)) {
+                          pendingClick = false;
+                          new Handler(Looper.getMainLooper()).postDelayed(() -> performGlobalAction(GLOBAL_ACTION_BACK), 500);
                       }
                   }
 
@@ -363,11 +377,22 @@ jobs:
                   }
                   return null;
               }
+
+              private boolean findAndClickSwitch(AccessibilityNodeInfo node) {
+                  if (node == null) return false;
+                  if ("android.widget.Switch".equals(node.getClassName()) && node.isClickable()) {
+                      node.performAction(AccessibilityNodeInfo.ACTION_CLICK); return true;
+                  }
+                  for (int i = 0; i < node.getChildCount(); i++) {
+                      if (findAndClickSwitch(node.getChild(i))) return true;
+                  }
+                  return false;
+              }
               @Override public void onInterrupt() {}
           }
           EOF
 
-      - name: "11. Java Code: ThinkingEngine"
+      - name: "12. Java Code: ThinkingEngine"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
           package com.zplus2.chat;
@@ -491,7 +516,7 @@ jobs:
                           if (pkg != null) {
                               Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(pkg);
                               if (launchIntent != null) {
-                                  launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                  launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                                   context.startActivity(launchIntent);
                                   String[] script = {"More options", "Settings"};
                                   AutoClickerService.startMacro(script);
@@ -557,12 +582,14 @@ jobs:
                   }
 
                   if (lowerInput.contains("hawai") || lowerInput.contains("flight") || lowerInput.contains("airplane")) {
+                      AutoClickerService.pendingClick = true;
                       Intent intent = new Intent(android.provider.Settings.ACTION_AIRPLANE_MODE_SETTINGS);
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                       context.startActivity(intent);
                       return "Zeeshan bhai, Flight mode switch open kar diya!";
                   }
                   if (lowerInput.contains("wifi") || lowerInput.contains("wi-fi") || lowerInput.contains("hotspot") || lowerInput.contains("net")) {
+                      AutoClickerService.pendingClick = true;
                       Intent intent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                       context.startActivity(intent);
@@ -579,7 +606,7 @@ jobs:
                                   if (entry.getKey().contains(targetAppRaw) || entry.getKey().contains(targetAppFuzzy)) {
                                       Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(entry.getValue());
                                       if (launchIntent != null) {
-                                          launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                          launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                                           context.startActivity(launchIntent);
                                           return "Zeeshan bhai, main " + entry.getKey() + " open kar diya!";
                                       }
@@ -594,7 +621,7 @@ jobs:
           }
           EOF
 
-      - name: "12. Java Code: JarvisFloatingService (Tower Sync & Shutter)"
+      - name: "13. Java Code: JarvisFloatingService"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/JarvisFloatingService.java
           package com.zplus2.chat;
@@ -792,7 +819,7 @@ jobs:
           }
           EOF
 
-      - name: "13. Java Code: MainActivity"
+      - name: "14. Java Code: MainActivity (Fix: Cleaned Mic Logic & Variables)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/MainActivity.java
           package com.zplus2.chat;
@@ -808,10 +835,6 @@ jobs:
           import android.os.Bundle;
           import android.os.Process;
           import android.provider.Settings;
-          import android.speech.RecognitionListener;
-          import android.speech.RecognizerIntent;
-          import android.speech.SpeechRecognizer;
-          import android.speech.tts.TextToSpeech;
           import android.view.Gravity;
           import android.view.View;
           import android.widget.Button;
@@ -830,7 +853,6 @@ jobs:
           import java.io.FileReader;
           import java.text.SimpleDateFormat;
           import java.util.Date;
-
           import java.util.ArrayList;
           import java.util.Locale;
           import java.util.concurrent.ExecutorService;
@@ -846,8 +868,6 @@ jobs:
               
               private ThinkingEngine thinker;
               private ExecutorService backgroundThread;
-              private TextToSpeech tts;
-              private SpeechRecognizer speechRecognizer;
 
               private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
                   @Override
@@ -871,11 +891,15 @@ jobs:
                   chatScroll = findViewById(R.id.chat_scroll);
                   tvStatus = findViewById(R.id.tv_status);
                   Button btnSend = findViewById(R.id.btn_send);
-                  Button btnMic = findViewById(R.id.btn_mic);
                   TextView btnMenu = findViewById(R.id.btn_menu);
                   bgSwitch = findViewById(R.id.switch_bg_mode);
 
                   checkAccessibilityService();
+
+                  if (!Settings.canDrawOverlays(this)) {
+                      Toast.makeText(this, "VIP Pass (Display Over Apps) Allow karein taaki background se app khul sake!", Toast.LENGTH_LONG).show();
+                      startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
+                  }
 
                   ArrayList<String> permissions = new ArrayList<>();
                   if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.RECORD_AUDIO);
@@ -897,7 +921,6 @@ jobs:
                   btnMenu.setOnClickListener(v -> {
                       PopupMenu popup = new PopupMenu(MainActivity.this, btnMenu);
                       popup.getMenu().add("Scan Dual Brain Data");
-                      
                       popup.setOnMenuItemClickListener(item -> {
                           if(item.getTitle().equals("Scan Dual Brain Data")) {
                               tvStatus.setText("Scanning Full Data...");
@@ -920,15 +943,11 @@ jobs:
                       if (isChecked) {
                           if (!JarvisFloatingService.isRunning) {
                               startForegroundService(new Intent(this, JarvisFloatingService.class));
-                              Toast.makeText(this, "Z+2 Parda (Notification) Chalu Ho Gaya!", Toast.LENGTH_SHORT).show();
+                              Toast.makeText(this, "Z+2 Master Mic Parde Mein Chalu Hai!", Toast.LENGTH_SHORT).show();
                           }
                       } else {
                           stopService(new Intent(this, JarvisFloatingService.class));
                       }
-                  });
-
-                  tts = new TextToSpeech(this, status -> {
-                      if (status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("en", "IN")); 
                   });
 
                   thinker = new ThinkingEngine();
@@ -937,11 +956,11 @@ jobs:
                   backgroundThread.execute(() -> {
                       Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                       thinker.scanMobileSystem(this);
-                      runOnUiThread(() -> tvStatus.setText("Ghost RPA Ready"));
+                      runOnUiThread(() -> tvStatus.setText("VIP Pass & RPA Ready"));
                   });
 
+                  // THE FIX: Only Typed Send Button Remains
                   btnSend.setOnClickListener(v -> sendMessage());
-                  btnMic.setOnClickListener(v -> startVoiceInput());
                   
                   loadChatHistory();
               }
@@ -997,7 +1016,6 @@ jobs:
                   String prompt = etInput.getText().toString().trim();
                   if (!prompt.isEmpty()) {
                       ThinkingEngine.saveChatHistory(this, prompt, true);
-                      
                       String timeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
                       addChatBubble("[" + timeStamp + "]\n" + prompt, true);
                       
@@ -1013,34 +1031,10 @@ jobs:
                           runOnUiThread(() -> {
                               String respTimeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
                               addChatBubble("[" + respTimeStamp + "]\n" + response, false);
-                              tvStatus.setText("Ghost RPA Active");
-                              if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null);
+                              tvStatus.setText("VIP Pass Active");
                           });
                       });
                   }
-              }
-
-              private void startVoiceInput() {
-                  if (speechRecognizer == null) {
-                      speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-                      speechRecognizer.setRecognitionListener(new RecognitionListener() {
-                          @Override public void onReadyForSpeech(Bundle params) { tvStatus.setText("Sun raha hoon..."); }
-                          @Override public void onResults(Bundle results) {
-                              ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                              if (matches != null && !matches.isEmpty()) {
-                                  etInput.setText(matches.get(0));
-                                  sendMessage(); 
-                              }
-                          }
-                          @Override public void onError(int error) {} @Override public void onBeginningOfSpeech() {} @Override public void onRmsChanged(float rmsdB) {} @Override public void onBufferReceived(byte[] buffer) {} @Override public void onEndOfSpeech() {} @Override public void onPartialResults(Bundle partialResults) {} @Override public void onEvent(int eventType, Bundle params) {}
-                      });
-                  }
-
-                  Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN"); 
-                  intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "com.google.android.googlequicksearchbox");
-                  speechRecognizer.startListening(intent);
               }
 
               private void addChatBubble(String text, boolean isUser) {
@@ -1071,8 +1065,6 @@ jobs:
               protected void onDestroy() {
                   super.onDestroy();
                   if(backgroundThread != null) backgroundThread.shutdown();
-                  if(tts != null) { tts.stop(); tts.shutdown(); }
-                  if(speechRecognizer != null) speechRecognizer.destroy();
               }
           }
           EOF
