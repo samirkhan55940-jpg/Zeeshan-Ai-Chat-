@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (The Ultimate Final Edition)"
+name: "Build Z+2 Chat (1-Mic VIP Pass Edition)"
 
 on:
   push:
@@ -69,8 +69,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 45
-                  versionName "45.0-Ultimate-Fixed"
+                  versionCode 46
+                  versionName "46.0-VIP-SingleMic"
               }
               buildTypes {
                   release {
@@ -154,7 +154,7 @@ jobs:
           EOF
           cp app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-      - name: "9. UI Layout XML (Clean 1-Mic UI)"
+      - name: "9. UI Layout XML (1-Mic Setup FIXED)"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -165,7 +165,8 @@ jobs:
                   <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_btn_send" android:text="Z" android:textColor="#FFF" android:textSize="22sp" android:textStyle="bold" android:gravity="center"/>
                   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Zeeshan" android:textColor="@color/text_white" android:textSize="18sp" android:textStyle="bold"/>
-                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Master Mic & VIP Pass Active" android:textColor="@color/text_gray" android:textSize="12sp"/>
+                      <!-- THE FIX: Used &amp; instead of direct & symbol -->
+                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Master Mic &amp; VIP Pass Active" android:textColor="@color/text_gray" android:textSize="12sp"/>
                   </LinearLayout>
                   <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Parda ON" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
                   <TextView android:id="@+id/btn_menu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⋮" android:textColor="#FFF" android:textSize="28sp" android:paddingStart="15dp" android:paddingEnd="5dp" android:textStyle="bold"/>
@@ -240,7 +241,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "11. Java Code: AutoClickerService (Fix: Restored PendingClick)"
+      - name: "11. Java Code: AutoClickerService"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/AutoClickerService.java
           package com.zplus2.chat;
@@ -257,7 +258,7 @@ jobs:
           public class AutoClickerService extends AccessibilityService {
               
               public static boolean pendingScroll = false;
-              public static boolean pendingClick = false; // THE FIX: Restored for Switches
+              public static boolean pendingClick = false; 
               public static String pendingTextToType = "";
               public static AutoClickerService instance;
 
@@ -301,7 +302,6 @@ jobs:
                       }
                   }
 
-                  // THE FIX: Added logic back for pendingClick (Airplane/Wifi)
                   if (pendingClick) {
                       if (findAndClickSwitch(rootNode)) {
                           pendingClick = false;
@@ -819,7 +819,7 @@ jobs:
           }
           EOF
 
-      - name: "14. Java Code: MainActivity (Fix: Cleaned Mic Logic & Variables)"
+      - name: "14. Java Code: MainActivity"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/MainActivity.java
           package com.zplus2.chat;
@@ -959,7 +959,6 @@ jobs:
                       runOnUiThread(() -> tvStatus.setText("VIP Pass & RPA Ready"));
                   });
 
-                  // THE FIX: Only Typed Send Button Remains
                   btnSend.setOnClickListener(v -> sendMessage());
                   
                   loadChatHistory();
