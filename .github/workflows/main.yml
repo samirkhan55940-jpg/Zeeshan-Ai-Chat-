@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (1-Mic VIP Pass Edition)"
+name: "Build Z+2 Chat (Voice Lock Z+2 Password Edition)"
 
 on:
   push:
@@ -69,8 +69,8 @@ jobs:
                   applicationId 'com.zplus2.chat'
                   minSdk 26
                   targetSdk 34
-                  versionCode 46
-                  versionName "46.0-VIP-SingleMic"
+                  versionCode 50
+                  versionName "50.0-ZPlus2-VoiceLock"
               }
               buildTypes {
                   release {
@@ -89,10 +89,10 @@ jobs:
           -keep class com.zplus2.chat.** { *; }
           EOF
 
-      - name: "6. Create Dual Storage Files (50MB + 50MB)"
+      - name: "6. Create Dual Storage Files (100MB System + 20MB Chat)"
         run: |
-          dd if=/dev/urandom of=app/src/main/assets/chat_memory_50mb.db bs=1M count=50
-          dd if=/dev/urandom of=app/src/main/assets/system_data_50mb.db bs=1M count=50
+          dd if=/dev/urandom of=app/src/main/assets/chat_memory_20mb.db bs=1M count=20
+          dd if=/dev/urandom of=app/src/main/assets/system_data_100mb.db bs=1M count=100
 
       - name: "7. App Resources & UI Drawables"
         run: |
@@ -100,6 +100,9 @@ jobs:
           <resources>
               <string name="app_name">Z+2 Assistant</string>
               <string name="accessibility_desc">Z+2 Assistant Ghost RPA Engine.</string>
+              <string name="status_lock_active">Voice Lock &amp; Vault Active</string>
+              <string name="welcome_msg">Bhai! Lock Mode chalu hai.\n\nLock Switch ON hone par mujhe Z+2 keh kar hukum dijiye. Aur faltu bakwaas ab poori tarah band hai!</string>
+              <string name="scan_title">Z+2 DEEP 100MB SCAN</string>
           </resources>
           EOF
 
@@ -154,7 +157,7 @@ jobs:
           EOF
           cp app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-      - name: "9. UI Layout XML (1-Mic Setup FIXED)"
+      - name: "9. UI Layout XML (Using Strings to avoid XML errors)"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -165,23 +168,34 @@ jobs:
                   <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_btn_send" android:text="Z" android:textColor="#FFF" android:textSize="22sp" android:textStyle="bold" android:gravity="center"/>
                   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Zeeshan" android:textColor="@color/text_white" android:textSize="18sp" android:textStyle="bold"/>
-                      <!-- THE FIX: Used &amp; instead of direct & symbol -->
-                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Master Mic &amp; VIP Pass Active" android:textColor="@color/text_gray" android:textSize="12sp"/>
+                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/status_lock_active" android:textColor="@color/text_gray" android:textSize="12sp"/>
                   </LinearLayout>
-                  <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Parda ON" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
+                  <Switch android:id="@+id/switch_voice_lock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Lock" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light" android:layout_marginEnd="10dp"/>
+                  <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Parda" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
                   <TextView android:id="@+id/btn_menu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⋮" android:textColor="#FFF" android:textSize="28sp" android:paddingStart="15dp" android:paddingEnd="5dp" android:textStyle="bold"/>
               </LinearLayout>
 
-              <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:layout_below="@id/top_bar" android:padding="10dp">
-                  <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="Bhai! Z+2 VIP Pass Mode chalu hai.\n\nMain app ka Mic hata diya gaya hai. Ab aap jo bhi Parde (Notification) wale Master Mic se bolenge, background se turant app khulegi bina kisi rukawat ke!\n\nHukum dijiye Zeeshan bhai!" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
-                  </LinearLayout>
-              </ScrollView>
+              <RelativeLayout android:id="@+id/chat_main_container" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/top_bar">
+                  <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:padding="10dp">
+                      <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="@string/welcome_msg" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
+                      </LinearLayout>
+                  </ScrollView>
 
-              <LinearLayout android:id="@+id/input_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical" android:background="@color/bg_chat">
-                  <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Type karke hukum dijiye..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
-                  <Button android:id="@+id/btn_send" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_send" android:text="➤" android:textColor="#FFF" android:textSize="20sp"/>
+                  <LinearLayout android:id="@+id/input_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical" android:background="@color/bg_chat">
+                      <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Type karke hukum dijiye..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
+                      <Button android:id="@+id/btn_send" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_send" android:text="➤" android:textColor="#FFF" android:textSize="20sp"/>
+                  </LinearLayout>
+              </RelativeLayout>
+
+              <LinearLayout android:id="@+id/scanner_container" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/top_bar" android:orientation="vertical" android:padding="20dp" android:gravity="center" android:visibility="gone" android:background="#0B141A">
+                  <ImageView android:layout_width="80dp" android:layout_height="80dp" android:src="@mipmap/ic_launcher" android:layout_marginBottom="20dp"/>
+                  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/scan_title" android:textColor="@color/accent_green" android:textSize="22sp" android:textStyle="bold" android:layout_marginBottom="20dp"/>
+                  <ProgressBar android:id="@+id/scan_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="20dp" android:max="100" android:progressTint="@color/accent_green" android:layout_marginBottom="15dp"/>
+                  <TextView android:id="@+id/tv_scan_log" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Initializing Vault..." android:textColor="@color/text_white" android:textSize="14sp" android:gravity="center" android:layout_marginBottom="30dp"/>
+                  <Button android:id="@+id/btn_scan_ok" android:layout_width="wrap_content" android:layout_height="wrap_content" android:backgroundTint="@color/bubble_user" android:text="OK - SECURE DATA" android:textColor="#FFF" android:textStyle="bold" android:visibility="gone" android:padding="15dp"/>
               </LinearLayout>
+
           </RelativeLayout>
           EOF
 
@@ -392,11 +406,12 @@ jobs:
           }
           EOF
 
-      - name: "12. Java Code: ThinkingEngine"
+      - name: "12. Java Code: ThinkingEngine (Voice Password: Z+2)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
           package com.zplus2.chat;
 
+          import android.app.PendingIntent;
           import android.content.Context;
           import android.content.Intent;
           import android.content.pm.PackageManager;
@@ -424,8 +439,8 @@ jobs:
               
               public static void saveChatHistory(Context context, String text, boolean isUser) {
                   try {
-                      File memoryFile = new File(context.getFilesDir(), "jarvis_chat_memory_50mb.txt");
-                      if (memoryFile.length() > 50000000) memoryFile.delete(); 
+                      File memoryFile = new File(context.getFilesDir(), "jarvis_chat_memory_20mb.txt");
+                      if (memoryFile.length() > 20000000) memoryFile.delete(); 
                       String timeStamp = new SimpleDateFormat("dd-MMM yyyy, hh:mm a", Locale.getDefault()).format(new Date());
                       FileOutputStream fos = new FileOutputStream(memoryFile, true);
                       String prefix = isUser ? "USER" : "Z+2";
@@ -437,11 +452,21 @@ jobs:
 
               public static void saveSystemData(Context context, String data) {
                   try {
-                      File systemFile = new File(context.getFilesDir(), "jarvis_system_data_50mb.txt");
+                      File systemFile = new File(context.getFilesDir(), "jarvis_system_data_100mb.txt");
                       FileOutputStream fos = new FileOutputStream(systemFile, true);
                       fos.write((data + "\n").getBytes());
                       fos.close();
                   } catch (Exception e) {}
+              }
+
+              private void launchFromBackground(Context context, Intent intent) {
+                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                  try {
+                      PendingIntent pi = PendingIntent.getActivity(context, (int) System.currentTimeMillis(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                      pi.send();
+                  } catch (Exception e) {
+                      context.startActivity(intent);
+                  }
               }
 
               public String scanMobileSystem(Context context) {
@@ -497,7 +522,7 @@ jobs:
                   } catch (Exception e) {}
 
                   saveSystemData(context, systemLog.toString());
-                  return "Zeeshan bhai, Dual Memory Update Complete!";
+                  return "Z+2 bhai, Dual Memory Update Complete! " + installedAppsMap.size() + " Apps, " + mediaFilesMap.size() + " Videos, " + contactsMap.size() + " Contacts loaded into 100MB Vault.";
               }
 
               private String cleanGarbageWords(String input) {
@@ -507,8 +532,16 @@ jobs:
                   return cleanStr;
               }
 
-              public String processInput(String input, Context context) {
+              public String processInput(String input, Context context, boolean isVoiceLockOn) {
                   String lowerInput = input.toLowerCase().trim();
+
+                  // NEW VOICE LOCK PASSWORD: 'z+2' or 'z plus 2' or 'z plus two'
+                  if (isVoiceLockOn) {
+                      if (!lowerInput.contains("z+2") && !lowerInput.contains("z plus 2") && !lowerInput.contains("z plus two")) {
+                          return ""; // Silent fallback
+                      }
+                      lowerInput = lowerInput.replace("z+2", "").replace("z plus 2", "").replace("z plus two", "").trim();
+                  }
 
                   if (lowerInput.contains("whatsapp setting") || lowerInput.contains("whatsapp ki setting")) {
                       if (AutoClickerService.instance != null) {
@@ -516,15 +549,14 @@ jobs:
                           if (pkg != null) {
                               Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(pkg);
                               if (launchIntent != null) {
-                                  launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                  context.startActivity(launchIntent);
+                                  launchFromBackground(context, launchIntent); 
                                   String[] script = {"More options", "Settings"};
                                   AutoClickerService.startMacro(script);
-                                  return "Zeeshan bhai, WhatsApp open karke automatic Setting khol raha hoon!";
+                                  return "WhatsApp open karke Setting khol raha hoon!";
                               }
                           }
                       }
-                      return "Ghost engine ready nahi hai bhai.";
+                      return "";
                   }
 
                   if (lowerInput.contains("call lagao") || lowerInput.contains("phone lagao") || lowerInput.contains("call karo") || lowerInput.contains("dial karo")) {
@@ -535,10 +567,9 @@ jobs:
                               try {
                                   Intent intent = new Intent(Intent.ACTION_CALL);
                                   intent.setData(Uri.parse("tel:" + numToDial));
-                                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                  context.startActivity(intent);
-                                  return "Zeeshan bhai, number " + numToDial + " par call laga di hai!";
-                              } catch (Exception e) { return "Call permission nahi mili bhai."; }
+                                  launchFromBackground(context, intent); 
+                                  return "Number " + numToDial + " par call laga di hai!";
+                              } catch (Exception e) { return ""; }
                           }
                           String foundNumber = null;
                           String foundName = null;
@@ -553,12 +584,11 @@ jobs:
                               try {
                                   Intent intent = new Intent(Intent.ACTION_CALL);
                                   intent.setData(Uri.parse("tel:" + foundNumber));
-                                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                  context.startActivity(intent);
-                                  return "Zeeshan bhai, " + foundName + " ko call laga raha hoon!";
-                              } catch (Exception e) { return "Call permission allowed nahi hai bhai."; }
+                                  launchFromBackground(context, intent); 
+                                  return foundName + " ko call laga raha hoon!";
+                              } catch (Exception e) { return ""; }
                           } else {
-                              return "Zeeshan bhai, yeh naam save nahi hai, kripya number batayein.";
+                              return ""; 
                           }
                       }
                   }
@@ -571,29 +601,26 @@ jobs:
                                   try {
                                       Intent intent = new Intent(Intent.ACTION_VIEW);
                                       intent.setDataAndType(Uri.parse(entry.getValue()), "video/*");
-                                      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                      context.startActivity(intent);
-                                      return "Zeeshan bhai, video mili! '" + entry.getKey() + "' play kar raha hoon.";
-                                  } catch (Exception e) { return "Video player mein dikkat hai bhai."; }
+                                      launchFromBackground(context, intent); 
+                                      return "Video mili, play kar raha hoon.";
+                                  } catch (Exception e) { return ""; }
                               }
                           }
-                          return "Zeeshan bhai, aisi koi video memory mein nahi mili.";
+                          return ""; 
                       }
                   }
 
                   if (lowerInput.contains("hawai") || lowerInput.contains("flight") || lowerInput.contains("airplane")) {
                       AutoClickerService.pendingClick = true;
                       Intent intent = new Intent(android.provider.Settings.ACTION_AIRPLANE_MODE_SETTINGS);
-                      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                      context.startActivity(intent);
-                      return "Zeeshan bhai, Flight mode switch open kar diya!";
+                      launchFromBackground(context, intent); 
+                      return "Flight mode switch open kar diya!";
                   }
                   if (lowerInput.contains("wifi") || lowerInput.contains("wi-fi") || lowerInput.contains("hotspot") || lowerInput.contains("net")) {
                       AutoClickerService.pendingClick = true;
                       Intent intent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
-                      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                      context.startActivity(intent);
-                      return "Network Setting khol raha hoon Zeeshan bhai!";
+                      launchFromBackground(context, intent); 
+                      return "Network Setting khol raha hoon!";
                   }
                   
                   String[] openTriggers = {"open", "kholo", "chalao", "start", "laga", "dikhao", "on", "shuru"};
@@ -606,9 +633,8 @@ jobs:
                                   if (entry.getKey().contains(targetAppRaw) || entry.getKey().contains(targetAppFuzzy)) {
                                       Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(entry.getValue());
                                       if (launchIntent != null) {
-                                          launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                          context.startActivity(launchIntent);
-                                          return "Zeeshan bhai, main " + entry.getKey() + " open kar diya!";
+                                          launchFromBackground(context, launchIntent); 
+                                          return entry.getKey() + " open kar diya!";
                                       }
                                   }
                               }
@@ -616,7 +642,7 @@ jobs:
                       } 
                   }
 
-                  return "Hukum dijiye Zeeshan bhai!";
+                  return ""; 
               }
           }
           EOF
@@ -729,7 +755,7 @@ jobs:
 
               private void updateNotificationUI() {
                   if (isMicActive) {
-                      remoteViews.setTextViewText(R.id.tv_notif_status, "Sun raha hoon Zeeshan Bhai...");
+                      remoteViews.setTextViewText(R.id.tv_notif_status, "Sun raha hoon...");
                       remoteViews.setTextColor(R.id.tv_notif_status, Color.parseColor("#00A884")); 
                       remoteViews.setTextViewText(R.id.btn_notif_toggle, "MIC ON");
                       remoteViews.setInt(R.id.btn_notif_toggle, "setBackgroundResource", R.drawable.bg_btn_green);
@@ -769,16 +795,19 @@ jobs:
                               if (matches != null && !matches.isEmpty()) {
                                   String userText = matches.get(0);
                                   
-                                  ThinkingEngine.saveChatHistory(JarvisFloatingService.this, userText, true);
-                                  sendChatBroadcast(userText, true); 
+                                  boolean isLockOn = getSharedPreferences("ZPrefs", MODE_PRIVATE).getBoolean("voice_lock", false);
                                   
                                   new Thread(() -> {
-                                      String response = thinker.processInput(userText, JarvisFloatingService.this);
-                                      ThinkingEngine.saveChatHistory(JarvisFloatingService.this, response, false);
+                                      String response = thinker.processInput(userText, JarvisFloatingService.this, isLockOn);
                                       
                                       new Handler(Looper.getMainLooper()).post(() -> {
-                                          sendChatBroadcast(response, false); 
-                                          if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null); 
+                                          if(response != null && !response.isEmpty()) {
+                                              ThinkingEngine.saveChatHistory(JarvisFloatingService.this, userText, true);
+                                              sendChatBroadcast(userText, true); 
+                                              ThinkingEngine.saveChatHistory(JarvisFloatingService.this, response, false);
+                                              sendChatBroadcast(response, false); 
+                                              if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null); 
+                                          }
                                           if(isMicActive) startListening();
                                       });
                                   }).start();
@@ -833,13 +862,18 @@ jobs:
           import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.Looper;
           import android.os.Process;
           import android.provider.Settings;
+          import android.speech.tts.TextToSpeech;
           import android.view.Gravity;
           import android.view.View;
           import android.widget.Button;
           import android.widget.EditText;
           import android.widget.LinearLayout;
+          import android.widget.ProgressBar;
+          import android.widget.RelativeLayout;
           import android.widget.ScrollView;
           import android.widget.Switch;
           import android.widget.TextView;
@@ -865,9 +899,17 @@ jobs:
               private ScrollView chatScroll;
               private TextView tvStatus;
               private Switch bgSwitch;
+              private Switch lockSwitch;
+              
+              private RelativeLayout chatMainContainer;
+              private LinearLayout scannerContainer;
+              private ProgressBar scanProgress;
+              private TextView tvScanLog;
+              private Button btnScanOk;
               
               private ThinkingEngine thinker;
               private ExecutorService backgroundThread;
+              private TextToSpeech tts;
 
               private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
                   @Override
@@ -893,11 +935,18 @@ jobs:
                   Button btnSend = findViewById(R.id.btn_send);
                   TextView btnMenu = findViewById(R.id.btn_menu);
                   bgSwitch = findViewById(R.id.switch_bg_mode);
+                  lockSwitch = findViewById(R.id.switch_voice_lock);
+                  
+                  chatMainContainer = findViewById(R.id.chat_main_container);
+                  scannerContainer = findViewById(R.id.scanner_container);
+                  scanProgress = findViewById(R.id.scan_progress);
+                  tvScanLog = findViewById(R.id.tv_scan_log);
+                  btnScanOk = findViewById(R.id.btn_scan_ok);
 
                   checkAccessibilityService();
 
                   if (!Settings.canDrawOverlays(this)) {
-                      Toast.makeText(this, "VIP Pass (Display Over Apps) Allow karein taaki background se app khul sake!", Toast.LENGTH_LONG).show();
+                      Toast.makeText(this, "VIP Pass Allow karein taaki background se app khul sake!", Toast.LENGTH_LONG).show();
                       startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
                   }
 
@@ -918,25 +967,30 @@ jobs:
                       ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), 3);
                   }
 
+                  boolean isLocked = getSharedPreferences("ZPrefs", MODE_PRIVATE).getBoolean("voice_lock", false);
+                  lockSwitch.setChecked(isLocked);
+                  lockSwitch.setOnCheckedChangeListener((btn, checked) -> {
+                      getSharedPreferences("ZPrefs", MODE_PRIVATE).edit().putBoolean("voice_lock", checked).apply();
+                      Toast.makeText(this, "Voice Password Lock " + (checked ? "ON" : "OFF"), Toast.LENGTH_SHORT).show();
+                  });
+
                   btnMenu.setOnClickListener(v -> {
                       PopupMenu popup = new PopupMenu(MainActivity.this, btnMenu);
-                      popup.getMenu().add("Scan Dual Brain Data");
+                      popup.getMenu().add("Deep System Scan");
                       popup.setOnMenuItemClickListener(item -> {
-                          if(item.getTitle().equals("Scan Dual Brain Data")) {
-                              tvStatus.setText("Scanning Full Data...");
-                              backgroundThread.execute(() -> {
-                                  Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                                  String result = thinker.scanMobileSystem(MainActivity.this);
-                                  runOnUiThread(() -> {
-                                      tvStatus.setText("Scan Complete");
-                                      Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
-                                      addChatBubble(result, false);
-                                  });
-                              });
+                          if(item.getTitle().equals("Deep System Scan")) {
+                              startDeepVisualScan();
                           }
                           return true;
                       });
                       popup.show();
+                  });
+
+                  btnScanOk.setOnClickListener(v -> {
+                      scannerContainer.setVisibility(View.GONE);
+                      chatMainContainer.setVisibility(View.VISIBLE);
+                      addChatBubble("Zeeshan bhai, Dual Memory Update Complete! Pura data 100MB vault mein lock ho gaya hai.", false);
+                      btnScanOk.setVisibility(View.GONE);
                   });
 
                   bgSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -950,13 +1004,17 @@ jobs:
                       }
                   });
 
+                  tts = new TextToSpeech(this, status -> {
+                      if (status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("en", "IN")); 
+                  });
+
                   thinker = new ThinkingEngine();
                   backgroundThread = Executors.newSingleThreadExecutor();
 
                   backgroundThread.execute(() -> {
                       Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                       thinker.scanMobileSystem(this);
-                      runOnUiThread(() -> tvStatus.setText("VIP Pass & RPA Ready"));
+                      runOnUiThread(() -> tvStatus.setText("Engine Ready"));
                   });
 
                   btnSend.setOnClickListener(v -> sendMessage());
@@ -964,9 +1022,38 @@ jobs:
                   loadChatHistory();
               }
 
+              private void startDeepVisualScan() {
+                  chatMainContainer.setVisibility(View.GONE);
+                  scannerContainer.setVisibility(View.VISIBLE);
+                  scanProgress.setProgress(0);
+                  tvScanLog.setText("Initializing 100MB Vault...");
+
+                  backgroundThread.execute(() -> {
+                      Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                      try {
+                          runOnUiThread(() -> { tvScanLog.setText("Scanning Installed Apps & Settings..."); scanProgress.setProgress(25); });
+                          Thread.sleep(1000); 
+
+                          runOnUiThread(() -> { tvScanLog.setText("Scanning Videos & Photos from Storage..."); scanProgress.setProgress(50); });
+                          Thread.sleep(1000);
+                          
+                          runOnUiThread(() -> { tvScanLog.setText("Reading Phonebook Contacts..."); scanProgress.setProgress(75); });
+                          Thread.sleep(1000);
+
+                          String result = thinker.scanMobileSystem(MainActivity.this);
+
+                          runOnUiThread(() -> {
+                              tvScanLog.setText("100% - " + result);
+                              scanProgress.setProgress(100);
+                              btnScanOk.setVisibility(View.VISIBLE);
+                          });
+                      } catch (Exception e) {}
+                  });
+              }
+
               private void loadChatHistory() {
                   try {
-                      File memoryFile = new File(getFilesDir(), "jarvis_chat_memory_50mb.txt");
+                      File memoryFile = new File(getFilesDir(), "jarvis_chat_memory_20mb.txt");
                       if (!memoryFile.exists()) return;
                       
                       BufferedReader br = new BufferedReader(new FileReader(memoryFile));
@@ -1014,6 +1101,8 @@ jobs:
               private void sendMessage() {
                   String prompt = etInput.getText().toString().trim();
                   if (!prompt.isEmpty()) {
+                      boolean isLockOn = getSharedPreferences("ZPrefs", MODE_PRIVATE).getBoolean("voice_lock", false);
+                      
                       ThinkingEngine.saveChatHistory(this, prompt, true);
                       String timeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
                       addChatBubble("[" + timeStamp + "]\n" + prompt, true);
@@ -1023,15 +1112,19 @@ jobs:
                       
                       backgroundThread.execute(() -> {
                           Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
-                          String response = thinker.processInput(prompt, MainActivity.this);
+                          String response = thinker.processInput(prompt, MainActivity.this, isLockOn);
                           
-                          ThinkingEngine.saveChatHistory(MainActivity.this, response, false);
-                          
-                          runOnUiThread(() -> {
-                              String respTimeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
-                              addChatBubble("[" + respTimeStamp + "]\n" + response, false);
-                              tvStatus.setText("VIP Pass Active");
-                          });
+                          if(response != null && !response.isEmpty()) {
+                              ThinkingEngine.saveChatHistory(MainActivity.this, response, false);
+                              runOnUiThread(() -> {
+                                  String respTimeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
+                                  addChatBubble("[" + respTimeStamp + "]\n" + response, false);
+                                  tvStatus.setText("Ready");
+                                  if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null);
+                              });
+                          } else {
+                              runOnUiThread(() -> tvStatus.setText("Ready"));
+                          }
                       });
                   }
               }
@@ -1064,6 +1157,7 @@ jobs:
               protected void onDestroy() {
                   super.onDestroy();
                   if(backgroundThread != null) backgroundThread.shutdown();
+                  if(tts != null) { tts.stop(); tts.shutdown(); }
               }
           }
           EOF
