@@ -1,4 +1,4 @@
-name: "Build Z-Atomic Caller (VIP Edition)"
+name: "Build Z-Atomic Caller (Pure Voice Edition)"
 
 on:
   push:
@@ -27,11 +27,18 @@ jobs:
           mkdir -p app/src/main/res/mipmap-anydpi-v26
           mkdir -p app/src/main/assets
 
-      - name: "4. Initialize Gradle System"
+      - name: "4. Initialize Gradle System (Fixed Repositories)"
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          dependencyResolutionManagement { 
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { 
+                  google()
+                  mavenCentral()
+                  maven { url 'https://jitpack.io' } 
+              } 
+          }
           rootProject.name = "ZAtomicCaller"
           include ':app'
           EOF
@@ -48,7 +55,7 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Android Config & AI Dependencies (Fixed JNA Bug)"
+      - name: "5. Android Config & Dependencies (Camera Removed)"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -59,8 +66,8 @@ jobs:
                   applicationId 'com.zatomic.caller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 1
-                  versionName "1.0-VIP-Atomic"
+                  versionCode 2
+                  versionName "2.0-Pure-Voice"
               }
               buildTypes {
                   release {
@@ -74,12 +81,9 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
               
-              // Google ML Kit Vision (Camera Number Scanner)
-              implementation 'com.google.android.gms:play-services-mlkit-text-recognition:19.0.0'
-              
-              // Vosk Offline Voice Engine (JNA Bug Fixed: removed @aar)
+              // Vosk Offline Voice Engine (Stable Version)
               implementation 'net.java.dev.jna:jna:5.13.0'
-              implementation 'com.alphacep:vosk-android:0.3.38@aar'
+              implementation 'com.alphacep:vosk-android:0.3.32@aar'
           }
           EOF
 
@@ -89,7 +93,7 @@ jobs:
           unzip vosk-model-small-en-in-0.4.zip
           mv vosk-model-small-en-in-0.4 app/src/main/assets/model
 
-      - name: "7. App Resources & UI (VIP Clean Screen)"
+      - name: "7. App Resources & UI (2 Buttons Only)"
         run: |
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
@@ -128,44 +132,30 @@ jobs:
                   <TextView android:id="@+id/tv_wake_word" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Voice Lock: Not Set" android:textColor="@color/accent_gold" android:textSize="14sp" android:layout_marginTop="5dp"/>
               </LinearLayout>
 
-              <!-- The 3 Master Buttons -->
-              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:weightSum="3" android:padding="15dp" android:background="#0A1014">
+              <!-- The 2 Master Buttons (Camera Removed) -->
+              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:weightSum="2" android:padding="15dp" android:background="#0A1014">
                   
                   <LinearLayout android:id="@+id/btn_voice_lock" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="?attr/selectableItemBackground" android:clickable="true">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎙️" android:textSize="28sp"/>
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Voice Lock" android:textColor="@color/text_white" android:textSize="12sp" android:textStyle="bold" android:layout_marginTop="5dp"/>
-                  </LinearLayout>
-
-                  <LinearLayout android:id="@+id/btn_scan_cam" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="?attr/selectableItemBackground" android:clickable="true">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📸" android:textSize="28sp"/>
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Scan Number" android:textColor="@color/text_white" android:textSize="12sp" android:textStyle="bold" android:layout_marginTop="5dp"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Voice Lock" android:textColor="@color/text_white" android:textSize="14sp" android:textStyle="bold" android:layout_marginTop="5dp"/>
                   </LinearLayout>
 
                   <LinearLayout android:id="@+id/btn_radar_sync" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="?attr/selectableItemBackground" android:clickable="true">
                       <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🔄" android:textSize="28sp"/>
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Smart Radar" android:textColor="@color/text_white" android:textSize="12sp" android:textStyle="bold" android:layout_marginTop="5dp"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Smart Radar" android:textColor="@color/text_white" android:textSize="14sp" android:textStyle="bold" android:layout_marginTop="5dp"/>
                   </LinearLayout>
 
               </LinearLayout>
           </RelativeLayout>
           EOF
 
-      - name: "8. AndroidManifest.xml (Fixed Camera Security Bug)"
+      - name: "8. AndroidManifest.xml (Camera Permissions Removed)"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-feature android:name="android.hardware.camera" android:required="false" />
-              <uses-permission android:name="android.permission.CAMERA" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.READ_CONTACTS" />
               <uses-permission android:name="android.permission.CALL_PHONE" />
-              
-              <!-- Android 11+ Camera Visibility Fix -->
-              <queries>
-                  <intent>
-                      <action android:name="android.media.action.IMAGE_CAPTURE" />
-                  </intent>
-              </queries>
 
               <application android:label="Z-Atomic Caller" android:icon="@mipmap/ic_launcher" android:theme="@style/Theme.AppCompat.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
@@ -178,7 +168,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "9. Java Code: MainActivity"
+      - name: "9. Java Code: MainActivity (Pure Voice Engine)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zatomic/caller/MainActivity.java
           package com.zatomic.caller;
@@ -189,24 +179,16 @@ jobs:
           import android.content.SharedPreferences;
           import android.content.pm.PackageManager;
           import android.database.Cursor;
-          import android.graphics.Bitmap;
           import android.net.Uri;
           import android.os.Bundle;
           import android.provider.ContactsContract;
-          import android.provider.MediaStore;
           import android.widget.LinearLayout;
           import android.widget.TextView;
           import android.widget.Toast;
 
-          import androidx.annotation.Nullable;
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
           import androidx.core.content.ContextCompat;
-
-          import com.google.mlkit.vision.common.InputImage;
-          import com.google.mlkit.vision.text.TextRecognition;
-          import com.google.mlkit.vision.text.TextRecognizer;
-          import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
           import org.json.JSONObject;
           import org.vosk.Model;
@@ -217,13 +199,11 @@ jobs:
 
           import java.util.HashMap;
           import java.util.Map;
-          import java.util.regex.Matcher;
-          import java.util.regex.Pattern;
 
           public class MainActivity extends AppCompatActivity implements RecognitionListener {
 
               private TextView tvStatus, tvWakeWord;
-              private LinearLayout btnVoiceLock, btnScanCam, btnRadarSync;
+              private LinearLayout btnVoiceLock, btnRadarSync;
               
               private HashMap<String, String> contactsMap = new HashMap<>();
               private SharedPreferences prefs;
@@ -232,8 +212,6 @@ jobs:
               private SpeechService speechService;
               private boolean isListening = false;
               private boolean isTrainingMode = false;
-              
-              private static final int REQUEST_IMAGE_CAPTURE = 101;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -245,7 +223,6 @@ jobs:
                   tvStatus = findViewById(R.id.tv_status);
                   tvWakeWord = findViewById(R.id.tv_wake_word);
                   btnVoiceLock = findViewById(R.id.btn_voice_lock);
-                  btnScanCam = findViewById(R.id.btn_scan_cam);
                   btnRadarSync = findViewById(R.id.btn_radar_sync);
 
                   String savedWord = prefs.getString("wake_word", "");
@@ -255,6 +232,7 @@ jobs:
 
                   requestAppPermissions();
 
+                  // 1. BUTTON: VOICE LOCK (Train App)
                   btnVoiceLock.setOnClickListener(v -> {
                       AlertDialog.Builder builder = new AlertDialog.Builder(this);
                       builder.setTitle("Set Voice Lock Password");
@@ -267,15 +245,7 @@ jobs:
                       builder.show();
                   });
 
-                  btnScanCam.setOnClickListener(v -> {
-                      Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                      if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                          startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
-                      } else {
-                          Toast.makeText(this, "Camera App blocked or not found!", Toast.LENGTH_SHORT).show();
-                      }
-                  });
-
+                  // 2. BUTTON: SMART RADAR (Sync Contacts)
                   btnRadarSync.setOnClickListener(v -> {
                       tvStatus.setText("Radar Active: Syncing Contacts...");
                       new Thread(() -> {
@@ -291,7 +261,7 @@ jobs:
               }
 
               private void requestAppPermissions() {
-                  String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE};
+                  String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE};
                   boolean needed = false;
                   for(String p : permissions) {
                       if(ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) needed = true;
@@ -299,40 +269,7 @@ jobs:
                   if(needed) ActivityCompat.requestPermissions(this, permissions, 1);
               }
 
-              @Override
-              protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-                  super.onActivityResult(requestCode, resultCode, data);
-                  if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK && data != null) {
-                      Bundle extras = data.getExtras();
-                      Bitmap imageBitmap = (Bitmap) extras.get("data");
-                      if(imageBitmap != null) {
-                          processImageForNumber(imageBitmap);
-                      }
-                  }
-              }
-
-              private void processImageForNumber(Bitmap bitmap) {
-                  tvStatus.setText("Scanning Image for Number...");
-                  InputImage image = InputImage.fromBitmap(bitmap, 0);
-                  TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-                  
-                  recognizer.process(image)
-                          .addOnSuccessListener(visionText -> {
-                              String fullText = visionText.getText();
-                              Pattern p = Pattern.compile("\\b\\d{10}\\b");
-                              Matcher m = p.matcher(fullText.replaceAll("[\\s\\-\\(\\)]", ""));
-                              if(m.find()) {
-                                  String number = m.group();
-                                  tvStatus.setText("Number Found: " + number);
-                                  executeDirectCall(number);
-                              } else {
-                                  tvStatus.setText("No valid number found in image.");
-                                  Toast.makeText(this, "Image mein number nahi mila bhai.", Toast.LENGTH_SHORT).show();
-                              }
-                          })
-                          .addOnFailureListener(e -> tvStatus.setText("Scan Failed."));
-              }
-
+              // --- SMART RADAR LOGIC (SYNC) ---
               private int syncLocalContacts() {
                   contactsMap.clear();
                   try {
@@ -353,12 +290,14 @@ jobs:
                   return contactsMap.size();
               }
 
+              // --- BACKGROUND VOICE ENGINE (VOSK) ---
               private void initVoskModel() {
-                  tvStatus.setText("Loading Offline Micro-Engine...");
+                  tvStatus.setText("Loading Offline Voice Engine...");
                   StorageService.unpack(this, "model", "model",
                           (model) -> {
                               this.voskModel = model;
                               tvStatus.setText("System Ready. Listening...");
+                              tvStatus.setTextColor(0xFF8696A0);
                               startBackgroundListening();
                           },
                           (exception) -> tvStatus.setText("Engine Load Failed: " + exception.getMessage()));
@@ -384,33 +323,50 @@ jobs:
                       String spokenText = obj.getString("text").toLowerCase().trim();
                       if(spokenText.isEmpty()) return;
 
+                      // Training Mode (Setting the Lock)
                       if (isTrainingMode) {
-                          String newPassword = spokenText.split(" ")[0]; 
+                          String newPassword = spokenText.split(" ")[0]; // Take first clear word
                           if(!newPassword.isEmpty() && newPassword.length() > 2) {
                               prefs.edit().putString("wake_word", newPassword).apply();
                               tvWakeWord.setText("Voice Lock: [" + newPassword.toUpperCase() + "]");
                               tvStatus.setText("Voice Lock Updated!");
+                              tvStatus.setTextColor(0xFF00A884);
                               isTrainingMode = false;
                           }
                           return;
                       }
 
+                      // Action Mode (Calling)
                       String myLock = prefs.getString("wake_word", "").toLowerCase();
                       if (!myLock.isEmpty() && spokenText.contains(myLock)) {
                           
-                          if(spokenText.contains("call") || spokenText.contains("phone")) {
-                              String targetName = spokenText.replace(myLock, "").replace("call", "").replace("phone", "").replace("ko", "").replace("lagao", "").trim();
+                          if(spokenText.contains("call") || spokenText.contains("phone") || spokenText.contains("dial")) {
+                              String targetData = spokenText.replace(myLock, "").replace("call", "").replace("phone", "").replace("dial", "").replace("ko", "").replace("lagao", "").trim();
                               
+                              // Check if user spoke direct numbers
+                              if(targetData.matches(".*\\d.*") || targetData.contains("zero") || targetData.contains("one")) {
+                                  String numToDial = targetData.replaceAll("[^0-9]", "");
+                                  // Very basic handling of word-to-digit if engine returned words
+                                  numToDial = targetData.replace("zero", "0").replace("one", "1").replace("two", "2").replace("three", "3").replace("four", "4").replace("five", "5").replace("six", "6").replace("seven", "7").replace("eight", "8").replace("nine", "9").replaceAll("[^0-9]", "");
+                                  
+                                  if(!numToDial.isEmpty()) {
+                                      tvStatus.setText("Dialing Number " + numToDial + "...");
+                                      executeDirectCall(numToDial);
+                                      return;
+                                  }
+                              }
+
+                              // Check Name in Radar
                               String targetNumber = null;
                               for(Map.Entry<String, String> entry : contactsMap.entrySet()) {
-                                  if(entry.getKey().contains(targetName) || targetName.contains(entry.getKey())) {
+                                  if(entry.getKey().contains(targetData) || targetData.contains(entry.getKey())) {
                                       targetNumber = entry.getValue();
                                       break;
                                   }
                               }
                               
                               if(targetNumber != null) {
-                                  tvStatus.setText("Dialing " + targetName + "...");
+                                  tvStatus.setText("Dialing " + targetData + "...");
                                   executeDirectCall(targetNumber);
                               } else {
                                   tvStatus.setText("Name not found in Radar.");
@@ -454,5 +410,5 @@ jobs:
       - name: "11. Upload App Artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: "Z-Atomic-Caller"
+          name: "Z-Atomic-Caller-Voice-Only"
           path: app/build/outputs/apk/debug/app-debug.apk
