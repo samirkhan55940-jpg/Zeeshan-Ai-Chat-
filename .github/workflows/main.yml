@@ -1,4 +1,4 @@
-name: "Build Z-Atomic Caller (Pure Voice Edition)"
+name: "Build Z-Atomic Caller (Pure Voice - Local Lib Edition)"
 
 on:
   push:
@@ -26,18 +26,15 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
           mkdir -p app/src/main/assets
+          mkdir -p app/libs
 
-      - name: "4. Initialize Gradle System (Fixed Repositories)"
+      - name: "4. Initialize Gradle System"
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { 
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { 
-                  google()
-                  mavenCentral()
-                  maven { url 'https://jitpack.io' } 
-              } 
+              repositories { google(); mavenCentral() } 
           }
           rootProject.name = "ZAtomicCaller"
           include ':app'
@@ -55,7 +52,17 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Android Config & Dependencies (Camera Removed)"
+      - name: "5. Download Vosk Offline Model & Local Engine Library (The Fix)"
+        run: |
+          # Download Engine Library direct to libs folder
+          wget https://alphacephei.com/maven/com/alphacep/vosk-android/0.3.38/vosk-android-0.3.38.aar -O app/libs/vosk-android.aar
+          
+          # Download Voice Model
+          wget https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip
+          unzip vosk-model-small-en-in-0.4.zip
+          mv vosk-model-small-en-in-0.4 app/src/main/assets/model
+
+      - name: "6. Android Config & Dependencies (Local Lib Linked)"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -66,8 +73,8 @@ jobs:
                   applicationId 'com.zatomic.caller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 2
-                  versionName "2.0-Pure-Voice"
+                  versionCode 3
+                  versionName "3.0-PureVoice-LocalEngine"
               }
               buildTypes {
                   release {
@@ -81,19 +88,13 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
               
-              // Vosk Offline Voice Engine (Stable Version)
-              implementation 'net.java.dev.jna:jna:5.13.0'
-              implementation 'com.alphacep:vosk-android:0.3.32@aar'
+              // JNA Engine & Local Vosk Engine
+              implementation 'net.java.dev.jna:jna:5.13.0@aar'
+              implementation files('libs/vosk-android.aar')
           }
           EOF
 
-      - name: "6. Download Vosk Offline Model"
-        run: |
-          wget https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip
-          unzip vosk-model-small-en-in-0.4.zip
-          mv vosk-model-small-en-in-0.4 app/src/main/assets/model
-
-      - name: "7. App Resources & UI (2 Buttons Only)"
+      - name: "7. App Resources & UI (Clean 2 Buttons)"
         run: |
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
@@ -132,7 +133,7 @@ jobs:
                   <TextView android:id="@+id/tv_wake_word" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Voice Lock: Not Set" android:textColor="@color/accent_gold" android:textSize="14sp" android:layout_marginTop="5dp"/>
               </LinearLayout>
 
-              <!-- The 2 Master Buttons (Camera Removed) -->
+              <!-- The 2 Master Buttons (Camera Block Removed) -->
               <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:weightSum="2" android:padding="15dp" android:background="#0A1014">
                   
                   <LinearLayout android:id="@+id/btn_voice_lock" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="?attr/selectableItemBackground" android:clickable="true">
@@ -149,7 +150,7 @@ jobs:
           </RelativeLayout>
           EOF
 
-      - name: "8. AndroidManifest.xml (Camera Permissions Removed)"
+      - name: "8. AndroidManifest.xml (Minimal Permissions)"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -346,7 +347,7 @@ jobs:
                               // Check if user spoke direct numbers
                               if(targetData.matches(".*\\d.*") || targetData.contains("zero") || targetData.contains("one")) {
                                   String numToDial = targetData.replaceAll("[^0-9]", "");
-                                  // Very basic handling of word-to-digit if engine returned words
+                                  // Basic mapping for spoken digits
                                   numToDial = targetData.replace("zero", "0").replace("one", "1").replace("two", "2").replace("three", "3").replace("four", "4").replace("five", "5").replace("six", "6").replace("seven", "7").replace("eight", "8").replace("nine", "9").replaceAll("[^0-9]", "");
                                   
                                   if(!numToDial.isEmpty()) {
