@@ -1,4 +1,4 @@
-name: "Build Z-Atomic Caller (Single Offline Engine AI)"
+name: "Build Z-Atomic Caller (Flawless AI Brain Edition)"
 
 on:
   push:
@@ -25,7 +25,6 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
-          mkdir -p app/libs
           mkdir -p app/src/main/assets
 
       - name: "4. Initialize Gradle System"
@@ -49,14 +48,15 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Download Vosk 50MB AI Brain (The Only Engine)"
+      - name: "5. Download 50MB AI Brain Model (Fixed Curl)"
         run: |
-          wget -q https://repo1.maven.org/maven2/com/alphacep/vosk-android/0.3.32/vosk-android-0.3.32.aar -O app/libs/vosk-android.aar
-          wget -q https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip
-          unzip -q vosk-model-small-en-in-0.4.zip
+          echo "Downloading Voice Model..."
+          curl -L "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip" -o vosk-model.zip
+          unzip -q vosk-model.zip
           mv vosk-model-small-en-in-0.4 app/src/main/assets/model
+          rm vosk-model.zip
 
-      - name: "6. Android Config (Pure Single Engine)"
+      - name: "6. Android Config (Fixed Spelling)"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -67,8 +67,8 @@ jobs:
                   applicationId 'com.zatomic.caller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 4
-                  versionName "4.0-Pure-Vosk"
+                  versionCode 3
+                  versionName "3.0-Perfect-AI"
               }
               buildTypes {
                   release {
@@ -82,9 +82,9 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
               
-              // ONLY VOSK - NO OTHER ENGINE
               implementation 'net.java.dev.jna:jna:5.13.0@aar'
-              implementation files('libs/vosk-android.aar')
+              // Spelling theek kar di gayi hai (alphacephei) - Ab engine yahan se auto-download hoga
+              implementation 'com.alphacephei:vosk-android:0.3.38@aar'
           }
           EOF
 
@@ -108,6 +108,13 @@ jobs:
           </shape>
           EOF
 
+          cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#000000" android:pathData="M0,0h108v108h-108z"/>
+              <path android:fillColor="#FFD700" android:pathData="M30,30 h48 v10 l-30,30 h30 v10 h-48 v-10 l30,-30 h-30 z"/>
+          </vector>
+          EOF
+
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
@@ -115,7 +122,7 @@ jobs:
 
               <TextView android:id="@+id/tv_top_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ZEESHAN" android:textColor="@color/accent_gold" android:textSize="26sp" android:textStyle="bold" android:letterSpacing="0.2" android:layout_centerHorizontal="true" android:layout_marginTop="10dp"/>
 
-              <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Loading Pure AI Engine..." android:textColor="#888888" android:layout_below="@id/tv_top_name" android:layout_centerHorizontal="true" android:layout_marginTop="5dp" android:textSize="14sp" android:gravity="center"/>
+              <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="System Ready" android:textColor="#888888" android:layout_below="@id/tv_top_name" android:layout_centerHorizontal="true" android:layout_marginTop="5dp" android:textSize="14sp" android:gravity="center"/>
 
               <!-- The Big Number Show Area -->
               <TextView android:id="@+id/tv_big_number" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="@color/accent_green" android:textSize="40sp" android:textStyle="bold" android:layout_below="@id/tv_status" android:layout_centerHorizontal="true" android:layout_marginTop="20dp"/>
@@ -141,10 +148,11 @@ jobs:
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
               
               <queries>
+                  <intent><action android:name="android.speech.RecognitionService" /></intent>
                   <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
               </queries>
 
-              <application android:label="Z Pure AI" android:theme="@style/Theme.AppCompat.NoActionBar">
+              <application android:label="Z Pure AI" android:icon="@mipmap/ic_launcher" android:theme="@style/Theme.AppCompat.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait" android:launchMode="singleTop">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -156,7 +164,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "9. Java Code: VoiceBackgroundService (Pure Vosk Brain Logic)"
+      - name: "9. Java Code: VoiceBackgroundService"
         run: |
           cat << 'EOF' > app/src/main/java/com/zatomic/caller/VoiceBackgroundService.java
           package com.zatomic.caller;
@@ -287,7 +295,6 @@ jobs:
                               @Override public void onStart(String utteranceId) {}
                               @Override public void onError(String utteranceId) { startVoskListening(); }
                               @Override public void onDone(String utteranceId) {
-                                  // Jab TTS bolna khatam kare, tabhi mic chalu karo
                                   restartHandler.post(() -> startVoskListening());
                               }
                           });
@@ -295,7 +302,6 @@ jobs:
                   });
               }
 
-              // --- VOSK RECOGNITION LISTENER ---
               @Override
               public void onResult(String hypothesis) {
                   try {
@@ -357,7 +363,6 @@ jobs:
                               bringToFront.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                               startActivity(bringToFront);
 
-                              // Mic roko taki app apni hi awaz na sune
                               stopVoskListeningTemporarily();
                               
                               Bundle params = new Bundle();
@@ -367,7 +372,7 @@ jobs:
                               stopVoskListeningTemporarily();
                               Bundle params = new Bundle();
                               params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "NOT_FOUND");
-                              tts.speak("Maaf karna Seth, yeh number nahi mila.", TextToSpeech.QUEUE_FLUSH, params, "NOT_FOUND");
+                              tts.speak("Maaf karna Seth, yeh number meri list mein nahi mila.", TextToSpeech.QUEUE_FLUSH, params, "NOT_FOUND");
                           }
                       }
                   }
