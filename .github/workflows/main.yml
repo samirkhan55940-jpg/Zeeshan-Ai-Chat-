@@ -1,4 +1,4 @@
-name: "Build Z-Atomic Scan AI (Official Edition)"
+name: "Build Z-Atomic Scan AI (Master Success Edition)"
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: "3. Create App Structure"
+      - name: "3. Create Full App Structure"
         run: |
           mkdir -p app/src/main/java/com/zatomic/caller
           mkdir -p app/src/main/res/layout
@@ -27,8 +27,9 @@ jobs:
           mkdir -p app/src/main/res/mipmap-anydpi-v26
           mkdir -p app/src/main/res/anim
 
-      - name: "4. Initialize Build Files"
+      - name: "4. Initialize Master Gradle System"
         run: |
+          # Root Settings
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
@@ -36,17 +37,23 @@ jobs:
           include ':app'
           EOF
 
+          # Root Build File (CRITICAL FIX: Adding Android Plugin Classpath)
           cat << 'EOF' > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.3.0' }
+          }
           plugins { id 'com.android.application' version '8.3.0' apply false }
           EOF
 
           cat << 'EOF' > gradle.properties
           android.useAndroidX=true
+          org.gradle.jvmargs=-Xmx4g
           EOF
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. UI Design & Themes"
+      - name: "5. UI Resources & Matrix Animation"
         run: |
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
@@ -86,7 +93,7 @@ jobs:
           </adaptive-icon>
           EOF
 
-      - name: "6. Layout Design (Drawer + Chat + Scan)"
+      - name: "6. Layout Design"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -106,7 +113,7 @@ jobs:
                   </ScrollView>
 
                   <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="10dp">
-                      <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_rounded" android:paddingHorizontal="15dp" android:hint="Kisse call karna hai?" android:textColor="@android:color/white" android:textColorHint="#666"/>
+                      <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_rounded" android:paddingHorizontal="15dp" android:hint="Message AI..." android:textColor="@android:color/white" android:textColorHint="#666"/>
                       <Button android:id="@+id/btn_send" android:layout_width="50dp" android:layout_height="50dp" android:text="➤" android:backgroundTint="@color/matrix_green" android:textColor="@color/bg_dark" android:layout_marginStart="5dp"/>
                   </LinearLayout>
               </LinearLayout>
@@ -126,8 +133,34 @@ jobs:
           </androidx.drawerlayout.widget.DrawerLayout>
           EOF
 
-      - name: "7. Java Code (The Scanning Brain)"
+      - name: "7. Android Config & App Code"
         run: |
+          cat << 'EOF' > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.zatomic.caller'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.zatomic.caller'
+                  minSdk 26
+                  targetSdk 34
+                  versionCode 14
+                  versionName "14.0-Build-Fix"
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled true
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                  }
+              }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+          }
+          EOF
+
           cat << 'EOF' > app/src/main/java/com/zatomic/caller/MainActivity.java
           package com.zatomic.caller;
 
@@ -147,7 +180,6 @@ jobs:
           import android.widget.LinearLayout;
           import android.widget.ScrollView;
           import android.widget.TextView;
-          import android.widget.Toast;
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
           import androidx.core.view.GravityCompat;
@@ -174,7 +206,6 @@ jobs:
                   tvScanCount = findViewById(R.id.tv_scan_count);
 
                   findViewById(R.id.btn_menu).setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
-                  
                   findViewById(R.id.menu_scan).setOnClickListener(v -> {
                       drawerLayout.closeDrawers();
                       performMatrixScan();
@@ -189,69 +220,57 @@ jobs:
                       }
                   });
 
-                  checkPermissions();
-                  addChatBubble("Z AI", "System Active. Salaam Seth! Menu mein jaakar numbers SCAN karein.", false);
+                  requestPermissions();
+                  addChatBubble("Z AI", "Salaam Seth! Menu se SCAN kijiye.", false);
               }
 
               private void performMatrixScan() {
                   ProgressDialog pd = new ProgressDialog(this);
-                  pd.setTitle("ACCESSING DATABASE");
-                  pd.setMessage("Decrypting Contacts...\nPlease Wait");
-                  pd.setCancelable(false);
+                  pd.setTitle("SCANNING...");
+                  pd.setMessage("Accessing Phonebook...");
                   pd.show();
-
                   new Handler(Looper.getMainLooper()).postDelayed(() -> {
                       contactList.clear();
-                      Cursor cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
-                      if (cursor != null) {
-                          while (cursor.moveToNext()) {
-                              String name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
-                              String num = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                              contactList.add(new String[]{name.toLowerCase(), num});
+                      Cursor c = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
+                      if (c != null) {
+                          while (c.moveToNext()) {
+                              contactList.add(new String[]{c.getString(c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)).toLowerCase(), c.getString(c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))});
                           }
-                          cursor.close();
+                          c.close();
                       }
                       pd.dismiss();
-                      tvScanCount.setText("Memory: " + contactList.size() + " Contacts Loaded");
-                      addChatBubble("Z AI", "✅ SCAN COMPLETE!\nTotal " + contactList.size() + " numbers stored in my brain.", false);
-                  }, 2500);
+                      tvScanCount.setText("Memory: " + contactList.size() + " Loaded");
+                      addChatBubble("Z AI", "✅ SCAN DONE! " + contactList.size() + " numbers ready.", false);
+                  }, 2000);
               }
 
               private void handleCommand(String input) {
-                  String name = input.replaceAll("\\b(call|dial|phone|laga|mila|lagao)\\b", "").trim();
-                  boolean found = false;
-                  for(String[] contact : contactList) {
-                      if(contact[0].contains(name)) {
-                          addChatBubble("Z AI", "Ji Seth, " + contact[0].toUpperCase() + " ko call mila raha hoon.", false);
-                          startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + contact[1])));
-                          found = true;
-                          break;
+                  String name = input.replaceAll("\\b(call|dial|laga|phone)\\b", "").trim();
+                  for(String[] c : contactList) {
+                      if(c[0].contains(name)) {
+                          addChatBubble("Z AI", "Calling " + c[0].toUpperCase(), false);
+                          startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + c[1])));
+                          return;
                       }
                   }
-                  if(!found) addChatBubble("Z AI", "Maaf karna Seth, yeh naam meri memory mein nahi hai. Kya aapne SCAN kiya?", false);
+                  addChatBubble("Z AI", "Naam nahi mila Seth.", false);
               }
 
               private void addChatBubble(String sender, String msg, boolean isUser) {
                   TextView tv = new TextView(this);
                   tv.setText(msg);
-                  tv.setPadding(35, 20, 35, 20);
+                  tv.setPadding(30, 20, 30, 20);
                   tv.setTextColor(android.graphics.Color.WHITE);
                   LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
                   lp.setMargins(0, 10, 0, 10);
-                  if (isUser) {
-                      tv.setBackgroundResource(R.drawable.bg_rounded);
-                      lp.gravity = Gravity.END;
-                  } else {
-                      tv.setBackgroundResource(R.drawable.bg_rounded);
-                      tv.getBackground().setTint(getResources().getColor(R.color.chat_ai));
-                      lp.gravity = Gravity.START;
-                  }
+                  if (isUser) { tv.setBackgroundResource(R.drawable.bg_rounded); lp.gravity = Gravity.END; }
+                  else { tv.setBackgroundResource(R.drawable.bg_rounded); tv.getBackground().setTint(0xFF1B5E20); lp.gravity = Gravity.START; }
                   tv.setLayoutParams(lp);
                   chatContainer.addView(tv);
                   scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
               }
 
-              private void checkPermissions() {
+              private void requestPermissions() {
                   ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE}, 1);
               }
           }
@@ -271,13 +290,14 @@ jobs:
           </manifest>
           EOF
 
-      - name: "9. Build & Upload"
+      - name: "9. Build Master APK"
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          # CRITICAL FIX: Explicitly calling the app module task
+          ./gradlew :app:assembleDebug
           
       - name: "10. Upload Artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: "Z-Atomic-Scan-AI"
+          name: "Z-Atomic-Scan-Fix"
           path: app/build/outputs/apk/debug/app-debug.apk
