@@ -1,4 +1,4 @@
-name: "Build Z+2 Chat (Voice Lock Z+2 Password Edition)"
+name: "Build Z-Atomic Caller (VIP Edition)"
 
 on:
   push:
@@ -18,31 +18,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: "3. Create App Directories & XML Config"
+      - name: "3. Create App Directories"
         run: |
-          mkdir -p app/src/main/java/com/zplus2/chat
+          mkdir -p app/src/main/java/com/zatomic/caller
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
-          mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/assets
-          
-          cat << 'EOF' > app/src/main/res/xml/accessibility_service_config.xml
-          <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-              android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
-              android:accessibilityFeedbackType="feedbackGeneric"
-              android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
-              android:canRetrieveWindowContent="true"
-              android:description="@string/accessibility_desc" />
-          EOF
 
       - name: "4. Initialize Gradle System"
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = "ZPlus2Chat"
+          rootProject.name = "ZAtomicCaller"
           include ':app'
           EOF
 
@@ -58,19 +48,19 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Android Native Config"
+      - name: "5. Android Config & AI Dependencies (Fixed JNA Bug)"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
-              namespace 'com.zplus2.chat'
+              namespace 'com.zatomic.caller'
               compileSdk 34
               defaultConfig {
-                  applicationId 'com.zplus2.chat'
+                  applicationId 'com.zatomic.caller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 50
-                  versionName "50.0-ZPlus2-VoiceLock"
+                  versionCode 1
+                  versionName "1.0-VIP-Atomic"
               }
               buildTypes {
                   release {
@@ -83,1092 +73,386 @@ jobs:
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
+              
+              // Google ML Kit Vision (Camera Number Scanner)
+              implementation 'com.google.android.gms:play-services-mlkit-text-recognition:19.0.0'
+              
+              // Vosk Offline Voice Engine (JNA Bug Fixed: removed @aar)
+              implementation 'net.java.dev.jna:jna:5.13.0'
+              implementation 'com.alphacep:vosk-android:0.3.38@aar'
           }
           EOF
-          cat << 'EOF' > app/proguard-rules.pro
-          -keep class com.zplus2.chat.** { *; }
-          EOF
 
-      - name: "6. Create Dual Storage Files (100MB System + 20MB Chat)"
+      - name: "6. Download Vosk Offline Model"
         run: |
-          dd if=/dev/urandom of=app/src/main/assets/chat_memory_20mb.db bs=1M count=20
-          dd if=/dev/urandom of=app/src/main/assets/system_data_100mb.db bs=1M count=100
+          wget https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip
+          unzip vosk-model-small-en-in-0.4.zip
+          mv vosk-model-small-en-in-0.4 app/src/main/assets/model
 
-      - name: "7. App Resources & UI Drawables"
+      - name: "7. App Resources & UI (VIP Clean Screen)"
         run: |
-          cat << 'EOF' > app/src/main/res/values/strings.xml
-          <resources>
-              <string name="app_name">Z+2 Assistant</string>
-              <string name="accessibility_desc">Z+2 Assistant Ghost RPA Engine.</string>
-              <string name="status_lock_active">Voice Lock &amp; Vault Active</string>
-              <string name="welcome_msg">Bhai! Lock Mode chalu hai.\n\nLock Switch ON hone par mujhe Z+2 keh kar hukum dijiye. Aur faltu bakwaas ab poori tarah band hai!</string>
-              <string name="scan_title">Z+2 DEEP 100MB SCAN</string>
-          </resources>
-          EOF
-
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
-              <color name="bg_chat">#0B141A</color>
-              <color name="chat_bar">#1F2C34</color>
-              <color name="text_white">#E9EDEF</color>
-              <color name="text_gray">#8696A0</color>
-              <color name="bubble_ai">#202C33</color>
-              <color name="bubble_user">#005C4B</color>
+              <color name="bg_dark">#050A0E</color>
+              <color name="btn_bg">#121B22</color>
+              <color name="text_white">#FFFFFF</color>
+              <color name="accent_gold">#FFD700</color>
               <color name="accent_green">#00A884</color>
-              <color name="btn_red">#FF4C4C</color>
           </resources>
           EOF
 
-          cat << 'EOF' > app/src/main/res/values/themes.xml
-          <resources>
-              <style name="Theme.ZPlus2Chat" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-                  <item name="android:windowBackground">@color/bg_chat</item>
-                  <item name="android:statusBarColor">@color/chat_bar</item>
-              </style>
-          </resources>
+          cat << 'EOF' > app/src/main/res/drawable/bg_round_btn.xml
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="@color/btn_bg"/>
+              <corners android:radius="20dp"/>
+              <stroke android:width="1dp" android:color="#2A3942"/>
+          </shape>
           EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/bg_input.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/bubble_ai"/><corners android:radius="24dp"/></shape>
-          EOF
-          cat << 'EOF' > app/src/main/res/drawable/bg_bubble_user.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/bubble_user"/><corners android:topLeftRadius="12dp" android:topRightRadius="12dp" android:bottomLeftRadius="12dp" android:bottomRightRadius="4dp"/></shape>
-          EOF
-          cat << 'EOF' > app/src/main/res/drawable/bg_bubble_ai.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/bubble_ai"/><corners android:topLeftRadius="12dp" android:topRightRadius="12dp" android:bottomLeftRadius="4dp" android:bottomRightRadius="12dp"/></shape>
-          EOF
-          cat << 'EOF' > app/src/main/res/drawable/bg_btn_send.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval"><solid android:color="@color/accent_green"/></shape>
-          EOF
-          cat << 'EOF' > app/src/main/res/drawable/bg_btn_green.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/accent_green"/><corners android:radius="12dp"/></shape>
-          EOF
-          cat << 'EOF' > app/src/main/res/drawable/bg_btn_red.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/btn_red"/><corners android:radius="12dp"/></shape>
-          EOF
-
-      - name: "8. App Icon"
-        run: |
           cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#0B141A" android:pathData="M0,0h108v108h-108z"/>
+              <path android:fillColor="#050A0E" android:pathData="M0,0h108v108h-108z"/>
               <path android:fillColor="#00A884" android:pathData="M24,24 h60 a12,12 0 0,1 12,12 v40 a12,12 0 0,1 -12,12 h-10 l-14,14 l-6,-14 h-30 a12,12 0 0,1 -12,-12 v-40 a12,12 0 0,1 12,-12 z"/>
           </vector>
           EOF
-          cp app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-      - name: "9. UI Layout XML (Using Strings to avoid XML errors)"
-        run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:background="@color/bg_chat">
+              android:background="@color/bg_dark">
 
-              <LinearLayout android:id="@+id/top_bar" android:layout_width="match_parent" android:layout_height="60dp" android:background="@color/chat_bar" android:orientation="horizontal" android:gravity="center_vertical" android:padding="10dp" android:elevation="4dp">
-                  <TextView android:layout_width="40dp" android:layout_height="40dp" android:background="@drawable/bg_btn_send" android:text="Z" android:textColor="#FFF" android:textSize="22sp" android:textStyle="bold" android:gravity="center"/>
-                  <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Zeeshan" android:textColor="@color/text_white" android:textSize="18sp" android:textStyle="bold"/>
-                      <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/status_lock_active" android:textColor="@color/text_gray" android:textSize="12sp"/>
-                  </LinearLayout>
-                  <Switch android:id="@+id/switch_voice_lock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Lock" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light" android:layout_marginEnd="10dp"/>
-                  <Switch android:id="@+id/switch_bg_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Parda" android:textColor="@color/text_white" android:textStyle="bold" android:theme="@style/Theme.AppCompat.Light"/>
-                  <TextView android:id="@+id/btn_menu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⋮" android:textColor="#FFF" android:textSize="28sp" android:paddingStart="15dp" android:paddingEnd="5dp" android:textStyle="bold"/>
+              <!-- VIP Center Logo -->
+              <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true" android:orientation="vertical" android:gravity="center">
+                  <TextView android:layout_width="100dp" android:layout_height="100dp" android:text="Z" android:textColor="@color/accent_green" android:textSize="70sp" android:textStyle="bold" android:gravity="center" android:background="@drawable/bg_round_btn"/>
+                  <TextView android:id="@+id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="System Standby" android:textColor="#8696A0" android:textSize="16sp" android:layout_marginTop="15dp"/>
+                  <TextView android:id="@+id/tv_wake_word" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Voice Lock: Not Set" android:textColor="@color/accent_gold" android:textSize="14sp" android:layout_marginTop="5dp"/>
               </LinearLayout>
 
-              <RelativeLayout android:id="@+id/chat_main_container" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/top_bar">
-                  <ScrollView android:id="@+id/chat_scroll" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/input_container" android:padding="10dp">
-                      <LinearLayout android:id="@+id/chat_layout" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/bg_bubble_ai" android:text="@string/welcome_msg" android:textColor="@color/text_white" android:textSize="16sp" android:padding="12dp" android:layout_marginBottom="10dp" android:layout_gravity="start"/>
-                      </LinearLayout>
-                  </ScrollView>
-
-                  <LinearLayout android:id="@+id/input_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical" android:background="@color/bg_chat">
-                      <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_input" android:hint="Type karke hukum dijiye..." android:textColorHint="@color/text_gray" android:textColor="@color/text_white" android:padding="14dp" android:minHeight="50dp" android:maxLines="4"/>
-                      <Button android:id="@+id/btn_send" android:layout_width="45dp" android:layout_height="45dp" android:layout_marginStart="8dp" android:background="@drawable/bg_btn_send" android:text="➤" android:textColor="#FFF" android:textSize="20sp"/>
+              <!-- The 3 Master Buttons -->
+              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="horizontal" android:weightSum="3" android:padding="15dp" android:background="#0A1014">
+                  
+                  <LinearLayout android:id="@+id/btn_voice_lock" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="?attr/selectableItemBackground" android:clickable="true">
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎙️" android:textSize="28sp"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Voice Lock" android:textColor="@color/text_white" android:textSize="12sp" android:textStyle="bold" android:layout_marginTop="5dp"/>
                   </LinearLayout>
-              </RelativeLayout>
 
-              <LinearLayout android:id="@+id/scanner_container" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/top_bar" android:orientation="vertical" android:padding="20dp" android:gravity="center" android:visibility="gone" android:background="#0B141A">
-                  <ImageView android:layout_width="80dp" android:layout_height="80dp" android:src="@mipmap/ic_launcher" android:layout_marginBottom="20dp"/>
-                  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/scan_title" android:textColor="@color/accent_green" android:textSize="22sp" android:textStyle="bold" android:layout_marginBottom="20dp"/>
-                  <ProgressBar android:id="@+id/scan_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="20dp" android:max="100" android:progressTint="@color/accent_green" android:layout_marginBottom="15dp"/>
-                  <TextView android:id="@+id/tv_scan_log" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Initializing Vault..." android:textColor="@color/text_white" android:textSize="14sp" android:gravity="center" android:layout_marginBottom="30dp"/>
-                  <Button android:id="@+id/btn_scan_ok" android:layout_width="wrap_content" android:layout_height="wrap_content" android:backgroundTint="@color/bubble_user" android:text="OK - SECURE DATA" android:textColor="#FFF" android:textStyle="bold" android:visibility="gone" android:padding="15dp"/>
+                  <LinearLayout android:id="@+id/btn_scan_cam" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="?attr/selectableItemBackground" android:clickable="true">
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📸" android:textSize="28sp"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Scan Number" android:textColor="@color/text_white" android:textSize="12sp" android:textStyle="bold" android:layout_marginTop="5dp"/>
+                  </LinearLayout>
+
+                  <LinearLayout android:id="@+id/btn_radar_sync" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="?attr/selectableItemBackground" android:clickable="true">
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🔄" android:textSize="28sp"/>
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Smart Radar" android:textColor="@color/text_white" android:textSize="12sp" android:textStyle="bold" android:layout_marginTop="5dp"/>
+                  </LinearLayout>
+
               </LinearLayout>
-
           </RelativeLayout>
           EOF
 
-          cat << 'EOF' > app/src/main/res/layout/notification_jarvis.xml
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent" android:layout_height="wrap_content"
-              android:background="@color/chat_bar" android:orientation="horizontal"
-              android:gravity="center_vertical" android:padding="12dp">
-              <ImageView android:layout_width="45dp" android:layout_height="45dp" android:src="@mipmap/ic_launcher_round"/>
-              <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
-                  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Z+2 Assistant" android:textColor="#FFF" android:textSize="16sp" android:textStyle="bold"/>
-                  <TextView android:id="@+id/tv_notif_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Master Mic Sun raha hai..." android:textColor="@color/accent_green" android:textSize="14sp"/>
-              </LinearLayout>
-              <TextView android:id="@+id/btn_notif_toggle" android:layout_width="80dp" android:layout_height="35dp" android:background="@drawable/bg_btn_green" android:text="MIC ON" android:textColor="#FFF" android:textSize="12sp" android:textStyle="bold" android:gravity="center"/>
-          </LinearLayout>
-          EOF
-
-      - name: "10. AndroidManifest.xml"
+      - name: "8. AndroidManifest.xml (Fixed Camera Security Bug)"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+              <uses-feature android:name="android.hardware.camera" android:required="false" />
               <uses-permission android:name="android.permission.CAMERA" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-              <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
               <uses-permission android:name="android.permission.READ_CONTACTS" />
               <uses-permission android:name="android.permission.CALL_PHONE" />
-              <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
               
+              <!-- Android 11+ Camera Visibility Fix -->
               <queries>
-                  <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
-                  <intent><action android:name="android.intent.action.MAIN" /></intent>
-                  <intent><action android:name="android.speech.RecognitionService" /></intent>
+                  <intent>
+                      <action android:name="android.media.action.IMAGE_CAPTURE" />
+                  </intent>
               </queries>
 
-              <application android:label="@string/app_name" android:theme="@style/Theme.ZPlus2Chat" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">
-                  <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
+              <application android:label="Z-Atomic Caller" android:icon="@mipmap/ic_launcher" android:theme="@style/Theme.AppCompat.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
-                  
-                  <service android:name=".JarvisFloatingService" android:exported="false" android:foregroundServiceType="microphone" android:stopWithTask="true" />
-                  
-                  <service android:name=".AutoClickerService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true">
-                      <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
-                      <meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility_service_config" />
-                  </service>
               </application>
           </manifest>
           EOF
 
-      - name: "11. Java Code: AutoClickerService"
+      - name: "9. Java Code: MainActivity"
         run: |
-          cat << 'EOF' > app/src/main/java/com/zplus2/chat/AutoClickerService.java
-          package com.zplus2.chat;
-
-          import android.accessibilityservice.AccessibilityService;
-          import android.view.accessibility.AccessibilityEvent;
-          import android.view.accessibility.AccessibilityNodeInfo;
-          import android.os.Bundle;
-          import android.os.Handler;
-          import android.os.Looper;
-          import java.util.ArrayList;
-          import java.util.List;
-
-          public class AutoClickerService extends AccessibilityService {
-              
-              public static boolean pendingScroll = false;
-              public static boolean pendingClick = false; 
-              public static String pendingTextToType = "";
-              public static AutoClickerService instance;
-
-              public static List<String> macroSteps = new ArrayList<>();
-              public static int currentStepIndex = 0;
-              public static long lastActionTime = 0;
-
-              @Override
-              protected void onServiceConnected() {
-                  super.onServiceConnected();
-                  instance = this;
-              }
-
-              @Override
-              public void onAccessibilityEvent(AccessibilityEvent event) {
-                  AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-                  if (rootNode == null) return;
-
-                  if (!pendingTextToType.isEmpty()) {
-                      AccessibilityNodeInfo focusedNode = findFocusedEditText(rootNode);
-                      if (focusedNode != null) {
-                          Bundle arguments = new Bundle();
-                          arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, pendingTextToType);
-                          focusedNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);
-                          pendingTextToType = ""; 
-                      }
-                  }
-
-                  if (!macroSteps.isEmpty() && currentStepIndex < macroSteps.size()) {
-                      long currentTime = System.currentTimeMillis();
-                      if (currentTime - lastActionTime > 1500) { 
-                          String targetStep = macroSteps.get(currentStepIndex);
-                          boolean success = clickTextOnScreen(rootNode, targetStep);
-                          if (success) {
-                              currentStepIndex++;
-                              lastActionTime = currentTime;
-                              if (currentStepIndex >= macroSteps.size()) {
-                                  macroSteps.clear();
-                              }
-                          }
-                      }
-                  }
-
-                  if (pendingClick) {
-                      if (findAndClickSwitch(rootNode)) {
-                          pendingClick = false;
-                          new Handler(Looper.getMainLooper()).postDelayed(() -> performGlobalAction(GLOBAL_ACTION_BACK), 500);
-                      }
-                  }
-
-                  if (pendingScroll) {
-                      performGlobalAction(GLOBAL_ACTION_HOME);
-                      pendingScroll = false;
-                  }
-              }
-
-              private boolean clickTextOnScreen(AccessibilityNodeInfo node, String targetText) {
-                  if (node == null) return false;
-                  
-                  if (node.getText() != null && node.getText().toString().toLowerCase().contains(targetText.toLowerCase())) {
-                      if (clickNodeOrParent(node)) return true;
-                  }
-                  
-                  if (node.getContentDescription() != null && node.getContentDescription().toString().toLowerCase().contains(targetText.toLowerCase())) {
-                      if (clickNodeOrParent(node)) return true;
-                  }
-
-                  for (int i = 0; i < node.getChildCount(); i++) {
-                      if (clickTextOnScreen(node.getChild(i), targetText)) return true;
-                  }
-                  return false;
-              }
-
-              private boolean clickNodeOrParent(AccessibilityNodeInfo node) {
-                  if (node.isClickable()) {
-                      node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                      return true;
-                  }
-                  AccessibilityNodeInfo parent = node.getParent();
-                  while (parent != null) {
-                      if (parent.isClickable()) {
-                          parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                          return true;
-                      }
-                      parent = parent.getParent();
-                  }
-                  return false;
-              }
-
-              public static void startMacro(String[] steps) {
-                  macroSteps.clear();
-                  for(String s : steps) macroSteps.add(s);
-                  currentStepIndex = 0;
-                  lastActionTime = System.currentTimeMillis() - 2000; 
-              }
-
-              public void executeVisionScreenshot() { performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT); }
-              public void executeScroll() {
-                  AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-                  if (rootNode != null) scrollNode(rootNode);
-              }
-              
-              private boolean scrollNode(AccessibilityNodeInfo node) {
-                  if (node == null) return false;
-                  if (node.isScrollable()) { node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD); return true; }
-                  for (int i = 0; i < node.getChildCount(); i++) { if (scrollNode(node.getChild(i))) return true; }
-                  return false;
-              }
-
-              private AccessibilityNodeInfo findFocusedEditText(AccessibilityNodeInfo node) {
-                  if (node == null) return null;
-                  if (node.isFocused() && node.isEditable()) return node;
-                  for (int i = 0; i < node.getChildCount(); i++) {
-                      AccessibilityNodeInfo result = findFocusedEditText(node.getChild(i));
-                      if (result != null) return result;
-                  }
-                  return null;
-              }
-
-              private boolean findAndClickSwitch(AccessibilityNodeInfo node) {
-                  if (node == null) return false;
-                  if ("android.widget.Switch".equals(node.getClassName()) && node.isClickable()) {
-                      node.performAction(AccessibilityNodeInfo.ACTION_CLICK); return true;
-                  }
-                  for (int i = 0; i < node.getChildCount(); i++) {
-                      if (findAndClickSwitch(node.getChild(i))) return true;
-                  }
-                  return false;
-              }
-              @Override public void onInterrupt() {}
-          }
-          EOF
-
-      - name: "12. Java Code: ThinkingEngine (Voice Password: Z+2)"
-        run: |
-          cat << 'EOF' > app/src/main/java/com/zplus2/chat/ThinkingEngine.java
-          package com.zplus2.chat;
-
-          import android.app.PendingIntent;
-          import android.content.Context;
-          import android.content.Intent;
-          import android.content.pm.PackageManager;
-          import android.content.pm.ResolveInfo;
-          import android.hardware.camera2.CameraManager;
-          import android.provider.MediaStore;
-          import android.provider.ContactsContract;
-          import android.database.Cursor;
-          import android.net.Uri;
-          import android.content.ContentUris;
-          import java.io.File;
-          import java.io.FileOutputStream;
-          import java.text.SimpleDateFormat;
-          import java.util.Date;
-          import java.util.HashMap;
-          import java.util.List;
-          import java.util.Locale;
-          import java.util.Map;
-          import java.util.Random;
-
-          public class ThinkingEngine {
-              private HashMap<String, String> installedAppsMap = new HashMap<>();
-              private HashMap<String, String> mediaFilesMap = new HashMap<>(); 
-              private HashMap<String, String> contactsMap = new HashMap<>(); 
-              
-              public static void saveChatHistory(Context context, String text, boolean isUser) {
-                  try {
-                      File memoryFile = new File(context.getFilesDir(), "jarvis_chat_memory_20mb.txt");
-                      if (memoryFile.length() > 20000000) memoryFile.delete(); 
-                      String timeStamp = new SimpleDateFormat("dd-MMM yyyy, hh:mm a", Locale.getDefault()).format(new Date());
-                      FileOutputStream fos = new FileOutputStream(memoryFile, true);
-                      String prefix = isUser ? "USER" : "Z+2";
-                      String logEntry = "[" + timeStamp + "] " + prefix + ": " + text + "\n";
-                      fos.write(logEntry.getBytes());
-                      fos.close();
-                  } catch (Exception e) {}
-              }
-
-              public static void saveSystemData(Context context, String data) {
-                  try {
-                      File systemFile = new File(context.getFilesDir(), "jarvis_system_data_100mb.txt");
-                      FileOutputStream fos = new FileOutputStream(systemFile, true);
-                      fos.write((data + "\n").getBytes());
-                      fos.close();
-                  } catch (Exception e) {}
-              }
-
-              private void launchFromBackground(Context context, Intent intent) {
-                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                  try {
-                      PendingIntent pi = PendingIntent.getActivity(context, (int) System.currentTimeMillis(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                      pi.send();
-                  } catch (Exception e) {
-                      context.startActivity(intent);
-                  }
-              }
-
-              public String scanMobileSystem(Context context) {
-                  StringBuilder systemLog = new StringBuilder("--- SYSTEM SCAN LOG ---\n");
-                  PackageManager pm = context.getPackageManager();
-                  Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-                  mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-                  List<ResolveInfo> appList = pm.queryIntentActivities(mainIntent, 0);
-                  installedAppsMap.clear(); 
-                  for (ResolveInfo info : appList) {
-                      String appName = info.loadLabel(pm).toString().toLowerCase();
-                      installedAppsMap.put(appName, info.activityInfo.packageName);
-                      installedAppsMap.put(appName.replace(" ", ""), info.activityInfo.packageName);
-                      systemLog.append("App: ").append(appName).append("\n");
-                  }
-                  mediaFilesMap.clear();
-                  try {
-                      String[] projection = {MediaStore.Video.Media._ID, MediaStore.Video.Media.DISPLAY_NAME};
-                      Cursor cursor = context.getContentResolver().query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, null);
-                      if (cursor != null) {
-                          while (cursor.moveToNext()) {
-                              long id = cursor.getLong(0);
-                              String name = cursor.getString(1);
-                              if (name != null) {
-                                  String cleanName = name.toLowerCase().replace(".mp4", "").replace(".mkv", "").replace("_", " ");
-                                  Uri contentUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
-                                  mediaFilesMap.put(cleanName, contentUri.toString());
-                                  systemLog.append("Video: ").append(cleanName).append("\n");
-                              }
-                          }
-                          cursor.close();
-                      }
-                  } catch (Exception e) {}
-
-                  contactsMap.clear();
-                  try {
-                      Cursor cursor = context.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
-                      if (cursor != null) {
-                          while (cursor.moveToNext()) {
-                              int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-                              int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                              if(nameIndex != -1 && numberIndex != -1) {
-                                  String name = cursor.getString(nameIndex);
-                                  String number = cursor.getString(numberIndex);
-                                  if (name != null && number != null) {
-                                      contactsMap.put(name.toLowerCase(), number.replaceAll("[^0-9+]", ""));
-                                      systemLog.append("Contact: ").append(name).append("\n");
-                                  }
-                              }
-                          }
-                          cursor.close();
-                      }
-                  } catch (Exception e) {}
-
-                  saveSystemData(context, systemLog.toString());
-                  return "Z+2 bhai, Dual Memory Update Complete! " + installedAppsMap.size() + " Apps, " + mediaFilesMap.size() + " Videos, " + contactsMap.size() + " Contacts loaded into 100MB Vault.";
-              }
-
-              private String cleanGarbageWords(String input) {
-                  String[] garbageWords = {"bhai", "zara", "please", "karo", "do", "de", "toh", "mujhe", "mera", "ki", "ka"};
-                  String cleanStr = input;
-                  for (String word : garbageWords) { cleanStr = cleanStr.replace(word, "").trim(); }
-                  return cleanStr;
-              }
-
-              public String processInput(String input, Context context, boolean isVoiceLockOn) {
-                  String lowerInput = input.toLowerCase().trim();
-
-                  // NEW VOICE LOCK PASSWORD: 'z+2' or 'z plus 2' or 'z plus two'
-                  if (isVoiceLockOn) {
-                      if (!lowerInput.contains("z+2") && !lowerInput.contains("z plus 2") && !lowerInput.contains("z plus two")) {
-                          return ""; // Silent fallback
-                      }
-                      lowerInput = lowerInput.replace("z+2", "").replace("z plus 2", "").replace("z plus two", "").trim();
-                  }
-
-                  if (lowerInput.contains("whatsapp setting") || lowerInput.contains("whatsapp ki setting")) {
-                      if (AutoClickerService.instance != null) {
-                          String pkg = installedAppsMap.get("whatsapp");
-                          if (pkg != null) {
-                              Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(pkg);
-                              if (launchIntent != null) {
-                                  launchFromBackground(context, launchIntent); 
-                                  String[] script = {"More options", "Settings"};
-                                  AutoClickerService.startMacro(script);
-                                  return "WhatsApp open karke Setting khol raha hoon!";
-                              }
-                          }
-                      }
-                      return "";
-                  }
-
-                  if (lowerInput.contains("call lagao") || lowerInput.contains("phone lagao") || lowerInput.contains("call karo") || lowerInput.contains("dial karo")) {
-                      String target = cleanGarbageWords(lowerInput).replace("call lagao", "").replace("phone lagao", "").replace("call karo", "").replace("dial karo", "").trim();
-                      if (!target.isEmpty()) {
-                          if (target.matches(".*\\d.*")) {
-                              String numToDial = target.replaceAll("[^0-9]", "");
-                              try {
-                                  Intent intent = new Intent(Intent.ACTION_CALL);
-                                  intent.setData(Uri.parse("tel:" + numToDial));
-                                  launchFromBackground(context, intent); 
-                                  return "Number " + numToDial + " par call laga di hai!";
-                              } catch (Exception e) { return ""; }
-                          }
-                          String foundNumber = null;
-                          String foundName = null;
-                          for (Map.Entry<String, String> entry : contactsMap.entrySet()) {
-                              if (entry.getKey().contains(target) || target.contains(entry.getKey())) {
-                                  foundNumber = entry.getValue();
-                                  foundName = entry.getKey();
-                                  break;
-                              }
-                          }
-                          if (foundNumber != null) {
-                              try {
-                                  Intent intent = new Intent(Intent.ACTION_CALL);
-                                  intent.setData(Uri.parse("tel:" + foundNumber));
-                                  launchFromBackground(context, intent); 
-                                  return foundName + " ko call laga raha hoon!";
-                              } catch (Exception e) { return ""; }
-                          } else {
-                              return ""; 
-                          }
-                      }
-                  }
-
-                  if (lowerInput.contains("video chalao") || lowerInput.contains("play video") || lowerInput.contains("picture")) {
-                      String targetVideo = cleanGarbageWords(lowerInput).replace("video chalao", "").replace("play video", "").replace("picture", "").trim();
-                      if (!targetVideo.isEmpty()) {
-                          for (Map.Entry<String, String> entry : mediaFilesMap.entrySet()) {
-                              if (entry.getKey().contains(targetVideo) || targetVideo.contains(entry.getKey())) {
-                                  try {
-                                      Intent intent = new Intent(Intent.ACTION_VIEW);
-                                      intent.setDataAndType(Uri.parse(entry.getValue()), "video/*");
-                                      launchFromBackground(context, intent); 
-                                      return "Video mili, play kar raha hoon.";
-                                  } catch (Exception e) { return ""; }
-                              }
-                          }
-                          return ""; 
-                      }
-                  }
-
-                  if (lowerInput.contains("hawai") || lowerInput.contains("flight") || lowerInput.contains("airplane")) {
-                      AutoClickerService.pendingClick = true;
-                      Intent intent = new Intent(android.provider.Settings.ACTION_AIRPLANE_MODE_SETTINGS);
-                      launchFromBackground(context, intent); 
-                      return "Flight mode switch open kar diya!";
-                  }
-                  if (lowerInput.contains("wifi") || lowerInput.contains("wi-fi") || lowerInput.contains("hotspot") || lowerInput.contains("net")) {
-                      AutoClickerService.pendingClick = true;
-                      Intent intent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
-                      launchFromBackground(context, intent); 
-                      return "Network Setting khol raha hoon!";
-                  }
-                  
-                  String[] openTriggers = {"open", "kholo", "chalao", "start", "laga", "dikhao", "on", "shuru"};
-                  for (String t : openTriggers) { 
-                      if (lowerInput.contains(t)) { 
-                          String targetAppRaw = cleanGarbageWords(lowerInput).replace(t, "").trim();
-                          String targetAppFuzzy = targetAppRaw.replace(" ", ""); 
-                          if (!targetAppRaw.isEmpty()) {
-                              for (Map.Entry<String, String> entry : installedAppsMap.entrySet()) {
-                                  if (entry.getKey().contains(targetAppRaw) || entry.getKey().contains(targetAppFuzzy)) {
-                                      Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(entry.getValue());
-                                      if (launchIntent != null) {
-                                          launchFromBackground(context, launchIntent); 
-                                          return entry.getKey() + " open kar diya!";
-                                      }
-                                  }
-                              }
-                          }
-                      } 
-                  }
-
-                  return ""; 
-              }
-          }
-          EOF
-
-      - name: "13. Java Code: JarvisFloatingService"
-        run: |
-          cat << 'EOF' > app/src/main/java/com/zplus2/chat/JarvisFloatingService.java
-          package com.zplus2.chat;
-
-          import android.app.Notification;
-          import android.app.NotificationChannel;
-          import android.app.NotificationManager;
-          import android.app.PendingIntent;
-          import android.app.Service;
-          import android.content.BroadcastReceiver;
-          import android.content.Context;
-          import android.content.Intent;
-          import android.content.IntentFilter;
-          import android.graphics.Color;
-          import android.os.Build;
-          import android.os.Bundle;
-          import android.os.IBinder;
-          import android.speech.RecognitionListener;
-          import android.speech.RecognizerIntent;
-          import android.speech.SpeechRecognizer;
-          import android.speech.tts.TextToSpeech;
-          import android.telephony.TelephonyManager;
-          import android.widget.RemoteViews;
-          import android.os.Handler;
-          import android.os.Looper;
-
-          import java.util.ArrayList;
-          import java.util.Locale;
-
-          public class JarvisFloatingService extends Service {
-              private SpeechRecognizer speechRecognizer;
-              private TextToSpeech tts;
-              private ThinkingEngine thinker;
-              private NotificationManager notificationManager;
-              private RemoteViews remoteViews;
-              private static final String CHANNEL_ID = "jarvis_channel";
-              
-              public static boolean isRunning = false;
-              private boolean isMicActive = true; 
-              
-              private BroadcastReceiver phoneStateReceiver = new BroadcastReceiver() {
-                  @Override
-                  public void onReceive(Context context, Intent intent) {
-                      String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
-                      if (TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state) || TelephonyManager.EXTRA_STATE_RINGING.equals(state)) {
-                          isMicActive = false;
-                          if (speechRecognizer != null) speechRecognizer.stopListening();
-                          updateNotificationUI();
-                      } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(state)) {
-                          isMicActive = true;
-                          updateNotificationUI();
-                          startListening();
-                      }
-                  }
-              };
-
-              @Override
-              public IBinder onBind(Intent intent) { return null; }
-
-              @Override
-              public int onStartCommand(Intent intent, int flags, int startId) {
-                  if (intent != null && "TOGGLE_MIC".equals(intent.getAction())) {
-                      isMicActive = !isMicActive;
-                      if (isMicActive) { startListening(); } 
-                      else { if (speechRecognizer != null) speechRecognizer.stopListening(); }
-                      updateNotificationUI();
-                  }
-                  return START_STICKY; 
-              }
-
-              @Override
-              public void onCreate() {
-                  super.onCreate();
-                  isRunning = true;
-                  notificationManager = getSystemService(NotificationManager.class);
-                  thinker = new ThinkingEngine();
-                  
-                  IntentFilter filter = new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-                  registerReceiver(phoneStateReceiver, filter);
-                  
-                  tts = new TextToSpeech(this, status -> {
-                      if(status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("en", "IN"));
-                  });
-
-                  createNotificationChannel();
-                  startForegroundNotification();
-                  startListening();
-              }
-
-              private void createNotificationChannel() {
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Z+2 Shutter System", NotificationManager.IMPORTANCE_LOW);
-                      notificationManager.createNotificationChannel(channel);
-                  }
-              }
-
-              private void startForegroundNotification() {
-                  remoteViews = new RemoteViews(getPackageName(), R.layout.notification_jarvis);
-                  Intent toggleIntent = new Intent(this, JarvisFloatingService.class);
-                  toggleIntent.setAction("TOGGLE_MIC");
-                  PendingIntent pendingIntent = PendingIntent.getService(this, 0, toggleIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                  remoteViews.setOnClickPendingIntent(R.id.btn_notif_toggle, pendingIntent);
-                  updateNotificationUI();
-              }
-
-              private void updateNotificationUI() {
-                  if (isMicActive) {
-                      remoteViews.setTextViewText(R.id.tv_notif_status, "Sun raha hoon...");
-                      remoteViews.setTextColor(R.id.tv_notif_status, Color.parseColor("#00A884")); 
-                      remoteViews.setTextViewText(R.id.btn_notif_toggle, "MIC ON");
-                      remoteViews.setInt(R.id.btn_notif_toggle, "setBackgroundResource", R.drawable.bg_btn_green);
-                  } else {
-                      remoteViews.setTextViewText(R.id.tv_notif_status, "Call Chal Rahi Hai / Soya Hua Hai");
-                      remoteViews.setTextColor(R.id.tv_notif_status, Color.parseColor("#FF4C4C")); 
-                      remoteViews.setTextViewText(R.id.btn_notif_toggle, "MIC OFF");
-                      remoteViews.setInt(R.id.btn_notif_toggle, "setBackgroundResource", R.drawable.bg_btn_red);
-                  }
-
-                  Notification notification = null;
-                  if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                      notification = new Notification.Builder(this, CHANNEL_ID)
-                              .setSmallIcon(R.mipmap.ic_launcher)
-                              .setCustomContentView(remoteViews)
-                              .setOngoing(true)
-                              .build();
-                  }
-                  startForeground(1, notification);
-              }
-
-              private void sendChatBroadcast(String text, boolean isUser) {
-                  Intent intent = new Intent("com.zplus2.UPDATE_CHAT");
-                  intent.putExtra("text", text);
-                  intent.putExtra("isUser", isUser);
-                  sendBroadcast(intent);
-              }
-
-              private void startListening() {
-                  if (!isMicActive) return; 
-
-                  if (speechRecognizer == null) {
-                      speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-                      speechRecognizer.setRecognitionListener(new RecognitionListener() {
-                          @Override public void onResults(Bundle results) {
-                              ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                              if (matches != null && !matches.isEmpty()) {
-                                  String userText = matches.get(0);
-                                  
-                                  boolean isLockOn = getSharedPreferences("ZPrefs", MODE_PRIVATE).getBoolean("voice_lock", false);
-                                  
-                                  new Thread(() -> {
-                                      String response = thinker.processInput(userText, JarvisFloatingService.this, isLockOn);
-                                      
-                                      new Handler(Looper.getMainLooper()).post(() -> {
-                                          if(response != null && !response.isEmpty()) {
-                                              ThinkingEngine.saveChatHistory(JarvisFloatingService.this, userText, true);
-                                              sendChatBroadcast(userText, true); 
-                                              ThinkingEngine.saveChatHistory(JarvisFloatingService.this, response, false);
-                                              sendChatBroadcast(response, false); 
-                                              if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null); 
-                                          }
-                                          if(isMicActive) startListening();
-                                      });
-                                  }).start();
-                              } else {
-                                  if(isMicActive) startListening();
-                              }
-                          }
-                          @Override public void onError(int error) { 
-                              if(isMicActive) {
-                                  new Handler(Looper.getMainLooper()).postDelayed(() -> startListening(), 500);
-                              }
-                          }
-                          @Override public void onReadyForSpeech(Bundle p){} @Override public void onBeginningOfSpeech(){} @Override public void onRmsChanged(float r){} @Override public void onBufferReceived(byte[] b){} @Override public void onEndOfSpeech(){} @Override public void onPartialResults(Bundle p){} @Override public void onEvent(int e, Bundle p){}
-                      });
-                  }
-                  Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN"); 
-                  intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "com.google.android.googlequicksearchbox");
-                  speechRecognizer.startListening(intent);
-              }
-
-              @Override
-              public void onTaskRemoved(Intent rootIntent) {
-                  super.onTaskRemoved(rootIntent);
-                  stopSelf();
-              }
-
-              @Override
-              public void onDestroy() {
-                  super.onDestroy();
-                  isRunning = false;
-                  isMicActive = false;
-                  try { unregisterReceiver(phoneStateReceiver); } catch(Exception e){}
-                  if (tts != null) { tts.stop(); tts.shutdown(); }
-                  if (speechRecognizer != null) speechRecognizer.destroy();
-              }
-          }
-          EOF
-
-      - name: "14. Java Code: MainActivity"
-        run: |
-          cat << 'EOF' > app/src/main/java/com/zplus2/chat/MainActivity.java
-          package com.zplus2.chat;
+          cat << 'EOF' > app/src/main/java/com/zatomic/caller/MainActivity.java
+          package com.zatomic.caller;
 
           import android.Manifest;
-          import android.content.BroadcastReceiver;
-          import android.content.Context;
+          import android.app.AlertDialog;
           import android.content.Intent;
-          import android.content.IntentFilter;
+          import android.content.SharedPreferences;
           import android.content.pm.PackageManager;
+          import android.database.Cursor;
+          import android.graphics.Bitmap;
           import android.net.Uri;
-          import android.os.Build;
           import android.os.Bundle;
-          import android.os.Handler;
-          import android.os.Looper;
-          import android.os.Process;
-          import android.provider.Settings;
-          import android.speech.tts.TextToSpeech;
-          import android.view.Gravity;
-          import android.view.View;
-          import android.widget.Button;
-          import android.widget.EditText;
+          import android.provider.ContactsContract;
+          import android.provider.MediaStore;
           import android.widget.LinearLayout;
-          import android.widget.ProgressBar;
-          import android.widget.RelativeLayout;
-          import android.widget.ScrollView;
-          import android.widget.Switch;
           import android.widget.TextView;
           import android.widget.Toast;
-          import android.widget.PopupMenu;
+
+          import androidx.annotation.Nullable;
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
           import androidx.core.content.ContextCompat;
-          import java.io.BufferedReader;
-          import java.io.File;
-          import java.io.FileReader;
-          import java.text.SimpleDateFormat;
-          import java.util.Date;
-          import java.util.ArrayList;
-          import java.util.Locale;
-          import java.util.concurrent.ExecutorService;
-          import java.util.concurrent.Executors;
 
-          public class MainActivity extends AppCompatActivity {
+          import com.google.mlkit.vision.common.InputImage;
+          import com.google.mlkit.vision.text.TextRecognition;
+          import com.google.mlkit.vision.text.TextRecognizer;
+          import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
-              private EditText etInput;
-              private LinearLayout chatLayout;
-              private ScrollView chatScroll;
-              private TextView tvStatus;
-              private Switch bgSwitch;
-              private Switch lockSwitch;
+          import org.json.JSONObject;
+          import org.vosk.Model;
+          import org.vosk.Recognizer;
+          import org.vosk.android.RecognitionListener;
+          import org.vosk.android.SpeechService;
+          import org.vosk.android.StorageService;
+
+          import java.util.HashMap;
+          import java.util.Map;
+          import java.util.regex.Matcher;
+          import java.util.regex.Pattern;
+
+          public class MainActivity extends AppCompatActivity implements RecognitionListener {
+
+              private TextView tvStatus, tvWakeWord;
+              private LinearLayout btnVoiceLock, btnScanCam, btnRadarSync;
               
-              private RelativeLayout chatMainContainer;
-              private LinearLayout scannerContainer;
-              private ProgressBar scanProgress;
-              private TextView tvScanLog;
-              private Button btnScanOk;
+              private HashMap<String, String> contactsMap = new HashMap<>();
+              private SharedPreferences prefs;
               
-              private ThinkingEngine thinker;
-              private ExecutorService backgroundThread;
-              private TextToSpeech tts;
-
-              private BroadcastReceiver chatReceiver = new BroadcastReceiver() {
-                  @Override
-                  public void onReceive(Context context, Intent intent) {
-                      String text = intent.getStringExtra("text");
-                      boolean isUser = intent.getBooleanExtra("isUser", false);
-                      if(text != null) {
-                          String timeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
-                          addChatBubble("[" + timeStamp + "]\n" + text, isUser);
-                      }
-                  }
-              };
+              private Model voskModel;
+              private SpeechService speechService;
+              private boolean isListening = false;
+              private boolean isTrainingMode = false;
+              
+              private static final int REQUEST_IMAGE_CAPTURE = 101;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
 
-                  etInput = findViewById(R.id.et_input);
-                  chatLayout = findViewById(R.id.chat_layout);
-                  chatScroll = findViewById(R.id.chat_scroll);
+                  prefs = getSharedPreferences("Z_ATOMIC_PREFS", MODE_PRIVATE);
+
                   tvStatus = findViewById(R.id.tv_status);
-                  Button btnSend = findViewById(R.id.btn_send);
-                  TextView btnMenu = findViewById(R.id.btn_menu);
-                  bgSwitch = findViewById(R.id.switch_bg_mode);
-                  lockSwitch = findViewById(R.id.switch_voice_lock);
-                  
-                  chatMainContainer = findViewById(R.id.chat_main_container);
-                  scannerContainer = findViewById(R.id.scanner_container);
-                  scanProgress = findViewById(R.id.scan_progress);
-                  tvScanLog = findViewById(R.id.tv_scan_log);
-                  btnScanOk = findViewById(R.id.btn_scan_ok);
+                  tvWakeWord = findViewById(R.id.tv_wake_word);
+                  btnVoiceLock = findViewById(R.id.btn_voice_lock);
+                  btnScanCam = findViewById(R.id.btn_scan_cam);
+                  btnRadarSync = findViewById(R.id.btn_radar_sync);
 
-                  checkAccessibilityService();
-
-                  if (!Settings.canDrawOverlays(this)) {
-                      Toast.makeText(this, "VIP Pass Allow karein taaki background se app khul sake!", Toast.LENGTH_LONG).show();
-                      startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
+                  String savedWord = prefs.getString("wake_word", "");
+                  if(!savedWord.isEmpty()) {
+                      tvWakeWord.setText("Voice Lock: [" + savedWord.toUpperCase() + "]");
                   }
 
-                  ArrayList<String> permissions = new ArrayList<>();
-                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.RECORD_AUDIO);
-                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_CONTACTS);
-                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.CALL_PHONE);
-                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_PHONE_STATE);
-                  
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_MEDIA_VIDEO);
-                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_MEDIA_IMAGES);
-                  } else {
-                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-                  }
-                  
-                  if(!permissions.isEmpty()) {
-                      ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), 3);
-                  }
+                  requestAppPermissions();
 
-                  boolean isLocked = getSharedPreferences("ZPrefs", MODE_PRIVATE).getBoolean("voice_lock", false);
-                  lockSwitch.setChecked(isLocked);
-                  lockSwitch.setOnCheckedChangeListener((btn, checked) -> {
-                      getSharedPreferences("ZPrefs", MODE_PRIVATE).edit().putBoolean("voice_lock", checked).apply();
-                      Toast.makeText(this, "Voice Password Lock " + (checked ? "ON" : "OFF"), Toast.LENGTH_SHORT).show();
-                  });
-
-                  btnMenu.setOnClickListener(v -> {
-                      PopupMenu popup = new PopupMenu(MainActivity.this, btnMenu);
-                      popup.getMenu().add("Deep System Scan");
-                      popup.setOnMenuItemClickListener(item -> {
-                          if(item.getTitle().equals("Deep System Scan")) {
-                              startDeepVisualScan();
-                          }
-                          return true;
+                  btnVoiceLock.setOnClickListener(v -> {
+                      AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                      builder.setTitle("Set Voice Lock Password");
+                      builder.setMessage("Bhai, apna secret naam ya password boliye. Jab main beep karu tab bolna shuru karein.");
+                      builder.setPositiveButton("Start Recording", (dialog, which) -> {
+                          isTrainingMode = true;
+                          tvStatus.setText("Listening for Password...");
+                          tvStatus.setTextColor(0xFFFFD700);
                       });
-                      popup.show();
+                      builder.show();
                   });
 
-                  btnScanOk.setOnClickListener(v -> {
-                      scannerContainer.setVisibility(View.GONE);
-                      chatMainContainer.setVisibility(View.VISIBLE);
-                      addChatBubble("Zeeshan bhai, Dual Memory Update Complete! Pura data 100MB vault mein lock ho gaya hai.", false);
-                      btnScanOk.setVisibility(View.GONE);
-                  });
-
-                  bgSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                      if (isChecked) {
-                          if (!JarvisFloatingService.isRunning) {
-                              startForegroundService(new Intent(this, JarvisFloatingService.class));
-                              Toast.makeText(this, "Z+2 Master Mic Parde Mein Chalu Hai!", Toast.LENGTH_SHORT).show();
-                          }
+                  btnScanCam.setOnClickListener(v -> {
+                      Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                      if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                          startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
                       } else {
-                          stopService(new Intent(this, JarvisFloatingService.class));
+                          Toast.makeText(this, "Camera App blocked or not found!", Toast.LENGTH_SHORT).show();
                       }
                   });
 
-                  tts = new TextToSpeech(this, status -> {
-                      if (status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("en", "IN")); 
-                  });
-
-                  thinker = new ThinkingEngine();
-                  backgroundThread = Executors.newSingleThreadExecutor();
-
-                  backgroundThread.execute(() -> {
-                      Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                      thinker.scanMobileSystem(this);
-                      runOnUiThread(() -> tvStatus.setText("Engine Ready"));
-                  });
-
-                  btnSend.setOnClickListener(v -> sendMessage());
-                  
-                  loadChatHistory();
-              }
-
-              private void startDeepVisualScan() {
-                  chatMainContainer.setVisibility(View.GONE);
-                  scannerContainer.setVisibility(View.VISIBLE);
-                  scanProgress.setProgress(0);
-                  tvScanLog.setText("Initializing 100MB Vault...");
-
-                  backgroundThread.execute(() -> {
-                      Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                      try {
-                          runOnUiThread(() -> { tvScanLog.setText("Scanning Installed Apps & Settings..."); scanProgress.setProgress(25); });
-                          Thread.sleep(1000); 
-
-                          runOnUiThread(() -> { tvScanLog.setText("Scanning Videos & Photos from Storage..."); scanProgress.setProgress(50); });
-                          Thread.sleep(1000);
-                          
-                          runOnUiThread(() -> { tvScanLog.setText("Reading Phonebook Contacts..."); scanProgress.setProgress(75); });
-                          Thread.sleep(1000);
-
-                          String result = thinker.scanMobileSystem(MainActivity.this);
-
+                  btnRadarSync.setOnClickListener(v -> {
+                      tvStatus.setText("Radar Active: Syncing Contacts...");
+                      new Thread(() -> {
+                          int count = syncLocalContacts();
                           runOnUiThread(() -> {
-                              tvScanLog.setText("100% - " + result);
-                              scanProgress.setProgress(100);
-                              btnScanOk.setVisibility(View.VISIBLE);
+                              tvStatus.setText("Radar Complete: " + count + " VIPs Ready!");
+                              Toast.makeText(this, "Contacts Updated!", Toast.LENGTH_SHORT).show();
                           });
-                      } catch (Exception e) {}
+                      }).start();
                   });
+
+                  initVoskModel();
               }
 
-              private void loadChatHistory() {
-                  try {
-                      File memoryFile = new File(getFilesDir(), "jarvis_chat_memory_20mb.txt");
-                      if (!memoryFile.exists()) return;
-                      
-                      BufferedReader br = new BufferedReader(new FileReader(memoryFile));
-                      String line;
-                      while ((line = br.readLine()) != null) {
-                          if (line.contains("] USER: ")) {
-                              String content = line.replace("] USER: ", "]\n");
-                              addChatBubble(content, true);
-                          } else if (line.contains("] Z+2: ")) {
-                              String content = line.replace("] Z+2: ", "]\n");
-                              addChatBubble(content, false);
-                          }
+              private void requestAppPermissions() {
+                  String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE};
+                  boolean needed = false;
+                  for(String p : permissions) {
+                      if(ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) needed = true;
+                  }
+                  if(needed) ActivityCompat.requestPermissions(this, permissions, 1);
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK && data != null) {
+                      Bundle extras = data.getExtras();
+                      Bitmap imageBitmap = (Bitmap) extras.get("data");
+                      if(imageBitmap != null) {
+                          processImageForNumber(imageBitmap);
                       }
-                      br.close();
+                  }
+              }
+
+              private void processImageForNumber(Bitmap bitmap) {
+                  tvStatus.setText("Scanning Image for Number...");
+                  InputImage image = InputImage.fromBitmap(bitmap, 0);
+                  TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+                  
+                  recognizer.process(image)
+                          .addOnSuccessListener(visionText -> {
+                              String fullText = visionText.getText();
+                              Pattern p = Pattern.compile("\\b\\d{10}\\b");
+                              Matcher m = p.matcher(fullText.replaceAll("[\\s\\-\\(\\)]", ""));
+                              if(m.find()) {
+                                  String number = m.group();
+                                  tvStatus.setText("Number Found: " + number);
+                                  executeDirectCall(number);
+                              } else {
+                                  tvStatus.setText("No valid number found in image.");
+                                  Toast.makeText(this, "Image mein number nahi mila bhai.", Toast.LENGTH_SHORT).show();
+                              }
+                          })
+                          .addOnFailureListener(e -> tvStatus.setText("Scan Failed."));
+              }
+
+              private int syncLocalContacts() {
+                  contactsMap.clear();
+                  try {
+                      Cursor cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
+                      if (cursor != null) {
+                          while (cursor.moveToNext()) {
+                              int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+                              int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                              if (nameIndex != -1 && numberIndex != -1) {
+                                  String name = cursor.getString(nameIndex).toLowerCase();
+                                  String number = cursor.getString(numberIndex).replaceAll("[^0-9+]", "");
+                                  contactsMap.put(name, number);
+                              }
+                          }
+                          cursor.close();
+                      }
+                  } catch (Exception e) { e.printStackTrace(); }
+                  return contactsMap.size();
+              }
+
+              private void initVoskModel() {
+                  tvStatus.setText("Loading Offline Micro-Engine...");
+                  StorageService.unpack(this, "model", "model",
+                          (model) -> {
+                              this.voskModel = model;
+                              tvStatus.setText("System Ready. Listening...");
+                              startBackgroundListening();
+                          },
+                          (exception) -> tvStatus.setText("Engine Load Failed: " + exception.getMessage()));
+              }
+
+              private void startBackgroundListening() {
+                  if (speechService != null) {
+                      speechService.stop();
+                      speechService = null;
+                  }
+                  try {
+                      Recognizer rec = new Recognizer(voskModel, 16000.0f);
+                      speechService = new SpeechService(rec, 16000.0f);
+                      speechService.startListening(this);
+                      isListening = true;
                   } catch (Exception e) {}
               }
 
               @Override
-              protected void onResume() {
-                  super.onResume();
-                  if (bgSwitch != null) bgSwitch.setChecked(JarvisFloatingService.isRunning);
-                  
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                      ContextCompat.registerReceiver(this, chatReceiver, new IntentFilter("com.zplus2.UPDATE_CHAT"), ContextCompat.RECEIVER_NOT_EXPORTED);
-                  } else {
-                      registerReceiver(chatReceiver, new IntentFilter("com.zplus2.UPDATE_CHAT"));
-                  }
-              }
+              public void onResult(String hypothesis) {
+                  try {
+                      JSONObject obj = new JSONObject(hypothesis);
+                      String spokenText = obj.getString("text").toLowerCase().trim();
+                      if(spokenText.isEmpty()) return;
 
-              @Override
-              protected void onPause() {
-                  super.onPause();
-                  try { unregisterReceiver(chatReceiver); } catch(Exception e){}
-              }
-
-              private void checkAccessibilityService() {
-                  int accEnabled = 0;
-                  try { accEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED); } catch (Exception e) {}
-                  if (accEnabled == 0) {
-                      Toast.makeText(this, "Zaroori: Z+2 Accessibility ON karein", Toast.LENGTH_LONG).show();
-                      startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-                  }
-              }
-
-              private void sendMessage() {
-                  String prompt = etInput.getText().toString().trim();
-                  if (!prompt.isEmpty()) {
-                      boolean isLockOn = getSharedPreferences("ZPrefs", MODE_PRIVATE).getBoolean("voice_lock", false);
-                      
-                      ThinkingEngine.saveChatHistory(this, prompt, true);
-                      String timeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
-                      addChatBubble("[" + timeStamp + "]\n" + prompt, true);
-                      
-                      etInput.setText("");
-                      tvStatus.setText("Processing Command...");
-                      
-                      backgroundThread.execute(() -> {
-                          Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
-                          String response = thinker.processInput(prompt, MainActivity.this, isLockOn);
-                          
-                          if(response != null && !response.isEmpty()) {
-                              ThinkingEngine.saveChatHistory(MainActivity.this, response, false);
-                              runOnUiThread(() -> {
-                                  String respTimeStamp = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
-                                  addChatBubble("[" + respTimeStamp + "]\n" + response, false);
-                                  tvStatus.setText("Ready");
-                                  if(tts != null) tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null);
-                              });
-                          } else {
-                              runOnUiThread(() -> tvStatus.setText("Ready"));
+                      if (isTrainingMode) {
+                          String newPassword = spokenText.split(" ")[0]; 
+                          if(!newPassword.isEmpty() && newPassword.length() > 2) {
+                              prefs.edit().putString("wake_word", newPassword).apply();
+                              tvWakeWord.setText("Voice Lock: [" + newPassword.toUpperCase() + "]");
+                              tvStatus.setText("Voice Lock Updated!");
+                              isTrainingMode = false;
                           }
-                      });
+                          return;
+                      }
+
+                      String myLock = prefs.getString("wake_word", "").toLowerCase();
+                      if (!myLock.isEmpty() && spokenText.contains(myLock)) {
+                          
+                          if(spokenText.contains("call") || spokenText.contains("phone")) {
+                              String targetName = spokenText.replace(myLock, "").replace("call", "").replace("phone", "").replace("ko", "").replace("lagao", "").trim();
+                              
+                              String targetNumber = null;
+                              for(Map.Entry<String, String> entry : contactsMap.entrySet()) {
+                                  if(entry.getKey().contains(targetName) || targetName.contains(entry.getKey())) {
+                                      targetNumber = entry.getValue();
+                                      break;
+                                  }
+                              }
+                              
+                              if(targetNumber != null) {
+                                  tvStatus.setText("Dialing " + targetName + "...");
+                                  executeDirectCall(targetNumber);
+                              } else {
+                                  tvStatus.setText("Name not found in Radar.");
+                              }
+                          }
+                      }
+                  } catch(Exception e){}
+              }
+
+              private void executeDirectCall(String number) {
+                  try {
+                      Intent intent = new Intent(Intent.ACTION_CALL);
+                      intent.setData(Uri.parse("tel:" + number));
+                      startActivity(intent);
+                  } catch (SecurityException e) {
+                      Toast.makeText(this, "Call permission missing!", Toast.LENGTH_SHORT).show();
                   }
               }
 
-              private void addChatBubble(String text, boolean isUser) {
-                  TextView tv = new TextView(this);
-                  tv.setText(text);
-                  tv.setTextSize(16f);
-                  LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                  params.setMargins(0, 8, 0, 8);
-
-                  if (isUser) {
-                      tv.setBackgroundResource(R.drawable.bg_bubble_user);
-                      tv.setTextColor(ContextCompat.getColor(this, R.color.text_white));
-                      params.gravity = Gravity.END;
-                      params.setMarginStart(100);
-                  } else {
-                      tv.setBackgroundResource(R.drawable.bg_bubble_ai);
-                      tv.setTextColor(ContextCompat.getColor(this, R.color.text_white));
-                      params.gravity = Gravity.START;
-                      params.setMarginEnd(100);
-                  }
-                  tv.setPadding(35, 25, 35, 25);
-                  tv.setLayoutParams(params);
-                  chatLayout.addView(tv);
-                  chatScroll.post(() -> chatScroll.fullScroll(View.FOCUS_DOWN));
-              }
+              @Override public void onFinalResult(String h) { onResult(h); }
+              @Override public void onPartialResult(String h) {}
+              @Override public void onError(Exception e) { if(isListening) startBackgroundListening(); }
+              @Override public void onTimeout() { if(isListening) startBackgroundListening(); }
 
               @Override
               protected void onDestroy() {
                   super.onDestroy();
-                  if(backgroundThread != null) backgroundThread.shutdown();
-                  if(tts != null) { tts.stop(); tts.shutdown(); }
+                  if (speechService != null) {
+                      speechService.stop();
+                      speechService.shutdown();
+                  }
               }
           }
           EOF
 
-      - name: "15. Build Complete Zeeshan Z+2 APK"
+      - name: "10. Build Z-Atomic APK"
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: "16. Upload App Artifact"
+      - name: "11. Upload App Artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: "ZPlus2-Assistant"
+          name: "Z-Atomic-Caller"
           path: app/build/outputs/apk/debug/app-debug.apk
