@@ -1,4 +1,4 @@
-name: "Build Z-Atomic Caller (Flawless AI Brain Edition)"
+name: "Build Z-Atomic Caller (Official Native AI)"
 
 on:
   push:
@@ -25,7 +25,6 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
-          mkdir -p app/src/main/assets
 
       - name: "4. Initialize Gradle System"
         run: |
@@ -48,15 +47,7 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Download 50MB AI Brain Model (Fixed Curl)"
-        run: |
-          echo "Downloading Voice Model..."
-          curl -L "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip" -o vosk-model.zip
-          unzip -q vosk-model.zip
-          mv vosk-model-small-en-in-0.4 app/src/main/assets/model
-          rm vosk-model.zip
-
-      - name: "6. Android Config (Fixed Spelling)"
+      - name: "5. Android Config (Zero Dependencies - Solid Build)"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -67,8 +58,8 @@ jobs:
                   applicationId 'com.zatomic.caller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 3
-                  versionName "3.0-Perfect-AI"
+                  versionCode 8
+                  versionName "8.0-Official-Solid"
               }
               buildTypes {
                   release {
@@ -81,14 +72,10 @@ jobs:
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
-              
-              implementation 'net.java.dev.jna:jna:5.13.0@aar'
-              // Spelling theek kar di gayi hai (alphacephei) - Ab engine yahan se auto-download hoga
-              implementation 'com.alphacephei:vosk-android:0.3.38@aar'
           }
           EOF
 
-      - name: "7. Z-Style UI & Resources"
+      - name: "6. Z-Style UI & Resources"
         run: |
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
@@ -130,13 +117,13 @@ jobs:
               <TextView android:id="@+id/logo_z" android:layout_width="150dp" android:layout_height="150dp" android:text="Z" android:textColor="@color/accent_gold" android:textSize="80sp" android:textStyle="bold" android:gravity="center" android:background="@drawable/bg_round_z" android:layout_centerInParent="true"/>
 
               <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="vertical" android:gravity="center" android:layout_marginBottom="20dp">
-                  <Button android:id="@+id/btn_sync" android:layout_width="match_parent" android:layout_height="60dp" android:text="LOAD AI BRAIN &amp; CONTACTS" android:backgroundTint="#1C1C1E" android:textColor="@color/text_white" android:textStyle="bold" android:layout_marginBottom="15dp"/>
+                  <Button android:id="@+id/btn_sync" android:layout_width="match_parent" android:layout_height="60dp" android:text="LOAD NATIVE CONTACTS" android:backgroundTint="#1C1C1E" android:textColor="@color/text_white" android:textStyle="bold" android:layout_marginBottom="15dp"/>
                   <Button android:id="@+id/btn_toggle_bg" android:layout_width="match_parent" android:layout_height="60dp" android:text="TURN ON BACKGROUND AI" android:backgroundTint="@color/accent_green" android:textColor="@color/bg_dark" android:textStyle="bold"/>
               </LinearLayout>
           </RelativeLayout>
           EOF
 
-      - name: "8. AndroidManifest.xml"
+      - name: "7. AndroidManifest.xml (Native Mic Permissions)"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -146,13 +133,15 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <!-- Mute Beep Permission -->
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
               
               <queries>
                   <intent><action android:name="android.speech.RecognitionService" /></intent>
                   <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
               </queries>
 
-              <application android:label="Z Pure AI" android:icon="@mipmap/ic_launcher" android:theme="@style/Theme.AppCompat.NoActionBar">
+              <application android:label="Z Official AI" android:icon="@mipmap/ic_launcher" android:theme="@style/Theme.AppCompat.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait" android:launchMode="singleTop">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -164,7 +153,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "9. Java Code: VoiceBackgroundService"
+      - name: "8. Java Code: VoiceBackgroundService (Solid Anti-Beep Logic)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zatomic/caller/VoiceBackgroundService.java
           package com.zatomic.caller;
@@ -173,8 +162,10 @@ jobs:
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
           import android.app.Service;
+          import android.content.Context;
           import android.content.Intent;
           import android.database.Cursor;
+          import android.media.AudioManager;
           import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
@@ -182,28 +173,25 @@ jobs:
           import android.os.IBinder;
           import android.os.Looper;
           import android.provider.ContactsContract;
+          import android.speech.RecognitionListener;
+          import android.speech.RecognizerIntent;
+          import android.speech.SpeechRecognizer;
           import android.speech.tts.TextToSpeech;
           import android.speech.tts.UtteranceProgressListener;
 
           import androidx.annotation.Nullable;
           import androidx.core.app.NotificationCompat;
 
-          import org.json.JSONObject;
-          import org.vosk.Model;
-          import org.vosk.Recognizer;
-          import org.vosk.android.RecognitionListener;
-          import org.vosk.android.SpeechService;
-          import org.vosk.android.StorageService;
-
           import java.util.ArrayList;
           import java.util.Locale;
 
-          public class VoiceBackgroundService extends Service implements RecognitionListener {
+          public class VoiceBackgroundService extends Service {
 
-              private SpeechService voskSpeechService;
-              private Model voskModel;
+              private SpeechRecognizer speechRecognizer;
+              private Intent speechRecognizerIntent;
               private TextToSpeech tts;
-              private Handler restartHandler = new Handler(Looper.getMainLooper());
+              private AudioManager audioManager;
+              private Handler mainHandler = new Handler(Looper.getMainLooper());
 
               private static class MyContact {
                   String name; String number;
@@ -214,17 +202,19 @@ jobs:
               
               private boolean isWaitingForDialOrHold = false;
               private String pendingNumberToCall = "";
-              private boolean isEngineReady = false;
+              private boolean isListening = false;
 
               @Override
               public void onCreate() {
                   super.onCreate();
+                  audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                   createNotificationChannel();
-                  startForeground(1, getNotification("100% Offline AI Brain Running..."));
+                  startForeground(1, getNotification("Z Official Native AI Active..."));
                   
                   loadContacts();
                   setupTTS();
-                  initVoskEngine();
+                  
+                  mainHandler.post(() -> setupNativeSpeechRecognizer());
               }
 
               @Override
@@ -232,39 +222,83 @@ jobs:
                   return START_STICKY; 
               }
 
-              private void initVoskEngine() {
-                  StorageService.unpack(this, "model", "model",
-                          (model) -> {
-                              this.voskModel = model;
-                              isEngineReady = true;
-                              if(MainActivity.instance != null) {
-                                  MainActivity.instance.updateStatus("System Ready! Say 'Z Call [Name]'");
-                              }
-                              startVoskListening();
-                          },
-                          (exception) -> { 
-                              if(MainActivity.instance != null) MainActivity.instance.updateStatus("Engine Load Error!");
-                          }
-                  );
-              }
-
-              private void startVoskListening() {
-                  if(!isEngineReady) return;
-                  if (voskSpeechService != null) {
-                      voskSpeechService.stop();
-                      voskSpeechService = null;
+              // --- ANTI-BEEP SYSTEM ---
+              private void muteMicBeep() {
+                  if (audioManager != null) {
+                      audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
                   }
-                  try {
-                      Recognizer rec = new Recognizer(voskModel, 16000.0f);
-                      voskSpeechService = new SpeechService(rec, 16000.0f);
-                      voskSpeechService.startListening(this);
-                  } catch (Exception e) {}
               }
 
-              private void stopVoskListeningTemporarily() {
-                  if (voskSpeechService != null) {
-                      voskSpeechService.stop();
-                      voskSpeechService = null;
+              private void unmuteMicBeep() {
+                  if (audioManager != null) {
+                      audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+                  }
+              }
+              // ------------------------
+
+              private void setupNativeSpeechRecognizer() {
+                  if (speechRecognizer != null) {
+                      speechRecognizer.destroy();
+                  }
+                  speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+                  speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                  speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                  speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN"); 
+                  speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+
+                  speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                      @Override public void onReadyForSpeech(Bundle params) { isListening = true; }
+                      @Override public void onBeginningOfSpeech() {}
+                      @Override public void onRmsChanged(float rmsdB) {}
+                      @Override public void onBufferReceived(byte[] buffer) {}
+                      @Override public void onEndOfSpeech() { isListening = false; }
+                      
+                      @Override 
+                      public void onError(int error) { 
+                          isListening = false;
+                          // Error 6 (Timeout) or 7 (No Match) handled instantly
+                          mainHandler.postDelayed(() -> safeStartListening(), 100); 
+                      }
+
+                      @Override
+                      public void onResults(Bundle results) {
+                          isListening = false;
+                          ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                          if (matches != null && !matches.isEmpty()) {
+                              String spokenText = matches.get(0).toLowerCase();
+                              
+                              if(isWaitingForDialOrHold) {
+                                  processDialOrHold(spokenText);
+                              } else {
+                                  processMainCommand(spokenText);
+                              }
+                          }
+                          
+                          if(!isWaitingForDialOrHold) {
+                              mainHandler.postDelayed(() -> safeStartListening(), 100);
+                          }
+                      }
+                      
+                      @Override public void onPartialResults(Bundle partialResults) {}
+                      @Override public void onEvent(int eventType, Bundle params) {}
+                  });
+                  
+                  safeStartListening();
+              }
+
+              private void safeStartListening() {
+                  if (!isListening && speechRecognizer != null && !isWaitingForDialOrHold) {
+                      try {
+                          muteMicBeep(); // Mute beep before starting
+                          speechRecognizer.startListening(speechRecognizerIntent);
+                      } catch (Exception e) {}
+                  }
+              }
+
+              private void stopListeningTemporarily() {
+                  if (speechRecognizer != null) {
+                      isListening = false;
+                      speechRecognizer.stopListening();
                   }
               }
 
@@ -293,44 +327,21 @@ jobs:
                           tts.setLanguage(new Locale("hi", "IN"));
                           tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                               @Override public void onStart(String utteranceId) {}
-                              @Override public void onError(String utteranceId) { startVoskListening(); }
+                              @Override public void onError(String utteranceId) { mainHandler.post(() -> safeStartListening()); }
                               @Override public void onDone(String utteranceId) {
-                                  restartHandler.post(() -> startVoskListening());
+                                  mainHandler.post(() -> safeStartListening());
                               }
                           });
                       }
                   });
               }
 
-              @Override
-              public void onResult(String hypothesis) {
-                  try {
-                      JSONObject obj = new JSONObject(hypothesis);
-                      String spokenText = obj.getString("text").toLowerCase().trim();
-                      if(spokenText.isEmpty()) return;
-                      
-                      if(isWaitingForDialOrHold) {
-                          processDialOrHold(spokenText);
-                      } else {
-                          processMainCommand(spokenText);
-                      }
-                  } catch(Exception e){}
-              }
-
-              @Override public void onPartialResult(String h) {}
-              @Override public void onFinalResult(String h) { onResult(h); }
-              @Override public void onError(Exception e) { 
-                  restartHandler.postDelayed(() -> startVoskListening(), 1000); 
-              }
-              @Override public void onTimeout() { startVoskListening(); }
-
               private void processMainCommand(String spokenText) {
                   if (spokenText.contains("z ") || spokenText.startsWith("z") || spokenText.contains("zed ")) {
                       
                       boolean wantsToCall = spokenText.contains("call") || spokenText.contains("phone") || 
                                             spokenText.contains("lagao") || spokenText.contains("dial") || 
-                                            spokenText.contains("mila") || spokenText.contains("baat kara") || 
-                                            spokenText.contains("number likh");
+                                            spokenText.contains("mila") || spokenText.contains("number");
 
                       if (wantsToCall) {
                           String targetData = spokenText.replaceAll("\\b(zed|z|call|phone|ko|lagao|karo|dial|number|likho|mila|do|baat|karao)\\b", "").trim();
@@ -356,23 +367,24 @@ jobs:
                               isWaitingForDialOrHold = true;
                               
                               if (MainActivity.instance != null) {
-                                  MainActivity.instance.updateScreenNumber(pendingNumberToCall, "Number found: " + foundContact.name);
+                                  MainActivity.instance.updateScreenNumber(pendingNumberToCall, "Contact Found: " + foundContact.name);
                               }
 
                               Intent bringToFront = new Intent(getApplicationContext(), MainActivity.class);
                               bringToFront.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                               startActivity(bringToFront);
 
-                              stopVoskListeningTemporarily();
-                              
+                              stopListeningTemporarily();
+                              unmuteMicBeep(); // Unmute before AI speaks
                               Bundle params = new Bundle();
                               params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "ASK_DIAL_HOLD");
-                              tts.speak("Ji Seth, number screen par hai. Dial karun ya hold par rakhun?", TextToSpeech.QUEUE_FLUSH, params, "ASK_DIAL_HOLD");
+                              tts.speak("Ji Seth, number screen par hai. Dial karun ya hold karun?", TextToSpeech.QUEUE_FLUSH, params, "ASK_DIAL_HOLD");
                           } else {
-                              stopVoskListeningTemporarily();
+                              stopListeningTemporarily();
+                              unmuteMicBeep(); // Unmute before AI speaks
                               Bundle params = new Bundle();
                               params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "NOT_FOUND");
-                              tts.speak("Maaf karna Seth, yeh number meri list mein nahi mila.", TextToSpeech.QUEUE_FLUSH, params, "NOT_FOUND");
+                              tts.speak("Maaf karna Seth, naam nahi mila.", TextToSpeech.QUEUE_FLUSH, params, "NOT_FOUND");
                           }
                       }
                   }
@@ -383,23 +395,26 @@ jobs:
                                    text.contains("yes") || text.contains("haan") || text.contains("kar do");
                   
                   boolean isHold = text.contains("hold") || text.contains("ruk") || text.contains("wait") || 
-                                   text.contains("cancel") || text.contains("nahi");
+                                   text.contains("cancel") || text.contains("nahi") || text.contains("rehne");
 
                   if (isDial) {
-                      stopVoskListeningTemporarily();
-                      tts.speak("Ji Seth, call mila raha hoon.", TextToSpeech.QUEUE_FLUSH, null, null);
+                      stopListeningTemporarily();
+                      unmuteMicBeep();
+                      tts.speak("Call laga raha hoon Seth.", TextToSpeech.QUEUE_FLUSH, null, null);
                       isWaitingForDialOrHold = false;
                       makeCall(pendingNumberToCall);
                   } 
                   else if (isHold) {
-                      stopVoskListeningTemporarily();
+                      stopListeningTemporarily();
+                      unmuteMicBeep();
                       Bundle params = new Bundle();
                       params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "HOLD_DONE");
-                      tts.speak("Theek hai Seth, number hold kar diya hai.", TextToSpeech.QUEUE_FLUSH, params, "HOLD_DONE");
+                      tts.speak("Theek hai Seth, number hold kar diya.", TextToSpeech.QUEUE_FLUSH, params, "HOLD_DONE");
                       isWaitingForDialOrHold = false;
                   } 
                   else {
-                      stopVoskListeningTemporarily();
+                      stopListeningTemporarily();
+                      unmuteMicBeep();
                       Bundle params = new Bundle();
                       params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "ASK_DIAL_HOLD");
                       tts.speak("Seth Dial karna hai ya Hold?", TextToSpeech.QUEUE_FLUSH, params, "ASK_DIAL_HOLD");
@@ -422,7 +437,7 @@ jobs:
 
               private Notification getNotification(String text) {
                   return new NotificationCompat.Builder(this, "Z_CHANNEL")
-                          .setContentTitle("Z AI Assistant")
+                          .setContentTitle("Z Native AI")
                           .setContentText(text)
                           .setSmallIcon(R.mipmap.ic_launcher)
                           .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -441,15 +456,16 @@ jobs:
 
               @Override
               public void onDestroy() {
+                  unmuteMicBeep(); // Restore normal state on kill
                   if(tts != null) { tts.stop(); tts.shutdown(); }
-                  if(voskSpeechService != null) { voskSpeechService.stop(); voskSpeechService.shutdown(); }
-                  restartHandler.removeCallbacksAndMessages(null);
+                  if(speechRecognizer != null) { speechRecognizer.destroy(); }
+                  mainHandler.removeCallbacksAndMessages(null);
                   super.onDestroy();
               }
           }
           EOF
 
-      - name: "10. Java Code: MainActivity (UI Updater)"
+      - name: "9. Java Code: MainActivity (UI Updater)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zatomic/caller/MainActivity.java
           package com.zatomic.caller;
@@ -492,7 +508,7 @@ jobs:
                   checkServiceStatus();
 
                   btnSync.setOnClickListener(v -> {
-                      Toast.makeText(this, "Smart Logic Engine Updated!", Toast.LENGTH_SHORT).show();
+                      Toast.makeText(this, "Native Contacts Synced!", Toast.LENGTH_SHORT).show();
                   });
 
                   btnToggleBg.setOnClickListener(v -> {
@@ -511,14 +527,10 @@ jobs:
                           }
                           btnToggleBg.setText("TURN OFF BACKGROUND AI");
                           btnToggleBg.setBackgroundColor(0xFFFF3B30); 
-                          tvStatus.setText("Engine Booting...");
+                          tvStatus.setText("Official Mic Listening...");
                           isServiceRunning = true;
                       }
                   });
-              }
-
-              public void updateStatus(String status) {
-                  runOnUiThread(() -> tvStatus.setText(status));
               }
 
               public void updateScreenNumber(String number, String nameStatus) {
@@ -544,9 +556,9 @@ jobs:
               private void requestPermissions() {
                   String[] perms;
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                      perms = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE, Manifest.permission.POST_NOTIFICATIONS};
+                      perms = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE, Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.MODIFY_AUDIO_SETTINGS};
                   } else {
-                      perms = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE};
+                      perms = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE, Manifest.permission.MODIFY_AUDIO_SETTINGS};
                   }
                   boolean needed = false;
                   for (String p : perms) {
@@ -563,13 +575,13 @@ jobs:
           }
           EOF
 
-      - name: "11. Build Final APK"
+      - name: "10. Build Final APK"
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: "12. Upload App Artifact"
+      - name: "11. Upload App Artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: "Z-Atomic-Pure-Vosk-AI"
+          name: "Z-Atomic-Official-Native"
           path: app/build/outputs/apk/debug/app-debug.apk
