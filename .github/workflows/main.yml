@@ -58,8 +58,8 @@ jobs:
                   applicationId 'com.zatomic.caller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 1
-                  versionName "1.0-Human-AI-Brain"
+                  versionCode 2
+                  versionName "2.0-Flawless-AI"
               }
               buildTypes {
                   release {
@@ -117,7 +117,7 @@ jobs:
               <TextView android:id="@+id/logo_z" android:layout_width="150dp" android:layout_height="150dp" android:text="Z" android:textColor="@color/accent_gold" android:textSize="80sp" android:textStyle="bold" android:gravity="center" android:background="@drawable/bg_round_z" android:layout_centerInParent="true"/>
 
               <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="vertical" android:gravity="center" android:layout_marginBottom="20dp">
-                  <Button android:id="@+id/btn_sync" android:layout_width="match_parent" android:layout_height="60dp" android:text="LOAD AI BRAIN & CONTACTS" android:backgroundTint="#1C1C1E" android:textColor="@color/text_white" android:textStyle="bold" android:layout_marginBottom="15dp"/>
+                  <Button android:id="@+id/btn_sync" android:layout_width="match_parent" android:layout_height="60dp" android:text="LOAD AI BRAIN &amp; CONTACTS" android:backgroundTint="#1C1C1E" android:textColor="@color/text_white" android:textStyle="bold" android:layout_marginBottom="15dp"/>
                   <Button android:id="@+id/btn_toggle_bg" android:layout_width="match_parent" android:layout_height="60dp" android:text="TURN ON BACKGROUND AI" android:backgroundTint="@color/accent_green" android:textColor="@color/bg_dark" android:textStyle="bold"/>
               </LinearLayout>
           </RelativeLayout>
@@ -152,7 +152,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: "8. Java Code: VoiceBackgroundService (Smart Logic Brain)"
+      - name: "8. Java Code: VoiceBackgroundService (Flawless AI Brain)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zatomic/caller/VoiceBackgroundService.java
           package com.zatomic.caller;
@@ -166,7 +166,9 @@ jobs:
           import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
+          import android.os.Handler;
           import android.os.IBinder;
+          import android.os.Looper;
           import android.provider.ContactsContract;
           import android.speech.RecognitionListener;
           import android.speech.RecognizerIntent;
@@ -185,6 +187,7 @@ jobs:
               private SpeechRecognizer speechRecognizer;
               private Intent speechRecognizerIntent;
               private TextToSpeech tts;
+              private Handler restartHandler = new Handler(Looper.getMainLooper());
 
               private static class MyContact {
                   String name; String number;
@@ -192,7 +195,6 @@ jobs:
               }
               
               private ArrayList<MyContact> allContacts = new ArrayList<>();
-              
               private boolean isWaitingForDialOrHold = false;
               private String pendingNumberToCall = "";
 
@@ -215,7 +217,11 @@ jobs:
 
               private void startListening() {
                   if (speechRecognizer != null) {
-                      speechRecognizer.startListening(speechRecognizerIntent);
+                      try {
+                          speechRecognizer.startListening(speechRecognizerIntent);
+                      } catch (Exception e) {
+                          // Prevent random crashes if called improperly
+                      }
                   }
               }
 
@@ -267,7 +273,10 @@ jobs:
                       @Override public void onRmsChanged(float rmsdB) {}
                       @Override public void onBufferReceived(byte[] buffer) {}
                       @Override public void onEndOfSpeech() {}
-                      @Override public void onError(int error) { startListening(); }
+                      @Override public void onError(int error) { 
+                          // FIX 3: Prevent battery drain & hang loop
+                          restartHandler.postDelayed(() -> startListening(), 1000); 
+                      }
 
                       @Override
                       public void onResults(Bundle results) {
@@ -287,26 +296,20 @@ jobs:
                   });
               }
 
-              // SMART INTENT ENGINE (The 30MB Logic Brain)
+              // SMART INTENT ENGINE
               private void processMainCommand(String spokenText) {
-                  // Wake word check
                   if (spokenText.contains("z ") || spokenText.startsWith("z") || spokenText.contains("zed ")) {
                       
-                      // 1. CALL INTENT MATCHING (Any combination of these words)
                       boolean wantsToCall = spokenText.contains("call") || spokenText.contains("phone") || 
                                             spokenText.contains("lagao") || spokenText.contains("dial") || 
                                             spokenText.contains("mila") || spokenText.contains("baat kara") || 
                                             spokenText.contains("number likh");
 
                       if (wantsToCall) {
-                          // 2. CLEANUP: Remove system words to extract the pure Name/Number
-                          String targetData = spokenText.replace("zed", "").replace("z", "").trim();
-                          targetData = targetData.replace("call", "").replace("phone", "").replace("ko", "")
-                                                 .replace("lagao", "").replace("karo", "").replace("dial", "")
-                                                 .replace("number", "").replace("likho", "").replace("mila", "")
-                                                 .replace("do", "").replace("baat", "").replace("karao", "").trim();
+                          // FIX 1: Exact word boundary match. Komal and Abdul safe!
+                          String targetData = spokenText.replaceAll("\\b(zed|z|call|phone|ko|lagao|karo|dial|number|likho|mila|do|baat|karao)\\b", "").trim();
+                          targetData = targetData.replaceAll("\\s+", " "); // Remove extra spaces
                           
-                          // Handle spoken numbers (e.g., "nine eight seven")
                           String spokenAsNumbers = targetData.replace("zero", "0").replace("one", "1").replace("two", "2")
                                   .replace("three", "3").replace("four", "4").replace("five", "5")
                                   .replace("six", "6").replace("seven", "7").replace("eight", "8")
@@ -314,12 +317,14 @@ jobs:
 
                           MyContact foundContact = null;
                           
-                          // 3. SEARCH BRAIN
                           for(MyContact c : allContacts) {
-                              if(c.name.contains(targetData) || targetData.contains(c.name) || 
-                                (!spokenAsNumbers.isEmpty() && c.name.contains(spokenAsNumbers))) {
-                                  foundContact = c;
-                                  break;
+                              // FIX 2: Ignore Empty Names
+                              if (!c.name.isEmpty() && !targetData.isEmpty()) {
+                                  if(c.name.contains(targetData) || targetData.contains(c.name) || 
+                                    (!spokenAsNumbers.isEmpty() && c.name.contains(spokenAsNumbers))) {
+                                      foundContact = c;
+                                      break;
+                                  }
                               }
                           }
                           
@@ -327,7 +332,6 @@ jobs:
                               pendingNumberToCall = foundContact.number;
                               isWaitingForDialOrHold = true;
                               
-                              // Wake App & Show Number
                               if (MainActivity.instance != null) {
                                   MainActivity.instance.updateScreenNumber(pendingNumberToCall, "Number found: " + foundContact.name);
                               }
@@ -336,7 +340,6 @@ jobs:
                               bringToFront.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                               startActivity(bringToFront);
 
-                              // HUMAN-LIKE TTS
                               Bundle params = new Bundle();
                               params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "ASK_DIAL_HOLD");
                               tts.speak("Ji Seth, number screen par hai. Hukum kijiye, dial karun ya hold par rakhun?", TextToSpeech.QUEUE_FLUSH, params, "ASK_DIAL_HOLD");
@@ -347,7 +350,6 @@ jobs:
                   }
               }
 
-              // SMART CONFIRMATION ENGINE
               private void processDialOrHold(String text) {
                   boolean isDial = text.contains("dial") || text.contains("call") || text.contains("laga") || 
                                    text.contains("yes") || text.contains("haan") || text.contains("kar do") || text.contains("mila de");
@@ -363,7 +365,7 @@ jobs:
                   else if (isHold) {
                       tts.speak("Theek hai Seth, maine number hold kar diya hai.", TextToSpeech.QUEUE_FLUSH, null, null);
                       isWaitingForDialOrHold = false;
-                      startListening(); // Back to standby
+                      startListening(); 
                   } 
                   else {
                       Bundle params = new Bundle();
@@ -379,7 +381,6 @@ jobs:
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                       startActivity(intent);
                       
-                      // Auto-close feature after call
                       if(MainActivity.instance != null) {
                           MainActivity.instance.finishAffinity();
                           System.exit(0);
@@ -410,6 +411,7 @@ jobs:
               public void onDestroy() {
                   if(tts != null) { tts.stop(); tts.shutdown(); }
                   if(speechRecognizer != null) { speechRecognizer.destroy(); }
+                  restartHandler.removeCallbacksAndMessages(null);
                   super.onDestroy();
               }
           }
