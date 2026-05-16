@@ -1,4 +1,4 @@
-name: "Build Z-Atomic Caller (Flawless Engine Edition)"
+name: "Build phone call Z+2"
 
 on:
   push:
@@ -20,19 +20,19 @@ jobs:
 
       - name: "3. Create App Structure"
         run: |
-          mkdir -p app/src/main/java/com/zatomic/caller
+          mkdir -p app/src/main/java/com/zatomic/aicaller
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/anim
           mkdir -p app/src/main/res/mipmap-anydpi-v26
-          mkdir -p app/src/main/assets
 
-      - name: "4. Initialize Master Gradle System"
+      - name: "4. Master Gradle Settings (ERROR FIXED)"
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = "ZAtomicChat"
+          rootProject.name = "ZAtomicVoice"
           include ':app'
           EOF
 
@@ -41,7 +41,7 @@ jobs:
               repositories { google(); mavenCentral() }
               dependencies { classpath 'com.android.tools.build:gradle:8.3.0' }
           }
-          plugins { id 'com.android.application' version '8.3.0' apply false }
+          // Yahan se allprojects block hata diya gaya hai taki clash na ho
           EOF
 
           cat << 'EOF' > gradle.properties
@@ -51,29 +51,19 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Download AI Brain (100% Strict Download)"
-        run: |
-          echo "Downloading Indian/Hinglish Voice Model..."
-          # Safe download with strict error checking
-          set -e
-          wget -qO vosk-model.zip "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip"
-          unzip -q vosk-model.zip
-          mv vosk-model-small-en-in-0.4 app/src/main/assets/model
-          rm vosk-model.zip
-
-      - name: "6. Android App Config"
+      - name: "5. Android App Config"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
-              namespace 'com.zatomic.caller'
+              namespace 'com.zatomic.aicaller'
               compileSdk 34
               defaultConfig {
-                  applicationId 'com.zatomic.caller'
+                  applicationId 'com.zatomic.aicaller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 18
-                  versionName "18.0-Flawless-Fix"
+                  versionCode 36
+                  versionName "36.0-Z2-Fixed"
               }
               buildTypes {
                   release {
@@ -86,266 +76,170 @@ jobs:
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
-              implementation 'net.java.dev.jna:jna:5.13.0@aar'
-              implementation 'com.alphacephei:vosk-android:0.3.38@aar'
           }
           EOF
 
-      - name: "7. UI Resources & Themes"
+      - name: "6. UI Resources & Pulse Animation"
         run: |
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
-              <color name="bg_dark">#080808</color>
-              <color name="bg_panel">#121212</color>
-              <color name="accent_gold">#FFD700</color>
-              <color name="matrix_green">#00FF41</color>
-              <color name="chat_ai">#1B5E20</color>
-              <color name="chat_user">#212121</color>
-              <color name="mic_btn">#1DB954</color>
+              <color name="bg_pitch_black">#000000</color>
+              <color name="text_gold">#FFD700</color>
+              <color name="text_white">#FFFFFF</color>
+              <color name="mic_idle">#0A84FF</color>
+              <color name="mic_listening">#FF3B30</color>
           </resources>
           EOF
 
           cat << 'EOF' > app/src/main/res/values/themes.xml
           <resources>
               <style name="Theme.ZAtomic" parent="Theme.AppCompat.NoActionBar">
-                  <item name="android:windowBackground">@color/bg_dark</item>
-                  <item name="android:statusBarColor">@color/bg_panel</item>
+                  <item name="android:windowBackground">@color/bg_pitch_black</item>
+                  <item name="android:statusBarColor">@color/bg_pitch_black</item>
               </style>
           </resources>
           EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/bg_rounded.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="@color/bg_panel"/><corners android:radius="20dp"/>
-              <stroke android:width="1dp" android:color="#333333"/>
-          </shape>
-          EOF
-
-          cat << 'EOF' > app/src/main/res/drawable/bg_mic_btn.xml
+          cat << 'EOF' > app/src/main/res/drawable/bg_mic_circle.xml
           <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-              <solid android:color="@color/mic_btn"/>
+              <solid android:color="@color/mic_idle"/>
           </shape>
           EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/ic_launcher_foreground.xml
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="@color/accent_gold" android:pathData="M30,30h48v10l-30,30h30v10h-48v-10l30,-30h-30z"/>
-          </vector>
+          cat << 'EOF' > app/src/main/res/anim/pulse.xml
+          <set xmlns:android="http://schemas.android.com/apk/res/android">
+              <scale android:fromXScale="1.0" android:toXScale="1.2" android:fromYScale="1.0" android:toYScale="1.2" android:pivotX="50%" android:pivotY="50%" android:duration="600" android:repeatCount="infinite" android:repeatMode="reverse"/>
+          </set>
           EOF
 
           cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/bg_dark"/><foreground android:drawable="@drawable/ic_launcher_foreground"/>
+              <background android:color="#990000"/>
+              <foreground android:drawable="@android:drawable/ic_btn_speak_now"/>
           </adaptive-icon>
           EOF
 
-      - name: "8. Layout Design"
+      - name: "7. Layout Design (Zeeshan Husain Title Added)"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
-          <androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:id="@+id/drawer_layout"
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+              android:background="@color/bg_pitch_black"
+              android:padding="20dp">
 
-              <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+              <TextView android:id="@+id/tv_app_title"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_alignParentTop="true"
+                  android:layout_marginTop="10dp"
+                  android:text="Zeeshan Husain"
+                  android:textColor="@color/text_gold"
+                  android:textSize="26sp"
+                  android:textStyle="bold"
+                  android:gravity="center"/>
+
+              <TextView android:id="@+id/tv_status"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_below="@id/tv_app_title"
+                  android:layout_marginTop="20dp"
+                  android:text="Z+2 AI"
+                  android:textColor="@color/text_white"
+                  android:textSize="22sp"
+                  android:gravity="center"
+                  android:lines="3"/>
+
+              <ImageButton android:id="@+id/btn_giant_mic"
+                  android:layout_width="220dp"
+                  android:layout_height="220dp"
+                  android:layout_centerInParent="true"
+                  android:background="@drawable/bg_mic_circle"
+                  android:src="@android:drawable/ic_btn_speak_now"
+                  android:scaleType="fitCenter"
+                  android:padding="50dp"
+                  android:tint="#FFFFFF"
+                  android:elevation="10dp"/>
                   
-                  <LinearLayout android:layout_width="match_parent" android:layout_height="65dp" android:background="@color/bg_panel" android:gravity="center_vertical" android:paddingHorizontal="15dp">
-                      <ImageButton android:id="@+id/btn_menu" android:layout_width="40dp" android:layout_height="40dp" android:src="@android:drawable/ic_menu_sort_by_size" android:background="?attr/selectableItemBackgroundBorderless" app:tint="@color/accent_gold"/>
-                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Z-ATOMIC AI" android:textColor="@color/accent_gold" android:textStyle="bold" android:textSize="18sp" android:layout_marginStart="15dp"/>
-                      <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
-                      <TextView android:id="@+id/tv_engine_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Loading..." android:textColor="#888888" android:textSize="12sp"/>
-                  </LinearLayout>
+              <TextView android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_below="@id/btn_giant_mic"
+                  android:layout_marginTop="30dp"
+                  android:text="Tap to Speak"
+                  android:textColor="#555555"
+                  android:textSize="18sp"
+                  android:gravity="center"/>
 
-                  <ScrollView android:id="@+id/scroll_view" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="10dp">
-                      <LinearLayout android:id="@+id/chat_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-                  </ScrollView>
-
-                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="10dp" android:gravity="center_vertical">
-                      <EditText android:id="@+id/et_input" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_rounded" android:paddingHorizontal="15dp" android:hint="Message likhein..." android:textColor="@android:color/white" android:textColorHint="#666666" android:layout_marginEnd="5dp"/>
-                      <Button android:id="@+id/btn_send" android:layout_width="45dp" android:layout_height="45dp" android:text="➤" android:backgroundTint="@color/matrix_green" android:textColor="@color/bg_dark" android:textSize="16sp" android:layout_marginEnd="5dp"/>
-                      <Button android:id="@+id/btn_mic" android:layout_width="50dp" android:layout_height="50dp" android:text="🎤" android:background="@drawable/bg_mic_btn" android:textColor="@android:color/white" android:textSize="20sp" android:stateListAnimator="@null"/>
-                  </LinearLayout>
-              </LinearLayout>
-
-              <LinearLayout
-                  android:id="@+id/nav_view"
-                  android:layout_width="280dp"
-                  android:layout_height="match_parent"
-                  android:layout_gravity="start"
-                  android:orientation="vertical"
-                  android:background="@color/bg_panel"
-                  android:padding="20dp">
-                  <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="SYSTEM MENU" android:textColor="@color/accent_gold" android:textSize="16sp" android:textStyle="bold"/>
-                  <Button android:id="@+id/menu_scan" android:layout_width="match_parent" android:layout_height="60dp" android:text="⚡ START SECURE SCAN" android:backgroundTint="@color/matrix_green" android:textColor="@color/bg_dark" android:layout_marginTop="30dp" android:textStyle="bold"/>
-                  <TextView android:id="@+id/tv_scan_count" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Permanent DB: Empty" android:textColor="#999999" android:layout_marginTop="10dp" android:gravity="center"/>
-              </LinearLayout>
-          </androidx.drawerlayout.widget.DrawerLayout>
+          </RelativeLayout>
           EOF
 
-      - name: "9. Java Code (Bug-Free Engine + Smart Logic)"
+      - name: "8. Java Code (The Smart Brain)"
         run: |
-          cat << 'EOF' > app/src/main/java/com/zatomic/caller/MainActivity.java
-          package com.zatomic.caller;
+          cat << 'EOF' > app/src/main/java/com/zatomic/aicaller/MainActivity.java
+          package com.zatomic.aicaller;
 
           import android.Manifest;
-          import android.app.ProgressDialog;
-          import android.content.ContentValues;
           import android.content.Intent;
           import android.content.pm.PackageManager;
           import android.database.Cursor;
-          import android.database.sqlite.SQLiteDatabase;
-          import android.media.AudioManager;
           import android.net.Uri;
           import android.os.Bundle;
           import android.os.Handler;
           import android.os.Looper;
           import android.provider.ContactsContract;
+          import android.speech.RecognitionListener;
+          import android.speech.RecognizerIntent;
+          import android.speech.SpeechRecognizer;
           import android.speech.tts.TextToSpeech;
-          import android.view.Gravity;
-          import android.widget.Button;
-          import android.widget.EditText;
-          import android.widget.LinearLayout;
-          import android.widget.ScrollView;
+          import android.view.animation.Animation;
+          import android.view.animation.AnimationUtils;
+          import android.widget.ImageButton;
           import android.widget.TextView;
           import android.widget.Toast;
-          
+
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.core.app.ActivityCompat;
           import androidx.core.content.ContextCompat;
-          import androidx.core.view.GravityCompat;
-          import androidx.drawerlayout.widget.DrawerLayout;
-
-          import org.json.JSONObject;
-          import org.vosk.Model;
-          import org.vosk.Recognizer;
-          import org.vosk.android.RecognitionListener;
-          import org.vosk.android.SpeechService;
-          import org.vosk.android.StorageService;
 
           import java.util.ArrayList;
+          import java.util.List;
           import java.util.Locale;
 
-          public class MainActivity extends AppCompatActivity implements RecognitionListener {
-              private LinearLayout chatContainer;
-              private ScrollView scrollView;
-              private EditText etInput;
-              private DrawerLayout drawerLayout;
-              private TextView tvScanCount, tvEngineStatus;
-              private Button btnMic, btnSend;
+          public class MainActivity extends AppCompatActivity {
+
+              private TextView tvStatus;
+              private ImageButton btnGiantMic;
+              private Animation pulseAnim;
               
-              private ArrayList<String[]> contactList = new ArrayList<>();
-              private Handler mainHandler = new Handler(Looper.getMainLooper());
-              private SQLiteDatabase memoryDB;
-              
-              private Model voskModel;
-              private SpeechService speechService;
+              private SpeechRecognizer speechRecognizer;
               private TextToSpeech tts;
-              private boolean isEngineReady = false;
+              private Handler mainHandler = new Handler(Looper.getMainLooper());
+              
+              private boolean waitingForChoice = false;
+              private List<String[]> pendingContacts = new ArrayList<>();
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
 
-                  chatContainer = findViewById(R.id.chat_container);
-                  scrollView = findViewById(R.id.scroll_view);
-                  etInput = findViewById(R.id.et_input);
-                  drawerLayout = findViewById(R.id.drawer_layout);
-                  tvScanCount = findViewById(R.id.tv_scan_count);
-                  tvEngineStatus = findViewById(R.id.tv_engine_status);
-                  btnMic = findViewById(R.id.btn_mic);
-                  btnSend = findViewById(R.id.btn_send);
+                  tvStatus = findViewById(R.id.tv_status);
+                  btnGiantMic = findViewById(R.id.btn_giant_mic);
+                  pulseAnim = AnimationUtils.loadAnimation(this, R.anim.pulse);
 
-                  initDatabaseMemory();
                   checkPermissions();
-                  setupNoiseFilters();
                   setupTTS();
-                  initVoskEngine();
+                  setupSpeechRecognizer();
 
-                  findViewById(R.id.btn_menu).setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
-                  
-                  findViewById(R.id.menu_scan).setOnClickListener(v -> {
-                      drawerLayout.closeDrawers();
-                      performMatrixScan();
-                  });
-
-                  btnSend.setOnClickListener(v -> {
-                      String cmd = etInput.getText().toString().trim();
-                      if(!cmd.isEmpty()) {
-                          addChatBubble("You", cmd, true);
-                          etInput.setText("");
-                          handleCommand(cmd.toLowerCase());
-                      }
-                  });
-
-                  btnMic.setOnClickListener(v -> toggleMic());
-              }
-
-              private void initDatabaseMemory() {
-                  memoryDB = openOrCreateDatabase("ZAtomicBrain", MODE_PRIVATE, null);
-                  memoryDB.execSQL("CREATE TABLE IF NOT EXISTS phonebook(name VARCHAR, number VARCHAR);");
-                  loadMemoryToBrain();
-              }
-
-              private void loadMemoryToBrain() {
-                  contactList.clear();
-                  Cursor c = memoryDB.rawQuery("SELECT * FROM phonebook", null);
-                  if(c.moveToFirst()) {
-                      do {
-                          contactList.add(new String[]{c.getString(0), c.getString(1)});
-                      } while(c.moveToNext());
-                  }
-                  c.close();
-                  tvScanCount.setText("Permanent DB: " + contactList.size() + " Numbers");
-              }
-
-              private void performMatrixScan() {
-                  ProgressDialog pd = new ProgressDialog(this);
-                  pd.setTitle("SCANNING...");
-                  pd.setMessage("Saving Phonebook to Brain...");
-                  pd.setCancelable(false);
-                  pd.show();
-
-                  mainHandler.postDelayed(() -> {
-                      memoryDB.execSQL("DELETE FROM phonebook");
-                      Cursor cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
-                      if (cursor != null) {
-                          while (cursor.moveToNext()) {
-                              int nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-                              int numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                              if(nameIdx != -1 && numIdx != -1) {
-                                  String name = cursor.getString(nameIdx);
-                                  String num = cursor.getString(numIdx);
-                                  if(name != null && num != null) {
-                                      ContentValues values = new ContentValues();
-                                      values.put("name", name.toLowerCase());
-                                      values.put("number", num);
-                                      memoryDB.insert("phonebook", null, values);
-                                  }
-                              }
-                          }
-                          cursor.close();
-                      }
-                      loadMemoryToBrain(); 
-                      pd.dismiss();
-                      addChatBubble("Z AI", "✅ SCAN DONE! " + contactList.size() + " numbers yaad kar liye.", false);
-                  }, 1500);
-              }
-
-              private void setupNoiseFilters() {
-                  AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-                  if (audioManager != null) {
-                      audioManager.setParameters("noise_suppression=on");
-                      audioManager.setParameters("echo_cancellation=on");
-                  }
+                  btnGiantMic.setOnClickListener(v -> startListening());
               }
 
               private void setupTTS() {
                   tts = new TextToSpeech(this, status -> {
                       if (status == TextToSpeech.SUCCESS) {
                           tts.setLanguage(new Locale("hi", "IN"));
-                          addChatBubble("Z AI", "Salaam Seth! Main Z AI hoon. Agar pehli baar aaye hain toh Menu se scan karein.", false);
+                          tvStatus.setText("Salaam!\nKisko call lagana hai?");
+                          speak("Salaam! Kisko call lagana hai?");
                       }
                   });
               }
@@ -354,183 +248,185 @@ jobs:
                   if (tts != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
               }
 
-              private void initVoskEngine() {
-                  StorageService.unpack(this, "model", "model",
-                          (model) -> {
-                              this.voskModel = model;
-                              isEngineReady = true;
-                              runOnUiThread(() -> {
-                                  tvEngineStatus.setText("AI Ready");
-                                  tvEngineStatus.setTextColor(0xFF00FF41);
-                              });
-                          },
-                          (exception) -> { 
-                              runOnUiThread(() -> {
-                                  tvEngineStatus.setText("Error");
-                                  tvEngineStatus.setTextColor(0xFFFF3B30);
-                                  Toast.makeText(MainActivity.this, "Engine failed to load!", Toast.LENGTH_LONG).show();
-                              });
+              private void setupSpeechRecognizer() {
+                  speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+                  speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                      @Override public void onReadyForSpeech(Bundle params) {
+                          tvStatus.setText("Sun raha hoon...");
+                          btnGiantMic.getBackground().mutate().setTint(ContextCompat.getColor(MainActivity.this, R.color.mic_listening));
+                          btnGiantMic.startAnimation(pulseAnim);
+                      }
+                      @Override public void onBeginningOfSpeech() {}
+                      @Override public void onRmsChanged(float rmsdB) {}
+                      @Override public void onBufferReceived(byte[] buffer) {}
+                      @Override public void onEndOfSpeech() { resetMic(); }
+                      @Override public void onError(int error) {
+                          resetMic();
+                          tvStatus.setText("Aawaz nahi aayi.\nPhir se dabayein.");
+                      }
+                      @Override public void onResults(Bundle results) {
+                          resetMic();
+                          ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                          if (matches != null && !matches.isEmpty()) {
+                              processVoiceCommand(matches.get(0).toLowerCase());
                           }
-                  );
+                      }
+                      @Override public void onPartialResults(Bundle partialResults) {}
+                      @Override public void onEvent(int eventType, Bundle params) {}
+                  });
               }
 
-              private void toggleMic() {
-                  if (!isEngineReady) {
-                      Toast.makeText(this, "Engine load nahi hua hai!", Toast.LENGTH_SHORT).show();
-                      return;
-                  }
-
-                  if (speechService != null) {
-                      speechService.stop();
-                      speechService = null;
-                      btnMic.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.mic_btn));
-                      etInput.setHint("Message likhein...");
-                  } else {
-                      try {
-                          Recognizer rec = new Recognizer(voskModel, 16000.0f);
-                          speechService = new SpeechService(rec, 16000.0f);
-                          speechService.startListening(this);
-                          btnMic.getBackground().mutate().setTint(0xFFFF3B30); // Red
-                          etInput.setHint("Sun raha hoon...");
-                      } catch (Exception e) {}
-                  }
-              }
-
-              @Override
-              public void onResult(String hypothesis) {
+              private void startListening() {
+                  if (tts != null && tts.isSpeaking()) tts.stop();
+                  Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN");
+                  intent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true);
+                  
                   try {
-                      JSONObject obj = new JSONObject(hypothesis);
-                      String spokenText = obj.getString("text").trim();
-                      if (!spokenText.isEmpty()) {
-                          etInput.setText(spokenText);
-                          toggleMic();
-                          btnSend.performClick();
-                      }
-                  } catch (Exception e) {}
+                      speechRecognizer.startListening(intent);
+                  } catch (Exception e) {
+                      Toast.makeText(this, "Mic Error", Toast.LENGTH_SHORT).show();
+                  }
               }
 
-              @Override public void onPartialResult(String h) {}
-              @Override public void onFinalResult(String h) { onResult(h); }
-              @Override public void onError(Exception e) { toggleMic(); }
-              @Override public void onTimeout() { toggleMic(); }
+              private void resetMic() {
+                  btnGiantMic.clearAnimation();
+                  btnGiantMic.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.mic_idle));
+              }
 
-              // ==========================================
-              // AI COMMAND LOGIC (FIXED SEARCH)
-              // ==========================================
-              private void handleCommand(String input) {
-                  if (contactList.isEmpty()) {
-                      addChatBubble("Z AI", "Memory khali hai Seth. Pehle Menu se SCAN kijiye.", false);
-                      speak("Pehle scan kijiye.");
+              private void processVoiceCommand(String input) {
+                  tvStatus.setText("Aapne kaha:\n\"" + input + "\"");
+                  
+                  if (waitingForChoice) {
+                      handleChoiceSelection(input);
                       return;
                   }
 
-                  String cleanName = input.replaceAll("\\b(call|dial|phone|laga|mila|lagao|karo|bhai|jaan|please|ko|hi|hello)\\b", "").trim();
+                  String cleanName = input.replaceAll("\\b(call|dial|phone|laga|lagao|karo|bhai|jaan|please|ko|hi|hello|mera|number|open|maro|jaldi|yaar|ko|kijiye)\\b", "").trim();
                   
-                  // Chhote words (jaise 'hi') ab galat naam ko call nahi lagayenge
                   if (cleanName.length() < 2) {
-                      addChatBubble("Z AI", "Seth, poora naam bataiye.", false);
+                      speak("Naam theek se samajh nahi aaya. Phir se bataiye.");
+                      tvStatus.setText("Naam theek se samajh nahi aaya.");
                       return;
                   }
 
-                  String[] foundContact = null;
-                  
-                  // 1st Priority: Exact Match (Pura naam sahi hona chahiye)
-                  for(String[] c : contactList) {
-                      if(c[0].equals(cleanName)) { foundContact = c; break; }
-                  }
-                  
-                  // 2nd Priority: Starts With (Shuru ka naam match ho)
-                  if(foundContact == null) {
-                      for(String[] c : contactList) {
-                          if(c[0].startsWith(cleanName) || c[0].contains(" " + cleanName)) { 
-                              foundContact = c; break; 
-                          }
+                  searchAndCall(cleanName);
+              }
+
+              private void searchAndCall(String searchName) {
+                  pendingContacts.clear();
+                  Cursor cursor = getContentResolver().query(
+                          ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                          new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
+                          ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " LIKE ?",
+                          new String[]{"%" + searchName + "%"},
+                          null
+                  );
+
+                  if (cursor != null) {
+                      while (cursor.moveToNext()) {
+                          pendingContacts.add(new String[]{cursor.getString(0), cursor.getString(1)});
                       }
+                      cursor.close();
                   }
 
-                  // 3rd Priority: Contains Match (Kam se kam 3 letter hone chahiye)
-                  if(foundContact == null && cleanName.length() >= 3) {
-                      for(String[] c : contactList) {
-                          if(c[0].contains(cleanName)) { foundContact = c; break; }
-                      }
-                  }
-
-                  if(foundContact != null) {
-                      String msg = "Calling " + foundContact[0].toUpperCase() + "...";
-                      addChatBubble("Z AI", msg, false);
-                      speak("Ji seth, " + foundContact[0] + " ko phone laga raha hoon.");
-                      
-                      mainHandler.postDelayed(() -> {
-                          try {
-                              startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + foundContact[1])));
-                          } catch (Exception e) {}
-                      }, 1500); 
+                  if (pendingContacts.isEmpty()) {
+                      speak("Maaf karna, " + searchName + " naam ka koi number nahi mila.");
+                      tvStatus.setText(searchName + "\nNahi Mila!");
+                  } else if (pendingContacts.size() == 1) {
+                      makeCall(pendingContacts.get(0)[0], pendingContacts.get(0)[1]);
                   } else {
-                      String errorMsg = "Maaf karna Seth, '" + cleanName + "' DB mein nahi mila.";
-                      addChatBubble("Z AI", errorMsg, false);
-                      speak("Naam nahi mila Seth.");
+                      waitingForChoice = true;
+                      StringBuilder announcement = new StringBuilder(pendingContacts.size() + " naam mile hain. ");
+                      for (int i = 0; i < Math.min(pendingContacts.size(), 3); i++) {
+                          String pos = (i == 0) ? "Pehla" : (i == 1) ? "Dusra" : "Teesra";
+                          announcement.append(pos).append(", ").append(pendingContacts.get(i)[0]).append(". ");
+                      }
+                      announcement.append("Kisko lagau?");
+                      
+                      speak(announcement.toString());
+                      tvStatus.setText("Bohot naam mile!\nKisko lagau?\n(Pehla, Dusra...)");
                   }
               }
 
-              private void addChatBubble(String sender, String msg, boolean isUser) {
-                  TextView tv = new TextView(this);
-                  tv.setText(msg);
-                  tv.setPadding(35, 25, 35, 25);
-                  tv.setTextColor(android.graphics.Color.WHITE);
-                  LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-                  lp.setMargins(0, 10, 0, 10);
+              private void handleChoiceSelection(String input) {
+                  waitingForChoice = false;
+                  int selectedIndex = -1;
                   
-                  tv.setBackgroundResource(R.drawable.bg_rounded);
-                  if (isUser) {
-                      tv.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.chat_user));
-                      lp.gravity = Gravity.END;
+                  if (input.contains("pehla") || input.contains("ek") || input.contains("first") || input.contains("1")) selectedIndex = 0;
+                  else if (input.contains("dusra") || input.contains("do") || input.contains("second") || input.contains("2")) selectedIndex = 1;
+                  else if (input.contains("teesra") || input.contains("teen") || input.contains("third") || input.contains("3")) selectedIndex = 2;
+
+                  if (selectedIndex >= 0 && selectedIndex < pendingContacts.size()) {
+                      makeCall(pendingContacts.get(selectedIndex)[0], pendingContacts.get(selectedIndex)[1]);
                   } else {
-                      tv.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.chat_ai));
-                      lp.gravity = Gravity.START;
+                      speak("Main samajh nahi paya. Kripya shuru se naam bataiye.");
+                      tvStatus.setText("Samajh nahi aaya.\nPhir se mic dabayein.");
                   }
-                  tv.setLayoutParams(lp);
-                  chatContainer.addView(tv);
-                  scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+              }
+
+              private void makeCall(String name, String number) {
+                  final String finalNumber = number; 
+                  tvStatus.setText("Calling...\n" + name.toUpperCase());
+                  speak("Ji seth, " + name + " ko call laga raha hoon.");
+                  
+                  mainHandler.postDelayed(() -> {
+                      try {
+                          startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + finalNumber)));
+                      } catch (Exception e) {
+                          Toast.makeText(MainActivity.this, "Calling Error", Toast.LENGTH_SHORT).show();
+                      }
+                  }, 2000);
               }
 
               private void checkPermissions() {
-                  ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO, Manifest.permission.MODIFY_AUDIO_SETTINGS}, 1);
+                  String[] perms = {Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO};
+                  for(String p : perms) {
+                      if(ActivityCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) {
+                          ActivityCompat.requestPermissions(this, perms, 1);
+                          return;
+                      }
+                  }
               }
 
               @Override
               protected void onDestroy() {
-                  if (speechService != null) { speechService.stop(); speechService.shutdown(); }
+                  if (speechRecognizer != null) { speechRecognizer.destroy(); }
                   if (tts != null) { tts.stop(); tts.shutdown(); }
-                  if (memoryDB != null) { memoryDB.close(); }
                   super.onDestroy();
               }
           }
           EOF
 
-      - name: "10. Android Manifest"
+      - name: "9. Android Manifest (App Name Updated)"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.READ_CONTACTS" />
               <uses-permission android:name="android.permission.CALL_PHONE" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
               
-              <application android:label="Z DB AI" android:icon="@mipmap/ic_launcher" android:theme="@style/Theme.ZAtomic">
-                  <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
+              <queries>
+                  <intent><action android:name="android.speech.RecognitionService" /></intent>
+                  <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
+              </queries>
+              
+              <application android:label="phone call Z+2" android:icon="@mipmap/ic_launcher" android:theme="@style/Theme.ZAtomic">
+                  <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
                       <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
                   </activity>
               </application>
           </manifest>
           EOF
 
-      - name: "11. Build Final APK"
+      - name: "10. Build Final Fast APK"
         run: |
           chmod +x gradlew
           ./gradlew :app:assembleDebug
           
-      - name: "12. Upload Artifact"
+      - name: "11. Upload Artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: "Z-Atomic-DB-AI"
+          name: "phone-call-Z+2"
           path: app/build/outputs/apk/debug/app-debug.apk
