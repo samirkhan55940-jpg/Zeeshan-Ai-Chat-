@@ -50,10 +50,11 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Download 20MB Offline Brain (Vosk)"
+      - name: "5. Download 20MB Offline Brain (Bulletproof Auto-Retry)"
         run: |
-          echo "Downloading Offline Search Engine..."
-          curl -L "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip" -o vosk-model.zip
+          echo "Downloading Offline Search Engine with Auto-Retry..."
+          # wget with 3 retries and timeout settings to prevent GitHub failure
+          wget --no-check-certificate --tries=3 --timeout=15 -qO vosk-model.zip "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip"
           unzip -q vosk-model.zip
           mv vosk-model-small-en-in-0.4 app/src/main/assets/model
           rm vosk-model.zip
@@ -69,8 +70,8 @@ jobs:
                   applicationId 'com.zatomic.aicaller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 40
-                  versionName "40.0-Perfect-Build"
+                  versionCode 42
+                  versionName "42.0-Master-Edition"
               }
               buildTypes {
                   release {
@@ -89,7 +90,7 @@ jobs:
           }
           EOF
 
-      - name: "7. UI Resources & Pulse Animation"
+      - name: "7. VIP UI Resources & Premium Logo (Included ✅)"
         run: |
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
@@ -124,7 +125,7 @@ jobs:
           </set>
           EOF
 
-          # --- VIP BLACK & GREEN CALL LOGO GENERATION (AAPT ERROR FIXED) ---
+          # --- VIP BLACK & GREEN CALL LOGO ---
           cat << 'EOF' > app/src/main/res/drawable/ic_launcher_foreground.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp" android:height="108dp"
@@ -135,15 +136,15 @@ jobs:
           </vector>
           EOF
 
+          # PERFECT AAPT2 ADAPTIVE ICON RULES
           cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/bg_pitch_black"/>
+              <background android:color="@color/bg_pitch_black"/>
               <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
           EOF
-          # -----------------------------------------------
 
-      - name: "8. Layout Design (Clean UI: Zeeshan Husain + Auto Mic)"
+      - name: "8. Layout Design"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -304,7 +305,7 @@ jobs:
                   if(allGranted && grantResults.length > 0) {
                       startBackgroundMagic();
                   } else {
-                      tvStatus.setText("Permissions denied!\nApp cannot work.");
+                      tvStatus.setText("Permissions required to run!");
                   }
               }
 
@@ -544,3 +545,4 @@ jobs:
         with:
           name: "phone-call-Z+2"
           path: app/build/outputs/apk/debug/app-debug.apk
+
