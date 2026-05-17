@@ -9,16 +9,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: "1. Checkout Code"
+      - name: "Step 1: Checkout Repository"
         uses: actions/checkout@v4
 
-      - name: "2. Set up JDK 17"
+      - name: "Step 2: Set up Java 17"
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: "3. Create App Structure"
+      - name: "Step 3: Create App Structure (Official Mipmap added)"
         run: |
           mkdir -p app/src/main/java/com/zatomic/aicaller
           mkdir -p app/src/main/res/layout
@@ -28,7 +28,7 @@ jobs:
           mkdir -p app/src/main/res/mipmap-anydpi-v26
           mkdir -p app/src/main/assets
 
-      - name: "4. Master Gradle Settings"
+      - name: "Step 4: Master Gradle Settings"
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
@@ -50,16 +50,16 @@ jobs:
           
           gradle wrapper --gradle-version 8.4
 
-      - name: "5. Download 20MB Offline Brain (Bulletproof Auto-Retry)"
+      - name: "Step 5: Safely Download Offline Engine (Anti-Block Rule)"
         run: |
-          echo "Downloading Offline Search Engine with Auto-Retry..."
-          # wget with 3 retries and timeout settings to prevent GitHub failure
-          wget --no-check-certificate --tries=3 --timeout=15 -qO vosk-model.zip "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip"
+          echo "Downloading Offline Engine..."
+          # Added User-Agent to prevent server from blocking GitHub Actions
+          wget -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" --no-check-certificate --tries=3 --timeout=15 -qO vosk-model.zip "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip"
           unzip -q vosk-model.zip
           mv vosk-model-small-en-in-0.4 app/src/main/assets/model
           rm vosk-model.zip
 
-      - name: "6. Android App Config"
+      - name: "Step 6: Android App Config"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -70,8 +70,8 @@ jobs:
                   applicationId 'com.zatomic.aicaller'
                   minSdk 26
                   targetSdk 34
-                  versionCode 42
-                  versionName "42.0-Master-Edition"
+                  versionCode 45
+                  versionName "45.0-Final-Premium-Logo"
               }
               buildTypes {
                   release {
@@ -90,7 +90,7 @@ jobs:
           }
           EOF
 
-      - name: "7. VIP UI Resources & Premium Logo (Included ✅)"
+      - name: "Step 7: VIP UI Resources & PREMIUM LOGO FIX ✅"
         run: |
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
@@ -100,7 +100,6 @@ jobs:
               <color name="mic_disabled">#555555</color>
               <color name="mic_idle">#0A84FF</color>
               <color name="mic_listening">#FF3B30</color>
-              <color name="iphone_green">#34C759</color>
           </resources>
           EOF
 
@@ -125,30 +124,39 @@ jobs:
           </set>
           EOF
 
-          # --- VIP BLACK & GREEN CALL LOGO ---
+          # 1. FOREGROUND LOGO (Green Call Icon centered)
           cat << 'EOF' > app/src/main/res/drawable/ic_launcher_foreground.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp" android:height="108dp"
-              android:viewportWidth="24" android:viewportHeight="24"
-              android:tint="@color/iphone_green">
-              <path android:fillColor="@android:color/white"
-                    android:pathData="M6.62,10.79c1.44,2.83 3.76,5.14 6.59,6.59l2.2,-2.2c0.27,-0.27 0.67,-0.36 1.02,-0.24 1.12,0.37 2.33,0.57 3.57,0.57 0.55,0 1,0.45 1,1V20c0,0.55 -0.45,1 -1,1 -9.39,0 -17,-7.61 -17,-17 0,-0.55 0.45,-1 1,-1h3.5c0.55,0 1,0.45 1,1 0,1.25 0.2,2.45 0.57,3.57 0.11,0.35 0.03,0.74 -0.25,1.02l-2.2,2.2z"/>
+              android:viewportWidth="108" android:viewportHeight="108">
+              <group android:translateX="30" android:translateY="30" android:scaleX="2" android:scaleY="2">
+                  <path android:fillColor="#34C759"
+                        android:pathData="M6.62,10.79c1.44,2.83 3.76,5.14 6.59,6.59l2.2,-2.2c0.27,-0.27 0.67,-0.36 1.02,-0.24 1.12,0.37 2.33,0.57 3.57,0.57 0.55,0 1,0.45 1,1V20c0,0.55 -0.45,1 -1,1 -9.39,0 -17,-7.61 -17,-17 0,-0.55 0.45,-1 1,-1h3.5c0.55,0 1,0.45 1,1 0,1.25 0.2,2.45 0.57,3.57 0.11,0.35 0.03,0.74 -0.25,1.02l-2.2,2.2z"/>
+              </group>
           </vector>
           EOF
 
-          # PERFECT AAPT2 ADAPTIVE ICON RULES
+          # 2. ADAPTIVE ICON WRAPPER (This strictly removes the Robot!)
           cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:color="@color/bg_pitch_black"/>
+              <background android:drawable="@color/bg_pitch_black"/>
+              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+          </adaptive-icon>
+          EOF
+          
+          cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/bg_pitch_black"/>
               <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
           EOF
 
-      - name: "8. Layout Design"
+      - name: "Step 8: Clean Layout Design"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:background="@color/bg_pitch_black"
@@ -158,10 +166,10 @@ jobs:
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:layout_alignParentTop="true"
-                  android:layout_marginTop="10dp"
+                  android:layout_marginTop="30dp"
                   android:text="Zeeshan Husain"
                   android:textColor="@color/text_gold"
-                  android:textSize="26sp"
+                  android:textSize="28sp"
                   android:textStyle="bold"
                   android:gravity="center"/>
 
@@ -169,7 +177,7 @@ jobs:
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:layout_below="@id/tv_app_title"
-                  android:layout_marginTop="20dp"
+                  android:layout_marginTop="30dp"
                   android:text="Data aur Engine Load ho raha hai...\nKripya ruken."
                   android:textColor="@color/text_white"
                   android:textSize="22sp"
@@ -184,7 +192,7 @@ jobs:
                   android:src="@android:drawable/ic_btn_speak_now"
                   android:scaleType="fitCenter"
                   android:padding="50dp"
-                  app:tint="#FFFFFF"
+                  android:tint="#FFFFFF"
                   android:elevation="10dp"
                   android:enabled="false"/>
                   
@@ -201,7 +209,7 @@ jobs:
           </RelativeLayout>
           EOF
 
-      - name: "9. Java Code (Auto-Scan Magic + Vosk Engine)"
+      - name: "Step 9: Java Code (Auto-Scan & Engine Logic)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zatomic/aicaller/MainActivity.java
           package com.zatomic.aicaller;
@@ -342,7 +350,6 @@ jobs:
                           }
                           cursor.close();
                       }
-                      
                       mainHandler.post(() -> {
                           isScanDone = true;
                           checkIfAllReady();
@@ -374,13 +381,10 @@ jobs:
               private void checkIfAllReady() {
                   if (isScanDone && isVoskReady && !isEngineReady) {
                       isEngineReady = true;
-                      
                       btnGiantMic.setEnabled(true);
                       btnGiantMic.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.mic_idle));
-                      
                       tvStatus.setText("Z+2 AI Ready\n(100% Offline)");
                       tvMicHint.setText("Tap to Speak");
-                      
                       speak("Salaam Seth! Main taiyar hoon, kisko phone lagau?");
                   }
               }
@@ -391,7 +395,6 @@ jobs:
 
               private void toggleMic() {
                   if (!isEngineReady) return;
-
                   if (speechService != null) {
                       speechService.stop();
                       speechService = null;
@@ -403,7 +406,6 @@ jobs:
                           Recognizer rec = new Recognizer(voskModel, 16000.0f);
                           speechService = new SpeechService(rec, 16000.0f);
                           speechService.startListening(this);
-                          
                           btnGiantMic.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.mic_listening));
                           btnGiantMic.startAnimation(pulseAnim);
                           if(tts != null && tts.isSpeaking()) tts.stop();
@@ -431,28 +433,22 @@ jobs:
 
               private void processVoiceCommand(String input) {
                   tvStatus.setText("Aapne kaha:\n\"" + input + "\"");
-                  
                   if (waitingForChoice) {
                       handleChoiceSelection(input);
                       return;
                   }
-
                   String cleanName = input.replaceAll("\\b(call|dial|phone|laga|lagao|karo|bhai|jaan|please|ko|hi|hello|mera|number|open|maro|jaldi|yaar|ko|kijiye)\\b", "").trim();
-                  
                   if (cleanName.length() < 2) {
                       speak("Naam theek se samajh nahi aaya. Phir se dabaiye.");
                       tvStatus.setText("Naam theek se samajh nahi aaya.");
                       return;
                   }
-
                   searchDatabaseAndCall(cleanName);
               }
 
               private void searchDatabaseAndCall(String searchName) {
                   pendingContacts.clear();
-                  
                   Cursor cursor = memoryDB.rawQuery("SELECT * FROM phonebook WHERE name LIKE ?", new String[]{"%" + searchName + "%"});
-
                   if (cursor != null) {
                       while (cursor.moveToNext()) {
                           pendingContacts.add(new String[]{cursor.getString(0), cursor.getString(1)});
@@ -473,7 +469,6 @@ jobs:
                           announcement.append(pos).append(", ").append(pendingContacts.get(i)[0]).append(". ");
                       }
                       announcement.append("Kisko lagau?");
-                      
                       speak(announcement.toString());
                       tvStatus.setText("Bohot naam mile!\nKisko lagau?\n(Pehla, Dusra...)");
                   }
@@ -482,7 +477,6 @@ jobs:
               private void handleChoiceSelection(String input) {
                   waitingForChoice = false;
                   int selectedIndex = -1;
-                  
                   if (input.contains("pehla") || input.contains("ek") || input.contains("first") || input.contains("1") || input.contains("one")) selectedIndex = 0;
                   else if (input.contains("dusra") || input.contains("do") || input.contains("second") || input.contains("2") || input.contains("two")) selectedIndex = 1;
                   else if (input.contains("teesra") || input.contains("teen") || input.contains("third") || input.contains("3") || input.contains("three")) selectedIndex = 2;
@@ -499,7 +493,6 @@ jobs:
                   final String finalNumber = number; 
                   tvStatus.setText("Calling...\n" + name.toUpperCase());
                   speak("Ji seth, " + name + " ko call laga raha hoon.");
-                  
                   mainHandler.postDelayed(() -> {
                       try {
                           startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + finalNumber)));
@@ -519,7 +512,7 @@ jobs:
           }
           EOF
 
-      - name: "10. Android Manifest"
+      - name: "Step 10: Official Android Manifest (Points to Mipmap Logo)"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -527,20 +520,26 @@ jobs:
               <uses-permission android:name="android.permission.CALL_PHONE" />
               <uses-permission android:name="android.permission.RECORD_AUDIO" />
               
-              <application android:label="phone call Z+2" android:icon="@mipmap/ic_launcher" android:theme="@style/Theme.ZAtomic">
+              <application android:label="phone call Z+2" 
+                           android:icon="@mipmap/ic_launcher" 
+                           android:roundIcon="@mipmap/ic_launcher_round" 
+                           android:theme="@style/Theme.ZAtomic">
                   <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
-                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
                   </activity>
               </application>
           </manifest>
           EOF
 
-      - name: "11. Build Final Fast APK"
+      - name: "Step 11: Build Final Fast APK"
         run: |
           chmod +x gradlew
           ./gradlew :app:assembleDebug
           
-      - name: "12. Upload Artifact"
+      - name: "Step 12: Upload Final APK"
         uses: actions/upload-artifact@v4
         with:
           name: "phone-call-Z+2"
