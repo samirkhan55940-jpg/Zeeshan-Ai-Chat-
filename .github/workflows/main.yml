@@ -38,7 +38,9 @@ jobs:
           EOF
 
           cat << 'EOF' > build.gradle
-          plugins { id 'com.android.application' version '8.3.0' apply false }
+          plugins {
+              id 'com.android.application' version '8.3.0' apply false
+          }
           EOF
 
           cat << 'EOF' > gradle.properties
@@ -56,7 +58,7 @@ jobs:
           mv vosk-model-small-en-in-0.4 app/src/main/assets/model
           rm vosk-model.zip
 
-      - name: "Step 6: Android App Config (Gradle Syntax Fixed 🔥)"
+      - name: "Step 6: Android App Config (100% Fixed Rule 🔥)"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -68,12 +70,12 @@ jobs:
                   minSdk 26
                   targetSdk 34
                   versionCode 48
-                  versionName "48.0-Syntax-Fixed"
+                  versionName "48.0-Engine-Fixed"
               }
               
-              // YAHAN NAYA GRADLE 8+ SYNTAX LAGAYA HAI (+=)
+              // YAHAN ENGINE KI FILES KO BACHAANE WALA ASLI RULE HAIN
               androidResources {
-                  noCompress += 'model'
+                  noCompress += ['mdl', 'fst', 'txt', 'conf', 'dict', 'int', 'am', 'pb']
               }
 
               buildTypes { 
@@ -93,7 +95,7 @@ jobs:
           }
           EOF
 
-      - name: "Step 7: VIP UI Resources & Premium Logo"
+      - name: "Step 7: VIP UI Resources & PREMIUM LOGO"
         run: |
           cat << 'EOF' > app/src/main/res/values/colors.xml
           <resources>
@@ -164,7 +166,7 @@ jobs:
           </adaptive-icon>
           EOF
 
-      - name: "Step 8: Layout Design (Strict UI Rules Applied)"
+      - name: "Step 8: Layout Design (Strict UI Rules Applied ✅)"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
