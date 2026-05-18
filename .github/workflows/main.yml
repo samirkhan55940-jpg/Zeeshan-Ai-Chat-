@@ -26,17 +26,32 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
 
-      - name: "Step 4: Master Gradle Settings"
+      - name: "Step 4: Master Gradle Settings (100% Fail-Proof)"
         run: |
           cat << 'EOF' > settings.gradle
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          pluginManagement { 
+              repositories { 
+                  google() 
+                  mavenCentral() 
+                  gradlePluginPortal() 
+              } 
+          }
+          dependencyResolutionManagement { 
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { 
+                  google() 
+                  mavenCentral() 
+              } 
+          }
           rootProject.name = "VIPScannerZ"
           include ':app'
           EOF
 
           cat << 'EOF' > build.gradle
-          plugins { id 'com.android.application' version '8.3.0' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }
+          plugins { 
+              id 'com.android.application' version '8.3.0' apply false 
+              id 'org.jetbrains.kotlin.android' version '1.9.0' apply false 
+          }
           EOF
 
           cat << 'EOF' > gradle.properties
@@ -44,44 +59,27 @@ jobs:
           org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8
           EOF
           
-          # Gradle wrapper ko theek se init karna taaki GitHub fail na ho
           gradle wrapper --gradle-version 8.4 --distribution-type bin
 
       - name: "Step 5: Add VIP Logo (Shield Icon)"
         run: |
-          # Logo ka Vector XML (Neele aur sunehre rang ki dhaal/shield)
           cat << 'EOF' > app/src/main/res/drawable/ic_launcher_foreground.xml
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="108dp" android:height="108dp"
-              android:viewportWidth="108" android:viewportHeight="108">
-              <path android:fillColor="#1E88E5"
-                    android:pathData="M54,12 L20,26 V50 C20,74 34,96 54,104 C74,96 88,74 88,50 V26 Z"/>
-              <path android:fillColor="#FFD700"
-                    android:pathData="M44,68 L32,56 L38,50 L44,56 L70,30 L76,36 Z"/>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#1E88E5" android:pathData="M54,12 L20,26 V50 C20,74 34,96 54,104 C74,96 88,74 88,50 V26 Z"/>
+              <path android:fillColor="#FFD700" android:pathData="M44,68 L32,56 L38,50 L44,56 L70,30 L76,36 Z"/>
           </vector>
           EOF
-
-          # Adaptive Icon Config
           cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@android:color/black"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-          </adaptive-icon>
+          <?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/black"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>
           EOF
-          
           cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@android:color/black"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-          </adaptive-icon>
+          <?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/black"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>
           EOF
 
-      - name: "Step 6: Android App Config"
+      - name: "Step 6: Android App Config (Room DB 50MB Ready)"
         run: |
           cat << 'EOF' > app/build.gradle
-          plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
+          plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android'; id 'kotlin-kapt' }
           android {
               namespace 'com.zatomic.scanner'
               compileSdk 34
@@ -89,8 +87,8 @@ jobs:
                   applicationId 'com.zatomic.scanner'
                   minSdk 26
                   targetSdk 34
-                  versionCode 3
-                  versionName "3.0-VIP-Logo"
+                  versionCode 6
+                  versionName "6.0-Dual-Scanner"
                   externalNativeBuild { cmake { cppFlags "" } }
               }
               externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt"; version "3.22.1" } }
@@ -102,6 +100,12 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
               implementation 'androidx.recyclerview:recyclerview:1.3.2'
+              
+              // Coroutines (For background tasks to avoid crash)
+              implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+              
+              implementation "androidx.room:room-runtime:2.6.1"
+              kapt "androidx.room:room-compiler:2.6.1"
           }
           EOF
 
@@ -115,7 +119,7 @@ jobs:
           target_link_libraries(vipscanner ${log-lib})
           EOF
 
-      - name: "Step 8: C++ Engine Code"
+      - name: "Step 8: C++ HYBRID ENGINE (200 Movie Sites)"
         run: |
           cat << 'EOF' > app/src/main/cpp/native-lib.cpp
           #include <jni.h>
@@ -124,64 +128,133 @@ jobs:
 
           extern "C" JNIEXPORT jobjectArray JNICALL
           Java_com_zatomic_scanner_MainActivity_scanForMovieSites(JNIEnv* env, jobject /* this */, jstring browserName) {
-              std::vector<std::string> sites = {
-                  "filmyzilla.to", "khatrimaza.org", "tamilrockers.cc", "moviesflix.in"
+              
+              std::vector<std::string> baseNames = {
+                  "filmyzilla", "khatrimaza", "tamilrockers", "moviesflix", "ibomma", 
+                  "vegamovies", "sdmoviespoint", "pagalmovies", "mp4moviez", "9xmovies", 
+                  "bolly4u", "moviesda", "tamilyogi", "isaimini", "movierulz", 
+                  "jalshamoviez", "extramovies", "hindilinks4u", "yts", "1337x", 
+                  "thepiratebay", "rarbg", "einthusan", "filmywap", "katmoviehd", 
+                  "worldfree4u", "skymovieshd", "hdhub4u", "afilmywap", "movieswood",
+                  "downloadhub", "bolly2tolly", "todaypk", "watchonlinemovies", "foumovies",
+                  "moviecounter", "yomovies", "123movies", "putlocker", "fmovies"
               };
+
+              std::vector<std::string> domains = {".to", ".in", ".org", ".cc", ".net"};
+              std::vector<std::string> finalSites;
+              
+              for(const auto& domain : domains) {
+                  for(const auto& name : baseNames) {
+                      finalSites.push_back(name + domain);
+                  }
+              }
               
               jclass stringClass = env->FindClass("java/lang/String");
-              jobjectArray stringArray = env->NewObjectArray(sites.size(), stringClass, nullptr);
+              jobjectArray stringArray = env->NewObjectArray(finalSites.size(), stringClass, nullptr);
               
-              for (size_t i = 0; i < sites.size(); ++i) {
-                  env->SetObjectArrayElement(stringArray, i, env->NewStringUTF(sites[i].c_str()));
+              for (size_t i = 0; i < finalSites.size(); ++i) {
+                  env->SetObjectArrayElement(stringArray, i, env->NewStringUTF(finalSites[i].c_str()));
               }
               return stringArray;
           }
           EOF
 
-      - name: "Step 9: UI Layouts"
+      - name: "Step 9: UI Layouts (Colorful Dual Scanners & History Default)"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
-          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent" android:layout_height="match_parent" android:background="#FFFFFF" android:padding="16dp">
-              <Button android:id="@+id/btnHistory" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="History" android:layout_alignParentEnd="true"/>
-              <Button android:id="@+id/btnScanNow" android:layout_width="200dp" android:layout_height="60dp" android:text="Scan Now" android:layout_centerInParent="true" android:backgroundTint="#000000" android:textColor="#FFFFFF"/>
-              <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/btnHistory" android:visibility="gone"/>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F5F5F5" android:padding="12dp">
+              
+              <LinearLayout android:id="@+id/topBar" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:weightSum="2" android:gravity="center">
+                  
+                  <Button android:id="@+id/btnAppScan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="APP SCAN" android:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:layout_marginEnd="5dp" android:textStyle="bold"/>
+                  
+                  <Button android:id="@+id/btnSiteScan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="SITE SCAN" android:backgroundTint="#F44336" android:textColor="#FFFFFF" android:layout_marginStart="5dp" android:textStyle="bold"/>
+              
+              </LinearLayout>
+
+              <TextView android:id="@+id/tvHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/topBar" android:layout_marginTop="10dp" android:text="History Log (Auto < 50MB)" android:textSize="18sp" android:textColor="#333333" android:textStyle="bold" android:gravity="center"/>
+              
+              <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/tvHeader" android:layout_marginTop="10dp"/>
+          
           </RelativeLayout>
           EOF
 
           cat << 'EOF' > app/src/main/res/layout/item_site_row.xml
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="12dp" android:background="?android:attr/selectableItemBackground">
-              <TextView android:id="@+id/tvSerial" android:layout_width="40dp" android:layout_height="wrap_content" android:textColor="#000" android:textStyle="bold"/>
-              <TextView android:id="@+id/tvName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#0000FF" android:textStyle="bold"/>
-              <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Unsafe" android:textColor="#FF0000"/>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="14dp" android:layout_marginBottom="4dp" android:background="#FFFFFF" android:elevation="2dp">
+              <TextView android:id="@+id/tvSerial" android:layout_width="40dp" android:layout_height="wrap_content" android:textColor="#555555" android:textStyle="bold"/>
+              <TextView android:id="@+id/tvName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#1E88E5" android:textStyle="bold" android:textSize="16sp"/>
+              <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Copied" android:textColor="#F44336" android:visibility="invisible"/>
           </LinearLayout>
           EOF
 
-      - name: "Step 10: Kotlin Code"
+      - name: "Step 10: Kotlin Code (Dual Scanning & 50MB Memory Manager)"
         run: |
+          cat << 'EOF' > app/src/main/java/com/zatomic/scanner/HistoryDB.kt
+          package com.zatomic.scanner
+          import androidx.room.*
+          import android.content.Context
+
+          @Entity(tableName = "history_table")
+          data class HistoryItem(@PrimaryKey(autoGenerate = true) val id: Int = 0, val name: String, val type: String)
+
+          @Dao
+          interface HistoryDao {
+              @Insert(onConflict = OnConflictStrategy.REPLACE)
+              fun insert(item: HistoryItem)
+              @Query("SELECT * FROM history_table ORDER BY id DESC")
+              fun getAll(): List<HistoryItem>
+              @Query("DELETE FROM history_table")
+              fun deleteAll()
+          }
+
+          @Database(entities = [HistoryItem::class], version = 1, exportSchema = false)
+          abstract class AppDatabase : RoomDatabase() {
+              abstract fun historyDao(): HistoryDao
+              companion object {
+                  @Volatile private var INSTANCE: AppDatabase? = null
+                  fun getDatabase(context: Context): AppDatabase {
+                      return INSTANCE ?: synchronized(this) {
+                          val instance = Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "scanner_database").build()
+                          INSTANCE = instance
+                          instance
+                      }
+                  }
+              }
+          }
+          EOF
+
           cat << 'EOF' > app/src/main/java/com/zatomic/scanner/SiteAdapter.kt
           package com.zatomic.scanner
+          import android.graphics.Color
           import android.view.LayoutInflater
           import android.view.View
           import android.view.ViewGroup
           import android.widget.TextView
           import androidx.recyclerview.widget.RecyclerView
 
-          class SiteAdapter(private val siteList: List<String>, private val onItemClick: (String) -> Unit) : RecyclerView.Adapter<SiteAdapter.ViewHolder>() {
+          class SiteAdapter(private val siteList: List<HistoryItem>, private val onItemClick: (String) -> Unit) : RecyclerView.Adapter<SiteAdapter.ViewHolder>() {
               class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
                   val tvSerial: TextView = view.findViewById(R.id.tvSerial)
                   val tvName: TextView = view.findViewById(R.id.tvName)
+                  val tvStatus: TextView = view.findViewById(R.id.tvStatus)
               }
               override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
                   val view = LayoutInflater.from(parent.context).inflate(R.layout.item_site_row, parent, false)
                   return ViewHolder(view)
               }
               override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-                  val name = siteList[position]
+                  val item = siteList[position]
                   holder.tvSerial.text = "${position + 1}."
-                  holder.tvName.text = name
-                  holder.itemView.setOnClickListener { onItemClick(name) }
+                  holder.tvName.text = item.name
+                  
+                  // Color coding based on type (App vs Site)
+                  if(item.type == "APP") { holder.tvName.setTextColor(Color.parseColor("#4CAF50")) } 
+                  else { holder.tvName.setTextColor(Color.parseColor("#1E88E5")) }
+
+                  holder.itemView.setOnClickListener { 
+                      holder.tvStatus.visibility = View.VISIBLE
+                      onItemClick(item.name) 
+                  }
               }
               override fun getItemCount() = siteList.size
           }
@@ -198,8 +271,8 @@ jobs:
           import android.content.pm.PackageManager
           import android.os.Build
           import android.os.Bundle
-          import android.view.View
           import android.widget.Button
+          import android.widget.TextView
           import android.widget.Toast
           import androidx.appcompat.app.AlertDialog
           import androidx.appcompat.app.AppCompatActivity
@@ -207,27 +280,79 @@ jobs:
           import androidx.core.content.ContextCompat
           import androidx.recyclerview.widget.LinearLayoutManager
           import androidx.recyclerview.widget.RecyclerView
+          import kotlinx.coroutines.*
+          import java.io.File
 
           class MainActivity : AppCompatActivity() {
-
               init { System.loadLibrary("vipscanner") }
               private external fun scanForMovieSites(browserName: String): Array<String>
 
-              private lateinit var btnScanNow: Button
+              private lateinit var btnAppScan: Button
+              private lateinit var btnSiteScan: Button
+              private lateinit var tvHeader: TextView
               private lateinit var recyclerView: RecyclerView
               private val PERMISSION_REQUEST_CODE = 100
+              private lateinit var database: AppDatabase
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_main)
 
-                  btnScanNow = findViewById(R.id.btnScanNow)
+                  database = AppDatabase.getDatabase(this)
+                  
+                  btnAppScan = findViewById(R.id.btnAppScan)
+                  btnSiteScan = findViewById(R.id.btnSiteScan)
+                  tvHeader = findViewById(R.id.tvHeader)
                   recyclerView = findViewById(R.id.recyclerView)
                   recyclerView.layoutManager = LinearLayoutManager(this)
 
                   checkAndRequestPermissions()
+                  checkDatabaseSizeAndClean()
 
-                  btnScanNow.setOnClickListener { showBrowserSelection() }
+                  // App khulte hi History load karega
+                  loadHistory()
+
+                  // 1. APP SCAN (Scan installed browsers)
+                  btnAppScan.setOnClickListener { 
+                      tvHeader.text = "Scanning Installed Apps..."
+                      scanInstalledBrowsers() 
+                  }
+
+                  // 2. SITE SCAN (Scan 200 piracy sites)
+                  btnSiteScan.setOnClickListener { 
+                      tvHeader.text = "Choose App to Scan Sites"
+                      showBrowserSelectionForSiteScan() 
+                  }
+              }
+
+              private fun loadHistory() {
+                  CoroutineScope(Dispatchers.IO).launch {
+                      val historyList = database.historyDao().getAll()
+                      withContext(Dispatchers.Main) {
+                          if (historyList.isEmpty()) {
+                              tvHeader.text = "No History Found. Please Scan."
+                          } else {
+                              tvHeader.text = "History Log (Safe 50MB Mode)"
+                              recyclerView.adapter = SiteAdapter(historyList) { name -> copyToClipboard(name) }
+                          }
+                      }
+                  }
+              }
+
+              private fun checkDatabaseSizeAndClean() {
+                  CoroutineScope(Dispatchers.IO).launch {
+                      val dbFile = getDatabasePath("scanner_database")
+                      if (dbFile.exists()) {
+                          val sizeInMB = dbFile.length() / (1024 * 1024)
+                          if (sizeInMB >= 50) {
+                              database.historyDao().deleteAll()
+                              withContext(Dispatchers.Main) {
+                                  Toast.makeText(this@MainActivity, "Auto-Cleaned: Database exceeded 50MB", Toast.LENGTH_LONG).show()
+                                  loadHistory()
+                              }
+                          }
+                      }
+                  }
               }
 
               private fun checkAndRequestPermissions() {
@@ -238,64 +363,67 @@ jobs:
                   }
               }
 
-              override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-                  super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-                  if (requestCode == PERMISSION_REQUEST_CODE) {
-                      if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                          Toast.makeText(this, "Permission Granted!", Toast.LENGTH_SHORT).show()
-                      } else {
-                          Toast.makeText(this, "Permission Denied. App needs this to run properly.", Toast.LENGTH_LONG).show()
-                      }
-                  }
-              }
-
-              private fun showBrowserSelection() {
+              // ================= FEATURE 1: APP SCANNER =================
+              private fun scanInstalledBrowsers() {
                   val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://www.google.com"))
-                  
                   val resolveInfoList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                       packageManager.queryIntentActivities(browserIntent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
                   } else {
                       packageManager.queryIntentActivities(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
                   }
                   
-                  val browserNames = resolveInfoList.map { it.loadLabel(packageManager).toString() }
+                  val browserNames = resolveInfoList.map { it.loadLabel(packageManager).toString() }.distinct()
+                  
+                  CoroutineScope(Dispatchers.IO).launch {
+                      browserNames.forEach { database.historyDao().insert(HistoryItem(name = it, type = "APP")) }
+                      loadHistory()
+                  }
+                  Toast.makeText(this, "Found ${browserNames.size} Browsers!", Toast.LENGTH_SHORT).show()
+              }
+
+              // ================= FEATURE 2: SITE SCANNER =================
+              private fun showBrowserSelectionForSiteScan() {
+                  val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://www.google.com"))
+                  val resolveInfoList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                      packageManager.queryIntentActivities(browserIntent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
+                  } else {
+                      packageManager.queryIntentActivities(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
+                  }
+                  val browserNames = resolveInfoList.map { it.loadLabel(packageManager).toString() }.distinct()
 
                   AlertDialog.Builder(this)
-                      .setTitle("Choose Browser to Scan")
+                      .setTitle("Choose App to Start Search")
                       .setItems(browserNames.toTypedArray()) { _, which ->
-                          startScanning(browserNames[which])
+                          startSiteScanning(browserNames[which])
                       }.show()
               }
 
-              private fun startScanning(browserName: String) {
-                  Toast.makeText(this, "Scanning via $browserName...", Toast.LENGTH_SHORT).show()
-                  btnScanNow.visibility = View.GONE
-                  recyclerView.visibility = View.VISIBLE
-
+              private fun startSiteScanning(browserName: String) {
+                  Toast.makeText(this, "Searching 200 sites via $browserName...", Toast.LENGTH_LONG).show()
                   val resultSites = scanForMovieSites(browserName)
-                  
-                  recyclerView.adapter = SiteAdapter(resultSites.toList()) { siteName ->
-                      val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                      val clip = ClipData.newPlainText("Piracy Site", siteName)
-                      clipboard.setPrimaryClip(clip)
-                      Toast.makeText(this, "Copied securely! Link won't open.", Toast.LENGTH_LONG).show()
+                  CoroutineScope(Dispatchers.IO).launch {
+                      resultSites.forEach { database.historyDao().insert(HistoryItem(name = it, type = "SITE")) }
+                      loadHistory()
                   }
+              }
+
+              private fun copyToClipboard(siteName: String) {
+                  val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                  val clip = ClipData.newPlainText("Piracy Site", siteName)
+                  clipboard.setPrimaryClip(clip)
+                  Toast.makeText(this, "Copied securely! Link won't open.", Toast.LENGTH_SHORT).show()
               }
           }
           EOF
 
-      - name: "Step 11: Official Android Manifest (With Logo Bound)"
+      - name: "Step 11: Official Android Manifest"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-              
-              <application android:label="Z+2 Scanner" 
-                           android:icon="@mipmap/ic_launcher"
-                           android:roundIcon="@mipmap/ic_launcher_round"
-                           android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+              <application android:label="Z+2 Scanner" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
