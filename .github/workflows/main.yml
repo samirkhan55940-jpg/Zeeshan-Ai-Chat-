@@ -1,4 +1,4 @@
-name: "Build phone call Z+2"
+name: "Build VIP Scanner Z+2"
 
 on:
   push:
@@ -20,27 +20,23 @@ jobs:
 
       - name: "Step 3: Create App Structure"
         run: |
-          mkdir -p app/src/main/java/com/zatomic/aicaller
+          mkdir -p app/src/main/java/com/zatomic/scanner
           mkdir -p app/src/main/res/layout
-          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/cpp
           mkdir -p app/src/main/res/drawable
-          mkdir -p app/src/main/res/anim
           mkdir -p app/src/main/res/mipmap-anydpi-v26
-          mkdir -p app/src/main/assets
 
       - name: "Step 4: Master Gradle Settings"
         run: |
           cat << 'EOF' > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = "ZAtomicVoice"
+          rootProject.name = "VIPScannerZ"
           include ':app'
           EOF
 
           cat << 'EOF' > build.gradle
-          plugins {
-              id 'com.android.application' version '8.3.0' apply false
-          }
+          plugins { id 'com.android.application' version '8.3.0' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }
           EOF
 
           cat << 'EOF' > gradle.properties
@@ -48,112 +44,28 @@ jobs:
           org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8
           EOF
           
-          gradle wrapper --gradle-version 8.4
+          # Gradle wrapper ko theek se init karna taaki GitHub fail na ho
+          gradle wrapper --gradle-version 8.4 --distribution-type bin
 
-      - name: "Step 5: Safely Download Offline Engine"
+      - name: "Step 5: Add VIP Logo (Shield Icon)"
         run: |
-          echo "Downloading Offline Engine..."
-          wget -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" --no-check-certificate --tries=3 --timeout=15 -qO vosk-model.zip "https://alphacephei.com/vosk/models/vosk-model-small-en-in-0.4.zip"
-          unzip -q vosk-model.zip
-          mv vosk-model-small-en-in-0.4 app/src/main/assets/model
-          rm vosk-model.zip
-
-      - name: "Step 6: Android App Config (100% Fixed Rule 🔥)"
-        run: |
-          cat << 'EOF' > app/build.gradle
-          plugins { id 'com.android.application' }
-          android {
-              namespace 'com.zatomic.aicaller'
-              compileSdk 34
-              defaultConfig {
-                  applicationId 'com.zatomic.aicaller'
-                  minSdk 26
-                  targetSdk 34
-                  versionCode 48
-                  versionName "48.0-Engine-Fixed"
-              }
-              
-              // YAHAN ENGINE KI FILES KO BACHAANE WALA ASLI RULE HAIN
-              androidResources {
-                  noCompress += ['mdl', 'fst', 'txt', 'conf', 'dict', 'int', 'am', 'pb']
-              }
-
-              buildTypes { 
-                  release {
-                      minifyEnabled true
-                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                  }
-              }
-              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
-              
-              implementation 'net.java.dev.jna:jna:5.13.0@aar'
-              implementation 'com.alphacephei:vosk-android:0.3.38@aar'
-          }
-          EOF
-
-      - name: "Step 7: VIP UI Resources & PREMIUM LOGO"
-        run: |
-          cat << 'EOF' > app/src/main/res/values/colors.xml
-          <resources>
-              <color name="bg_pitch_black">#000000</color>
-              <color name="text_gold">#FFD700</color>
-              <color name="text_white">#FFFFFF</color>
-              <color name="mic_disabled">#555555</color>
-              <color name="mic_idle">#0A84FF</color>
-              <color name="mic_listening">#FF3B30</color>
-              <color name="btn_scan_bg">#222222</color>
-              <color name="iphone_green">#34C759</color>
-          </resources>
-          EOF
-
-          cat << 'EOF' > app/src/main/res/values/themes.xml
-          <resources>
-              <style name="Theme.ZAtomic" parent="Theme.AppCompat.NoActionBar">
-                  <item name="android:windowBackground">@color/bg_pitch_black</item>
-                  <item name="android:statusBarColor">@color/bg_pitch_black</item>
-              </style>
-          </resources>
-          EOF
-
-          cat << 'EOF' > app/src/main/res/drawable/bg_mic_circle.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-              <solid android:color="@color/mic_disabled"/>
-          </shape>
-          EOF
-          
-          cat << 'EOF' > app/src/main/res/drawable/bg_scan_btn.xml
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="@color/btn_scan_bg"/>
-              <corners android:radius="8dp"/>
-              <stroke android:width="1dp" android:color="@color/text_gold"/>
-          </shape>
-          EOF
-
-          cat << 'EOF' > app/src/main/res/anim/pulse.xml
-          <set xmlns:android="http://schemas.android.com/apk/res/android">
-              <scale android:fromXScale="1.0" android:toXScale="1.2" android:fromYScale="1.0" android:toYScale="1.2" android:pivotX="50%" android:pivotY="50%" android:duration="600" android:repeatCount="infinite" android:repeatMode="reverse"/>
-          </set>
-          EOF
-
+          # Logo ka Vector XML (Neele aur sunehre rang ki dhaal/shield)
           cat << 'EOF' > app/src/main/res/drawable/ic_launcher_foreground.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp" android:height="108dp"
               android:viewportWidth="108" android:viewportHeight="108">
-              <group android:translateX="30" android:translateY="30" android:scaleX="2" android:scaleY="2">
-                  <path android:fillColor="#34C759"
-                        android:pathData="M6.62,10.79c1.44,2.83 3.76,5.14 6.59,6.59l2.2,-2.2c0.27,-0.27 0.67,-0.36 1.02,-0.24 1.12,0.37 2.33,0.57 3.57,0.57 0.55,0 1,0.45 1,1V20c0,0.55 -0.45,1 -1,1 -9.39,0 -17,-7.61 -17,-17 0,-0.55 0.45,-1 1,-1h3.5c0.55,0 1,0.45 1,1 0,1.25 0.2,2.45 0.57,3.57 0.11,0.35 0.03,0.74 -0.25,1.02l-2.2,2.2z"/>
-              </group>
+              <path android:fillColor="#1E88E5"
+                    android:pathData="M54,12 L20,26 V50 C20,74 34,96 54,104 C74,96 88,74 88,50 V26 Z"/>
+              <path android:fillColor="#FFD700"
+                    android:pathData="M44,68 L32,56 L38,50 L44,56 L70,30 L76,36 Z"/>
           </vector>
           EOF
 
+          # Adaptive Icon Config
           cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/bg_pitch_black"/>
+              <background android:drawable="@android:color/black"/>
               <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
           EOF
@@ -161,413 +73,230 @@ jobs:
           cat << 'EOF' > app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/bg_pitch_black"/>
+              <background android:drawable="@android:color/black"/>
               <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
           EOF
 
-      - name: "Step 8: Layout Design (Strict UI Rules Applied ✅)"
+      - name: "Step 6: Android App Config"
+        run: |
+          cat << 'EOF' > app/build.gradle
+          plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
+          android {
+              namespace 'com.zatomic.scanner'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.zatomic.scanner'
+                  minSdk 26
+                  targetSdk 34
+                  versionCode 3
+                  versionName "3.0-VIP-Logo"
+                  externalNativeBuild { cmake { cppFlags "" } }
+              }
+              externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt"; version "3.22.1" } }
+              buildTypes { release { minifyEnabled true; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' } }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+              kotlinOptions { jvmTarget = '17' }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+              implementation 'androidx.recyclerview:recyclerview:1.3.2'
+          }
+          EOF
+
+      - name: "Step 7: C++ Engine Config"
+        run: |
+          cat << 'EOF' > app/src/main/cpp/CMakeLists.txt
+          cmake_minimum_required(VERSION 3.22.1)
+          project("vipscanner")
+          add_library(vipscanner SHARED native-lib.cpp)
+          find_library(log-lib log)
+          target_link_libraries(vipscanner ${log-lib})
+          EOF
+
+      - name: "Step 8: C++ Engine Code"
+        run: |
+          cat << 'EOF' > app/src/main/cpp/native-lib.cpp
+          #include <jni.h>
+          #include <string>
+          #include <vector>
+
+          extern "C" JNIEXPORT jobjectArray JNICALL
+          Java_com_zatomic_scanner_MainActivity_scanForMovieSites(JNIEnv* env, jobject /* this */, jstring browserName) {
+              std::vector<std::string> sites = {
+                  "filmyzilla.to", "khatrimaza.org", "tamilrockers.cc", "moviesflix.in"
+              };
+              
+              jclass stringClass = env->FindClass("java/lang/String");
+              jobjectArray stringArray = env->NewObjectArray(sites.size(), stringClass, nullptr);
+              
+              for (size_t i = 0; i < sites.size(); ++i) {
+                  env->SetObjectArrayElement(stringArray, i, env->NewStringUTF(sites[i].c_str()));
+              }
+              return stringArray;
+          }
+          EOF
+
+      - name: "Step 9: UI Layouts"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="@color/bg_pitch_black"
-              android:padding="20dp">
-
-              <RelativeLayout android:id="@+id/rl_top_bar"
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:layout_alignParentTop="true"
-                  android:layout_marginTop="20dp">
-
-                  <TextView android:id="@+id/tv_app_title"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:layout_centerVertical="true"
-                      android:layout_alignParentStart="true"
-                      android:text="Zeeshan Husain"
-                      android:textColor="@color/text_gold"
-                      android:textSize="24sp"
-                      android:textStyle="bold"/>
-
-                  <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn_scan_manual"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:layout_centerVertical="true"
-                      android:layout_alignParentEnd="true"
-                      android:text="Scan Z+2"
-                      android:textColor="@color/text_gold"
-                      android:textSize="12sp"
-                      android:background="@drawable/bg_scan_btn"
-                      android:minHeight="35dp"
-                      android:paddingStart="10dp"
-                      android:paddingEnd="10dp"
-                      android:textAllCaps="false"/>
-              </RelativeLayout>
-
-              <TextView android:id="@+id/tv_status"
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:layout_below="@id/rl_top_bar"
-                  android:layout_marginTop="40dp"
-                  android:text="Engine Load ho raha hai...\nKripya ruken."
-                  android:textColor="@color/text_white"
-                  android:textSize="22sp"
-                  android:gravity="center"
-                  android:lines="3"/>
-
-              <ImageButton android:id="@+id/btn_giant_mic"
-                  android:layout_width="220dp"
-                  android:layout_height="220dp"
-                  android:layout_centerInParent="true"
-                  android:background="@drawable/bg_mic_circle"
-                  android:src="@android:drawable/ic_btn_speak_now"
-                  android:scaleType="fitCenter"
-                  android:padding="50dp"
-                  app:tint="#FFFFFF"
-                  android:elevation="10dp"
-                  android:enabled="false"/>
-                  
-              <TextView android:id="@+id/tv_mic_hint"
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:layout_below="@id/btn_giant_mic"
-                  android:layout_marginTop="20dp"
-                  android:text="Loading..."
-                  android:textColor="#555555"
-                  android:textSize="18sp"
-                  android:gravity="center"/>
-
+              android:layout_width="match_parent" android:layout_height="match_parent" android:background="#FFFFFF" android:padding="16dp">
+              <Button android:id="@+id/btnHistory" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="History" android:layout_alignParentEnd="true"/>
+              <Button android:id="@+id/btnScanNow" android:layout_width="200dp" android:layout_height="60dp" android:text="Scan Now" android:layout_centerInParent="true" android:backgroundTint="#000000" android:textColor="#FFFFFF"/>
+              <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/btnHistory" android:visibility="gone"/>
           </RelativeLayout>
           EOF
 
-      - name: "Step 9: Java Code (Manual Scan & Engine Logic)"
+          cat << 'EOF' > app/src/main/res/layout/item_site_row.xml
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="12dp" android:background="?android:attr/selectableItemBackground">
+              <TextView android:id="@+id/tvSerial" android:layout_width="40dp" android:layout_height="wrap_content" android:textColor="#000" android:textStyle="bold"/>
+              <TextView android:id="@+id/tvName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#0000FF" android:textStyle="bold"/>
+              <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Unsafe" android:textColor="#FF0000"/>
+          </LinearLayout>
+          EOF
+
+      - name: "Step 10: Kotlin Code"
         run: |
-          cat << 'EOF' > app/src/main/java/com/zatomic/aicaller/MainActivity.java
-          package com.zatomic.aicaller;
+          cat << 'EOF' > app/src/main/java/com/zatomic/scanner/SiteAdapter.kt
+          package com.zatomic.scanner
+          import android.view.LayoutInflater
+          import android.view.View
+          import android.view.ViewGroup
+          import android.widget.TextView
+          import androidx.recyclerview.widget.RecyclerView
 
-          import android.Manifest;
-          import android.app.ProgressDialog;
-          import android.content.ContentValues;
-          import android.content.Intent;
-          import android.content.pm.PackageManager;
-          import android.database.Cursor;
-          import android.database.sqlite.SQLiteDatabase;
-          import android.net.Uri;
-          import android.os.Bundle;
-          import android.os.Handler;
-          import android.os.Looper;
-          import android.provider.ContactsContract;
-          import android.speech.tts.TextToSpeech;
-          import android.view.animation.Animation;
-          import android.view.animation.AnimationUtils;
-          import android.widget.Button;
-          import android.widget.ImageButton;
-          import android.widget.TextView;
-          import android.widget.Toast;
+          class SiteAdapter(private val siteList: List<String>, private val onItemClick: (String) -> Unit) : RecyclerView.Adapter<SiteAdapter.ViewHolder>() {
+              class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+                  val tvSerial: TextView = view.findViewById(R.id.tvSerial)
+                  val tvName: TextView = view.findViewById(R.id.tvName)
+              }
+              override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+                  val view = LayoutInflater.from(parent.context).inflate(R.layout.item_site_row, parent, false)
+                  return ViewHolder(view)
+              }
+              override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+                  val name = siteList[position]
+                  holder.tvSerial.text = "${position + 1}."
+                  holder.tvName.text = name
+                  holder.itemView.setOnClickListener { onItemClick(name) }
+              }
+              override fun getItemCount() = siteList.size
+          }
+          EOF
 
-          import androidx.annotation.NonNull;
-          import androidx.appcompat.app.AppCompatActivity;
-          import androidx.core.app.ActivityCompat;
-          import androidx.core.content.ContextCompat;
+          cat << 'EOF' > app/src/main/java/com/zatomic/scanner/MainActivity.kt
+          package com.zatomic.scanner
 
-          import org.json.JSONObject;
-          import org.vosk.Model;
-          import org.vosk.Recognizer;
-          import org.vosk.android.RecognitionListener;
-          import org.vosk.android.SpeechService;
-          import org.vosk.android.StorageService;
+          import android.Manifest
+          import android.content.ClipData
+          import android.content.ClipboardManager
+          import android.content.Context
+          import android.content.Intent
+          import android.content.pm.PackageManager
+          import android.os.Build
+          import android.os.Bundle
+          import android.view.View
+          import android.widget.Button
+          import android.widget.Toast
+          import androidx.appcompat.app.AlertDialog
+          import androidx.appcompat.app.AppCompatActivity
+          import androidx.core.app.ActivityCompat
+          import androidx.core.content.ContextCompat
+          import androidx.recyclerview.widget.LinearLayoutManager
+          import androidx.recyclerview.widget.RecyclerView
 
-          import java.util.ArrayList;
-          import java.util.List;
-          import java.util.Locale;
+          class MainActivity : AppCompatActivity() {
 
-          public class MainActivity extends AppCompatActivity implements RecognitionListener {
+              init { System.loadLibrary("vipscanner") }
+              private external fun scanForMovieSites(browserName: String): Array<String>
 
-              private TextView tvStatus, tvMicHint;
-              private ImageButton btnGiantMic;
-              private Button btnScanManual;
-              private Animation pulseAnim;
-              
-              private Model voskModel;
-              private SpeechService speechService;
-              private TextToSpeech tts;
-              private Handler mainHandler = new Handler(Looper.getMainLooper());
-              private SQLiteDatabase memoryDB;
-              
-              private boolean isEngineReady = false;
-              private boolean waitingForChoice = false;
-              private List<String[]> pendingContacts = new ArrayList<>();
+              private lateinit var btnScanNow: Button
+              private lateinit var recyclerView: RecyclerView
+              private val PERMISSION_REQUEST_CODE = 100
 
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  setContentView(R.layout.activity_main);
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_main)
 
-                  tvStatus = findViewById(R.id.tv_status);
-                  tvMicHint = findViewById(R.id.tv_mic_hint);
-                  btnGiantMic = findViewById(R.id.btn_giant_mic);
-                  btnScanManual = findViewById(R.id.btn_scan_manual);
-                  pulseAnim = AnimationUtils.loadAnimation(this, R.anim.pulse);
+                  btnScanNow = findViewById(R.id.btnScanNow)
+                  recyclerView = findViewById(R.id.recyclerView)
+                  recyclerView.layoutManager = LinearLayoutManager(this)
 
-                  btnGiantMic.setEnabled(false);
-                  btnGiantMic.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.mic_disabled));
+                  checkAndRequestPermissions()
 
-                  checkPermissionsAndStart();
+                  btnScanNow.setOnClickListener { showBrowserSelection() }
+              }
+
+              private fun checkAndRequestPermissions() {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                          ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), PERMISSION_REQUEST_CODE)
+                      }
+                  }
+              }
+
+              override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+                  super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+                  if (requestCode == PERMISSION_REQUEST_CODE) {
+                      if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                          Toast.makeText(this, "Permission Granted!", Toast.LENGTH_SHORT).show()
+                      } else {
+                          Toast.makeText(this, "Permission Denied. App needs this to run properly.", Toast.LENGTH_LONG).show()
+                      }
+                  }
+              }
+
+              private fun showBrowserSelection() {
+                  val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://www.google.com"))
                   
-                  btnGiantMic.setOnClickListener(v -> toggleMic());
-                  btnScanManual.setOnClickListener(v -> startManualScan());
-              }
-
-              private void checkPermissionsAndStart() {
-                  String[] perms = {Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO};
-                  boolean allGranted = true;
-                  for(String p : perms) {
-                      if(ActivityCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) {
-                          allGranted = false; break;
-                      }
+                  val resolveInfoList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                      packageManager.queryIntentActivities(browserIntent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
+                  } else {
+                      packageManager.queryIntentActivities(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
                   }
                   
-                  if(allGranted) {
-                      initSystem();
-                  } else {
-                      ActivityCompat.requestPermissions(this, perms, 1);
+                  val browserNames = resolveInfoList.map { it.loadLabel(packageManager).toString() }
+
+                  AlertDialog.Builder(this)
+                      .setTitle("Choose Browser to Scan")
+                      .setItems(browserNames.toTypedArray()) { _, which ->
+                          startScanning(browserNames[which])
+                      }.show()
+              }
+
+              private fun startScanning(browserName: String) {
+                  Toast.makeText(this, "Scanning via $browserName...", Toast.LENGTH_SHORT).show()
+                  btnScanNow.visibility = View.GONE
+                  recyclerView.visibility = View.VISIBLE
+
+                  val resultSites = scanForMovieSites(browserName)
+                  
+                  recyclerView.adapter = SiteAdapter(resultSites.toList()) { siteName ->
+                      val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                      val clip = ClipData.newPlainText("Piracy Site", siteName)
+                      clipboard.setPrimaryClip(clip)
+                      Toast.makeText(this, "Copied securely! Link won't open.", Toast.LENGTH_LONG).show()
                   }
-              }
-
-              @Override
-              public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-                  super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-                  boolean allGranted = true;
-                  for(int res : grantResults) {
-                      if(res != PackageManager.PERMISSION_GRANTED) {
-                          allGranted = false; break;
-                      }
-                  }
-                  if(allGranted && grantResults.length > 0) {
-                      initSystem();
-                  } else {
-                      tvStatus.setText("Permissions required to run!");
-                  }
-              }
-
-              private void initSystem() {
-                  initDatabaseMemory();
-                  setupTTS();
-                  initVoskEngine();
-              }
-
-              private void initDatabaseMemory() {
-                  memoryDB = openOrCreateDatabase("ZAtomicBrain", MODE_PRIVATE, null);
-                  memoryDB.execSQL("CREATE TABLE IF NOT EXISTS phonebook(name VARCHAR, number VARCHAR);");
-              }
-
-              private void startManualScan() {
-                  ProgressDialog pd = new ProgressDialog(this);
-                  pd.setTitle("Scanning Contacts...");
-                  pd.setMessage("Aapke numbers Z+2 database mein save ho rahe hain. Kripya ruken.");
-                  pd.setCancelable(false);
-                  pd.show();
-
-                  new Thread(() -> {
-                      memoryDB.execSQL("DELETE FROM phonebook"); 
-                      Cursor cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
-                      int count = 0;
-                      if (cursor != null) {
-                          while (cursor.moveToNext()) {
-                              int nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-                              int numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                              if(nameIdx != -1 && numIdx != -1) {
-                                  String name = cursor.getString(nameIdx);
-                                  String num = cursor.getString(numIdx);
-                                  if(name != null && num != null) {
-                                      ContentValues values = new ContentValues();
-                                      values.put("name", name.toLowerCase());
-                                      values.put("number", num);
-                                      memoryDB.insert("phonebook", null, values);
-                                      count++;
-                                  }
-                              }
-                          }
-                          cursor.close();
-                      }
-                      final int finalCount = count;
-                      mainHandler.post(() -> {
-                          pd.dismiss();
-                          Toast.makeText(MainActivity.this, finalCount + " Numbers Scanned Successfully!", Toast.LENGTH_LONG).show();
-                          if(isEngineReady) {
-                              tvStatus.setText("Scan Complete!\nZ+2 AI Ready");
-                              speak("Scan poora hua seth. Ab mic dabakar naam boliye.");
-                          }
-                      });
-                  }).start();
-              }
-
-              private void initVoskEngine() {
-                  StorageService.unpack(this, "model", "model",
-                          (model) -> {
-                              this.voskModel = model;
-                              isEngineReady = true;
-                              runOnUiThread(() -> {
-                                  btnGiantMic.setEnabled(true);
-                                  btnGiantMic.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.mic_idle));
-                                  tvStatus.setText("Z+2 AI Ready\n(100% Offline)");
-                                  tvMicHint.setText("Tap to Speak");
-                                  speak("Salaam Seth! Main taiyar hoon. Pehli baar Call lagane se pehle upar Scan Z+2 daba dein.");
-                              });
-                          },
-                          (exception) -> { 
-                              runOnUiThread(() -> tvStatus.setText("Engine Load Error!"));
-                          }
-                  );
-              }
-
-              private void setupTTS() {
-                  tts = new TextToSpeech(this, status -> {
-                      if (status == TextToSpeech.SUCCESS) {
-                          tts.setLanguage(new Locale("hi", "IN"));
-                      }
-                  });
-              }
-
-              private void speak(String text) {
-                  if (tts != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
-              }
-
-              private void toggleMic() {
-                  if (!isEngineReady) return;
-                  if (speechService != null) {
-                      speechService.stop();
-                      speechService = null;
-                      btnGiantMic.clearAnimation();
-                      btnGiantMic.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.mic_idle));
-                      tvStatus.setText("Z+2 AI Ready");
-                  } else {
-                      try {
-                          Recognizer rec = new Recognizer(voskModel, 16000.0f);
-                          speechService = new SpeechService(rec, 16000.0f);
-                          speechService.startListening(this);
-                          btnGiantMic.getBackground().mutate().setTint(ContextCompat.getColor(this, R.color.mic_listening));
-                          btnGiantMic.startAnimation(pulseAnim);
-                          if(tts != null && tts.isSpeaking()) tts.stop();
-                          tvStatus.setText("Sun raha hoon...");
-                      } catch (Exception e) {}
-                  }
-              }
-
-              @Override
-              public void onResult(String hypothesis) {
-                  try {
-                      JSONObject obj = new JSONObject(hypothesis);
-                      String spokenText = obj.getString("text").trim();
-                      if (!spokenText.isEmpty()) {
-                          toggleMic(); 
-                          processVoiceCommand(spokenText.toLowerCase());
-                      }
-                  } catch (Exception e) {}
-              }
-
-              @Override public void onPartialResult(String h) {}
-              @Override public void onFinalResult(String h) { onResult(h); }
-              @Override public void onError(Exception e) { toggleMic(); }
-              @Override public void onTimeout() { toggleMic(); }
-
-              private void processVoiceCommand(String input) {
-                  tvStatus.setText("Aapne kaha:\n\"" + input + "\"");
-                  if (waitingForChoice) {
-                      handleChoiceSelection(input);
-                      return;
-                  }
-                  String cleanName = input.replaceAll("\\b(call|dial|phone|laga|lagao|karo|bhai|jaan|please|ko|hi|hello|mera|number|open|maro|jaldi|yaar|ko|kijiye)\\b", "").trim();
-                  if (cleanName.length() < 2) {
-                      speak("Naam theek se samajh nahi aaya. Phir se dabaiye.");
-                      tvStatus.setText("Naam theek se samajh nahi aaya.");
-                      return;
-                  }
-                  searchDatabaseAndCall(cleanName);
-              }
-
-              private void searchDatabaseAndCall(String searchName) {
-                  pendingContacts.clear();
-                  Cursor cursor = memoryDB.rawQuery("SELECT * FROM phonebook WHERE name LIKE ?", new String[]{"%" + searchName + "%"});
-                  if (cursor != null) {
-                      while (cursor.moveToNext()) {
-                          pendingContacts.add(new String[]{cursor.getString(0), cursor.getString(1)});
-                      }
-                      cursor.close();
-                  }
-
-                  if (pendingContacts.isEmpty()) {
-                      speak("Maaf karna, " + searchName + " database mein nahi mila. Ek baar Scan button daba lijiye.");
-                      tvStatus.setText(searchName + "\nNahi Mila!");
-                  } else if (pendingContacts.size() == 1) {
-                      makeCall(pendingContacts.get(0)[0], pendingContacts.get(0)[1]);
-                  } else {
-                      waitingForChoice = true;
-                      StringBuilder announcement = new StringBuilder(pendingContacts.size() + " naam mile hain. ");
-                      for (int i = 0; i < Math.min(pendingContacts.size(), 3); i++) {
-                          String pos = (i == 0) ? "Pehla" : (i == 1) ? "Dusra" : "Teesra";
-                          announcement.append(pos).append(", ").append(pendingContacts.get(i)[0]).append(". ");
-                      }
-                      announcement.append("Kisko lagau?");
-                      speak(announcement.toString());
-                      tvStatus.setText("Bohot naam mile!\nKisko lagau?\n(Pehla, Dusra...)");
-                  }
-              }
-
-              private void handleChoiceSelection(String input) {
-                  waitingForChoice = false;
-                  int selectedIndex = -1;
-                  if (input.contains("pehla") || input.contains("ek") || input.contains("first") || input.contains("1") || input.contains("one")) selectedIndex = 0;
-                  else if (input.contains("dusra") || input.contains("do") || input.contains("second") || input.contains("2") || input.contains("two")) selectedIndex = 1;
-                  else if (input.contains("teesra") || input.contains("teen") || input.contains("third") || input.contains("3") || input.contains("three")) selectedIndex = 2;
-
-                  if (selectedIndex >= 0 && selectedIndex < pendingContacts.size()) {
-                      makeCall(pendingContacts.get(selectedIndex)[0], pendingContacts.get(selectedIndex)[1]);
-                  } else {
-                      speak("Samajh nahi aaya. Phir se mic dabakar naam bataiye.");
-                      tvStatus.setText("Samajh nahi aaya.\nPhir se mic dabayein.");
-                  }
-              }
-
-              private void makeCall(String name, String number) {
-                  final String finalNumber = number; 
-                  tvStatus.setText("Calling...\n" + name.toUpperCase());
-                  speak("Ji seth, " + name + " ko call laga raha hoon.");
-                  mainHandler.postDelayed(() -> {
-                      try {
-                          startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + finalNumber)));
-                      } catch (Exception e) {
-                          Toast.makeText(MainActivity.this, "Calling Error", Toast.LENGTH_SHORT).show();
-                      }
-                  }, 2000);
-              }
-
-              @Override
-              protected void onDestroy() {
-                  if (speechService != null) { speechService.stop(); speechService.shutdown(); }
-                  if (tts != null) { tts.stop(); tts.shutdown(); }
-                  if (memoryDB != null) { memoryDB.close(); }
-                  super.onDestroy();
               }
           }
           EOF
 
-      - name: "Step 10: Official Android Manifest"
+      - name: "Step 11: Official Android Manifest (With Logo Bound)"
         run: |
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.READ_CONTACTS" />
-              <uses-permission android:name="android.permission.CALL_PHONE" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
               
-              <application android:label="phone call Z+2" 
-                           android:icon="@mipmap/ic_launcher" 
-                           android:roundIcon="@mipmap/ic_launcher_round" 
-                           android:theme="@style/Theme.ZAtomic">
-                  <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
+              <application android:label="Z+2 Scanner" 
+                           android:icon="@mipmap/ic_launcher"
+                           android:roundIcon="@mipmap/ic_launcher_round"
+                           android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
@@ -577,13 +306,13 @@ jobs:
           </manifest>
           EOF
 
-      - name: "Step 11: Build Final Fast APK"
+      - name: "Step 12: Build Final VIP APK"
         run: |
           chmod +x gradlew
           ./gradlew :app:assembleDebug
           
-      - name: "Step 12: Upload Final APK"
+      - name: "Step 13: Upload Final APK"
         uses: actions/upload-artifact@v4
         with:
-          name: "phone-call-Z+2"
+          name: "Z+2-Scanner-App"
           path: app/build/outputs/apk/debug/app-debug.apk
