@@ -26,32 +26,17 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
 
-      - name: "Step 4: Master Gradle Settings (100% Fail-Proof)"
+      - name: "Step 4: Master Gradle Settings"
         run: |
           cat << 'EOF' > settings.gradle
-          pluginManagement { 
-              repositories { 
-                  google() 
-                  mavenCentral() 
-                  gradlePluginPortal() 
-              } 
-          }
-          dependencyResolutionManagement { 
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { 
-                  google() 
-                  mavenCentral() 
-              } 
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
           rootProject.name = "VIPScannerZ"
           include ':app'
           EOF
 
           cat << 'EOF' > build.gradle
-          plugins { 
-              id 'com.android.application' version '8.3.0' apply false 
-              id 'org.jetbrains.kotlin.android' version '1.9.0' apply false 
-          }
+          plugins { id 'com.android.application' version '8.3.0' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }
           EOF
 
           cat << 'EOF' > gradle.properties
@@ -76,7 +61,7 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/black"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>
           EOF
 
-      - name: "Step 6: Android App Config (Room DB 50MB Ready)"
+      - name: "Step 6: Android App Config (Coroutines & DB Fixed)"
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android'; id 'kotlin-kapt' }
@@ -87,8 +72,8 @@ jobs:
                   applicationId 'com.zatomic.scanner'
                   minSdk 26
                   targetSdk 34
-                  versionCode 6
-                  versionName "6.0-Dual-Scanner"
+                  versionCode 7
+                  versionName "7.0-DeepScan-Fixed"
                   externalNativeBuild { cmake { cppFlags "" } }
               }
               externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt"; version "3.22.1" } }
@@ -101,9 +86,10 @@ jobs:
               implementation 'com.google.android.material:material:1.11.0'
               implementation 'androidx.recyclerview:recyclerview:1.3.2'
               
-              // Coroutines (For background tasks to avoid crash)
+              // Coroutines
               implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
               
+              // Room DB
               implementation "androidx.room:room-runtime:2.6.1"
               kapt "androidx.room:room-compiler:2.6.1"
           }
@@ -128,7 +114,6 @@ jobs:
 
           extern "C" JNIEXPORT jobjectArray JNICALL
           Java_com_zatomic_scanner_MainActivity_scanForMovieSites(JNIEnv* env, jobject /* this */, jstring browserName) {
-              
               std::vector<std::string> baseNames = {
                   "filmyzilla", "khatrimaza", "tamilrockers", "moviesflix", "ibomma", 
                   "vegamovies", "sdmoviespoint", "pagalmovies", "mp4moviez", "9xmovies", 
@@ -139,7 +124,6 @@ jobs:
                   "downloadhub", "bolly2tolly", "todaypk", "watchonlinemovies", "foumovies",
                   "moviecounter", "yomovies", "123movies", "putlocker", "fmovies"
               };
-
               std::vector<std::string> domains = {".to", ".in", ".org", ".cc", ".net"};
               std::vector<std::string> finalSites;
               
@@ -151,7 +135,6 @@ jobs:
               
               jclass stringClass = env->FindClass("java/lang/String");
               jobjectArray stringArray = env->NewObjectArray(finalSites.size(), stringClass, nullptr);
-              
               for (size_t i = 0; i < finalSites.size(); ++i) {
                   env->SetObjectArrayElement(stringArray, i, env->NewStringUTF(finalSites[i].c_str()));
               }
@@ -159,23 +142,16 @@ jobs:
           }
           EOF
 
-      - name: "Step 9: UI Layouts (Colorful Dual Scanners & History Default)"
+      - name: "Step 9: UI Layouts (Bug Fixed - XML Escaping)"
         run: |
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F5F5F5" android:padding="12dp">
-              
               <LinearLayout android:id="@+id/topBar" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:weightSum="2" android:gravity="center">
-                  
                   <Button android:id="@+id/btnAppScan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="APP SCAN" android:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:layout_marginEnd="5dp" android:textStyle="bold"/>
-                  
                   <Button android:id="@+id/btnSiteScan" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="SITE SCAN" android:backgroundTint="#F44336" android:textColor="#FFFFFF" android:layout_marginStart="5dp" android:textStyle="bold"/>
-              
               </LinearLayout>
-
-              <TextView android:id="@+id/tvHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/topBar" android:layout_marginTop="10dp" android:text="History Log (Auto < 50MB)" android:textSize="18sp" android:textColor="#333333" android:textStyle="bold" android:gravity="center"/>
-              
+              <TextView android:id="@+id/tvHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/topBar" android:layout_marginTop="10dp" android:text="History Log (Max 50MB)" android:textSize="18sp" android:textColor="#333333" android:textStyle="bold" android:gravity="center"/>
               <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/tvHeader" android:layout_marginTop="10dp"/>
-          
           </RelativeLayout>
           EOF
 
@@ -187,7 +163,7 @@ jobs:
           </LinearLayout>
           EOF
 
-      - name: "Step 10: Kotlin Code (Dual Scanning & 50MB Memory Manager)"
+      - name: "Step 10: Kotlin Code (Advanced Permissions & DB)"
         run: |
           cat << 'EOF' > app/src/main/java/com/zatomic/scanner/HistoryDB.kt
           package com.zatomic.scanner
@@ -246,11 +222,8 @@ jobs:
                   val item = siteList[position]
                   holder.tvSerial.text = "${position + 1}."
                   holder.tvName.text = item.name
-                  
-                  // Color coding based on type (App vs Site)
                   if(item.type == "APP") { holder.tvName.setTextColor(Color.parseColor("#4CAF50")) } 
                   else { holder.tvName.setTextColor(Color.parseColor("#1E88E5")) }
-
                   holder.itemView.setOnClickListener { 
                       holder.tvStatus.visibility = View.VISIBLE
                       onItemClick(item.name) 
@@ -291,7 +264,6 @@ jobs:
               private lateinit var btnSiteScan: Button
               private lateinit var tvHeader: TextView
               private lateinit var recyclerView: RecyclerView
-              private val PERMISSION_REQUEST_CODE = 100
               private lateinit var database: AppDatabase
 
               override fun onCreate(savedInstanceState: Bundle?) {
@@ -299,29 +271,47 @@ jobs:
                   setContentView(R.layout.activity_main)
 
                   database = AppDatabase.getDatabase(this)
-                  
                   btnAppScan = findViewById(R.id.btnAppScan)
                   btnSiteScan = findViewById(R.id.btnSiteScan)
                   tvHeader = findViewById(R.id.tvHeader)
                   recyclerView = findViewById(R.id.recyclerView)
                   recyclerView.layoutManager = LinearLayoutManager(this)
 
-                  checkAndRequestPermissions()
-                  checkDatabaseSizeAndClean()
+                  requestAppPermissions()
 
-                  // App khulte hi History load karega
+                  checkDatabaseSizeAndClean()
                   loadHistory()
 
-                  // 1. APP SCAN (Scan installed browsers)
                   btnAppScan.setOnClickListener { 
                       tvHeader.text = "Scanning Installed Apps..."
                       scanInstalledBrowsers() 
                   }
-
-                  // 2. SITE SCAN (Scan 200 piracy sites)
                   btnSiteScan.setOnClickListener { 
                       tvHeader.text = "Choose App to Scan Sites"
                       showBrowserSelectionForSiteScan() 
+                  }
+              }
+
+              private fun requestAppPermissions() {
+                  val permissionsNeeded = mutableListOf<String>()
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                          permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
+                      }
+                  }
+                  if (permissionsNeeded.isNotEmpty()) {
+                      ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), 101)
+                  }
+              }
+
+              override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+                  super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+                  if (requestCode == 101) {
+                      if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                          Toast.makeText(this, "Permission Allowed! Setup Complete.", Toast.LENGTH_SHORT).show()
+                      } else {
+                          Toast.makeText(this, "Permission Denied. Features may be limited.", Toast.LENGTH_LONG).show()
+                      }
                   }
               }
 
@@ -332,7 +322,7 @@ jobs:
                           if (historyList.isEmpty()) {
                               tvHeader.text = "No History Found. Please Scan."
                           } else {
-                              tvHeader.text = "History Log (Safe 50MB Mode)"
+                              tvHeader.text = "History Log (Max 50MB Mode)"
                               recyclerView.adapter = SiteAdapter(historyList) { name -> copyToClipboard(name) }
                           }
                       }
@@ -347,7 +337,7 @@ jobs:
                           if (sizeInMB >= 50) {
                               database.historyDao().deleteAll()
                               withContext(Dispatchers.Main) {
-                                  Toast.makeText(this@MainActivity, "Auto-Cleaned: Database exceeded 50MB", Toast.LENGTH_LONG).show()
+                                  Toast.makeText(this@MainActivity, "Auto-Cleaned: DB exceeded 50MB", Toast.LENGTH_LONG).show()
                                   loadHistory()
                               }
                           }
@@ -355,15 +345,6 @@ jobs:
                   }
               }
 
-              private fun checkAndRequestPermissions() {
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                          ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), PERMISSION_REQUEST_CODE)
-                      }
-                  }
-              }
-
-              // ================= FEATURE 1: APP SCANNER =================
               private fun scanInstalledBrowsers() {
                   val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://www.google.com"))
                   val resolveInfoList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -371,17 +352,14 @@ jobs:
                   } else {
                       packageManager.queryIntentActivities(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
                   }
-                  
                   val browserNames = resolveInfoList.map { it.loadLabel(packageManager).toString() }.distinct()
                   
                   CoroutineScope(Dispatchers.IO).launch {
                       browserNames.forEach { database.historyDao().insert(HistoryItem(name = it, type = "APP")) }
                       loadHistory()
                   }
-                  Toast.makeText(this, "Found ${browserNames.size} Browsers!", Toast.LENGTH_SHORT).show()
               }
 
-              // ================= FEATURE 2: SITE SCANNER =================
               private fun showBrowserSelectionForSiteScan() {
                   val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://www.google.com"))
                   val resolveInfoList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
